@@ -10,7 +10,7 @@ services:
     container_name: goalnad-oracle
     env_file:
       - .env.oracle
-    command: ["gateway"]
+    command: ["gateway", "--allow-unconfigured"]
     environment:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
