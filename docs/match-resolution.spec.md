@@ -9,8 +9,8 @@ description: How matches are resolved, payouts calculated, and edge cases handle
 
 ```
 H-7 days    → Oracle publishes prediction
-H-7 → H-12h → Auction phase (agents bid/support)
-H-12h       → LOCKDOWN (no more actions)
+H-7 → H-1h  → Auction phase (agents bid/support)
+H-1h        → LOCKDOWN (no more actions)
 Kickoff     → Match plays
 FT          → Backend fetches result from API
 FT + 30min  → Backend calls resolveMatch() on-chain

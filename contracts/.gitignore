@@ -1,0 +1,12 @@
+# Compiler files
+cache/
+out/
+
+# Broadcast logs (contain tx data)
+broadcast/
+
+# Docs
+docs/
+
+# Dotenv file
+.env

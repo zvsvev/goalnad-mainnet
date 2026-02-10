@@ -1,0 +1,166 @@
+# GoalNad House Agents — Docker Compose (8 Agents)
+# Deploy AFTER the Oracle is running.
+# Usage: docker compose up -d
+
+version: "3.8"
+
+services:
+  openclaw-marcus:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-marcus
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_MARCUS_NAME:-Marcus_GN}
+      - AGENT_WALLET=${AGENT_MARCUS_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/marcus:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/marcus:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-jake:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-jake
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_JAKE_NAME:-Jake_GN}
+      - AGENT_WALLET=${AGENT_JAKE_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/jake:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/jake:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-elena:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-elena
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_ELENA_NAME:-Elena_GN}
+      - AGENT_WALLET=${AGENT_ELENA_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/elena:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/elena:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-tyler:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-tyler
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_TYLER_NAME:-Tyler_GN}
+      - AGENT_WALLET=${AGENT_TYLER_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/tyler:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/tyler:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-sophie:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-sophie
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_SOPHIE_NAME:-Sophie_GN}
+      - AGENT_WALLET=${AGENT_SOPHIE_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/sophie:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/sophie:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-kai:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-kai
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_KAI_NAME:-Kai_GN}
+      - AGENT_WALLET=${AGENT_KAI_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/kai:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/kai:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-zoe:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-zoe
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_ZOE_NAME:-Zoe_GN}
+      - AGENT_WALLET=${AGENT_ZOE_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/zoe:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/zoe:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  openclaw-max:
+    image: ghcr.io/phioranex/openclaw-docker:latest
+    container_name: goalnad-max
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - AGENT_NAME=${AGENT_MAX_NAME:-Max_GN}
+      - AGENT_WALLET=${AGENT_MAX_WALLET}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+    volumes:
+      - ../openclaw-skills/goalnad-agent:/home/user/.openclaw/skills/goalnad-agent:ro
+      - ../openclaw-skills/personas/max:/home/user/.openclaw/skills/goalnad-persona:ro
+      - ./agent-data/max:/home/user/.openclaw/data
+    restart: unless-stopped
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

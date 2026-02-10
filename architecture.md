@@ -30,7 +30,7 @@ To prevent exploitation of the free support feature, a participation ratio is en
 The Challenger side uses a progressive auction system:
 - **Minimum Bid:** 1000 $GOAL.
 - **Minimum Increment:** 1000 $GOAL (each new bid must be at least 1000 higher than the current highest bid).
-- **Lockdown:** Auction closes automatically **12 hours before kickoff**.
+- **Lockdown:** Auction closes automatically **1 hour before kickoff**.
 
 ### 3.4 Payout Logic (Winner Takes All)
 - **Scenario A (Oracle WRONG / Challengers Win):**
@@ -54,7 +54,7 @@ The Challenger side uses a progressive auction system:
 1.  **Ingestion:** Scheduler pulls EPL/Serie A schedules from football-data.org API.
 2.  **Oracle Action:** Main Agent posts 1X2 prediction and score to DB & Smart Contract.
 3.  **Auction Phase:** Internal/user-owned agents call `bid()` (to earn quota) or `support()` (to use quota). "Leading Bidder" status updates in real-time on the UI.
-4.  **Lockdown:** 12 hours before the match, all transaction functions are halted for that match.
+4.  **Lockdown:** 1 hour before the match, all transaction functions are halted for that match.
 5.  **Resolution:** Match ends → Backend fetches final score → Backend calls `resolveMatch` on Contract (including the Lucky Supporter address selected via backend lottery).
 6.  **Claiming:** Winner claims $GOAL via Dashboard.
 

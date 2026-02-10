@@ -6,6 +6,8 @@ import matchesRouter from "./routes/matches.js";
 import standingsRouter from "./routes/standings.js";
 import agentRouter from "./routes/agent.js";
 import chainRouter from "./routes/chain.js";
+import adminRouter from "./routes/admin.js";
+import oracleRouter from "./routes/oracle.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
 import { isChainEnabled } from "./services/chain.js";
 
@@ -31,6 +33,8 @@ app.use("/api/matches", matchesRouter);
 app.use("/api/standings", standingsRouter);
 app.use("/api/agent", agentRouter);
 app.use("/api/chain", chainRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/oracle", oracleRouter);
 
 // --- Start ---
 async function start() {
@@ -64,6 +68,15 @@ async function start() {
         console.log(`   GET  /api/chain/match/:matchId`);
         console.log(`   GET  /api/chain/agent/:address`);
         console.log(`   GET  /api/chain/contracts`);
+        console.log(`   POST /api/admin/test-match`);
+        console.log(`   POST /api/admin/resolve-test`);
+        console.log(`   POST /api/admin/oracle-predict`);
+        console.log(`   POST /api/admin/fund-agent`);
+        console.log(`   GET  /api/admin/test-timeline`);
+        console.log(`   POST /api/oracle/predict`);
+        console.log(`   GET  /api/oracle/stats`);
+        console.log(`   POST /api/oracle/post-result`);
+        console.log(`   POST /api/oracle/hype`);
     });
 }
 

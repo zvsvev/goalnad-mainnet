@@ -19,6 +19,9 @@ export function initSchema(): void {
       away_logo TEXT,
       oracle_prediction INTEGER,
       oracle_score TEXT,
+      oracle_analysis TEXT,
+      oracle_conviction INTEGER,
+      oracle_tx_hash TEXT,
       lockdown_time TEXT,
       total_pot INTEGER DEFAULT 0,
       highest_bid INTEGER DEFAULT 0,
@@ -70,10 +73,14 @@ export function initSchema(): void {
     "ALTER TABLE matches ADD COLUMN highest_bidder TEXT",
     "ALTER TABLE matches ADD COLUMN resolved INTEGER DEFAULT 0",
     "ALTER TABLE matches ADD COLUMN result INTEGER",
+    "ALTER TABLE matches ADD COLUMN oracle_analysis TEXT",
+    "ALTER TABLE matches ADD COLUMN oracle_conviction INTEGER",
+    "ALTER TABLE matches ADD COLUMN oracle_tx_hash TEXT",
     "ALTER TABLE agents_metadata ADD COLUMN agent_name TEXT",
     "ALTER TABLE agents_metadata ADD COLUMN balance INTEGER DEFAULT 100000",
     "ALTER TABLE agents_metadata ADD COLUMN wins INTEGER DEFAULT 0",
     "ALTER TABLE agents_metadata ADD COLUMN losses INTEGER DEFAULT 0",
+    "ALTER TABLE matches ADD COLUMN moltbook_post_id TEXT",
   ];
 
   for (const sql of migrations) {

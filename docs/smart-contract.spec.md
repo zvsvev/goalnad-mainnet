@@ -15,7 +15,7 @@ Solidity contract deployed on Monad Testnet handling predictions, bidding, and p
 struct Match {
     uint256 matchId;           // API match ID
     uint8   oraclePrediction;  // 1=Home, 0=Draw, 2=Away
-    uint256 lockdownTime;      // kickoff - 12 hours
+    uint256 lockdownTime;      // kickoff - 1 hour
     uint256 highestBid;
     address highestBidder;
     uint256 totalPot;
@@ -37,7 +37,7 @@ mapping(address => uint256) public supportQuota;
 ### `publishPrediction(uint256 matchId, uint8 prediction, uint256 lockdownTime)`
 - **Access:** `onlyOracle`
 - Stores Oracle prediction for a match
-- Sets lockdown time (kickoff - 12h)
+- Sets lockdown time (kickoff - 1h)
 
 ### `bid(uint256 matchId) external payable`
 - Requires `block.timestamp < lockdownTime`
