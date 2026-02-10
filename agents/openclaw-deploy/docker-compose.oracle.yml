@@ -25,7 +25,7 @@ services:
       - ./oracle-data:/home/user/.openclaw/data
       - ./oracle-config:/home/user/.openclaw
     restart: unless-stopped
-    mem_limit: 512m
+    mem_limit: 1g
     logging:
       driver: json-file
       options:
