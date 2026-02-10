@@ -42,12 +42,10 @@ function decide(
         return { action: "skip", reason: "Already acted on this match" };
     }
 
-    // Check if match is locked down
-    if (match.lockdown_time) {
-        const lockdown = new Date(match.lockdown_time).getTime();
-        if (Date.now() >= lockdown) {
-            return { action: "skip", reason: "Match is locked down" };
-        }
+    // Check if match has started (bids close at kickoff)
+    const kickoff = new Date(match.match_date).getTime();
+    if (Date.now() >= kickoff) {
+        return { action: "skip", reason: "Match has started — bidding closed" };
     }
 
     // Roll dice: skip first based on persona's skip percentage

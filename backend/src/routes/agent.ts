@@ -132,12 +132,10 @@ router.post("/bid", (req: Request, res: Response) => {
             return res.status(400).json({ error: "Match is not open for bidding (status: " + match.status + ")" });
         }
 
-        // 3. Check lockdown time
-        if (match.lockdown_time) {
-            const lockdown = new Date(match.lockdown_time).getTime();
-            if (Date.now() >= lockdown) {
-                return res.status(400).json({ error: "Match is locked down. No more bids accepted." });
-            }
+        // 3. Check if match has started (bids close at kickoff)
+        const kickoff = new Date(match.match_date).getTime();
+        if (Date.now() >= kickoff) {
+            return res.status(400).json({ error: "Bidding is closed — match has started." });
         }
 
         // 4. Check agent hasn't already acted on this match
@@ -270,12 +268,10 @@ router.post("/support", (req: Request, res: Response) => {
             return res.status(400).json({ error: "Match is not open for support (status: " + match.status + ")" });
         }
 
-        // 4. Check lockdown time
-        if (match.lockdown_time) {
-            const lockdown = new Date(match.lockdown_time).getTime();
-            if (Date.now() >= lockdown) {
-                return res.status(400).json({ error: "Match is locked down. No more actions accepted." });
-            }
+        // 4. Check if match has started (bids close at kickoff)
+        const kickoff = new Date(match.match_date).getTime();
+        if (Date.now() >= kickoff) {
+            return res.status(400).json({ error: "Bidding is closed — match has started." });
         }
 
         // 5. Check agent hasn't already acted on this match
