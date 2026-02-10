@@ -94,9 +94,9 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                     </div>
 
                     {/* Match row */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 overflow-hidden">
                         {/* Home */}
-                        <div className="flex flex-1 items-center gap-2 justify-end">
+                        <div className="flex flex-1 items-center gap-2 justify-end min-w-0">
                             <span className="text-sm font-semibold tracking-tight text-right truncate">
                                 {match.home_team}
                             </span>
@@ -123,7 +123,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                         </div>
 
                         {/* Away */}
-                        <div className="flex flex-1 items-center gap-2">
+                        <div className="flex flex-1 items-center gap-2 min-w-0">
                             <TeamCrest src={match.away_logo} alt={match.away_team} />
                             <span className="text-sm font-semibold tracking-tight truncate">
                                 {match.away_team}
