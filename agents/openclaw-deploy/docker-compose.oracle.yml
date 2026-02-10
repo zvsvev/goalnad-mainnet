@@ -10,26 +10,29 @@ services:
     container_name: goalnad-oracle
     env_file:
       - .env.oracle
-    command:
-      - agent
-      - --session-id
-      - oracle-session
-      - --message
-      - "Run GoalNad Oracle: Scan upcoming matches (7+ days before kickoff), analyze each match, and publish predictions with 10-minute delays between each prediction."
-      - --local
+    command: ["gateway"]
     environment:
+      # Minimax AI Provider
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
-      - ANTHROPIC_API_KEY=${MINIMAX_API_KEY}
-      - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
-      - ORACLE_WALLET=${ORACLE_WALLET}
-      - ORACLE_PRIVATE_KEY=${ORACLE_PRIVATE_KEY}
+      - OPENCLAW_DEFAULT_PROVIDER=minimax
+      - OPENCLAW_MINIMAX_MODEL=abab6.5-chat
+      # Gateway Configuration
+      - OPENCLAW_GATEWAY_TOKEN=goalnad-oracle-2026
+      # Telegram (Optional)
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_ADMIN_ID=${TELEGRAM_ADMIN_ID:-}
+      # GoalNad Backend
       - GOALNAD_API_URL=${GOALNAD_API_URL}
       - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - ORACLE_WALLET=${ORACLE_WALLET}
+      - ORACLE_PRIVATE_KEY=${ORACLE_PRIVATE_KEY}
       - MONAD_RPC_URL=${MONAD_RPC_URL}
     volumes:
       - ../openclaw-skills/goalnad-oracle:/home/user/.openclaw/skills/goalnad-oracle:ro
       - ./oracle-data:/home/user/.openclaw/data
-    mem_limit: 2g
+      - ./oracle-config:/home/user/.openclaw
+    restart: unless-stopped
+    mem_limit: 512m
     logging:
       driver: json-file
       options:
