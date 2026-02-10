@@ -17,6 +17,7 @@ services:
       - OPENCLAW_DEFAULT_PROVIDER=minimax
       - OPENCLAW_MINIMAX_MODEL=abab6.5-chat
       # Gateway Configuration
+      - OPENCLAW_GATEWAY_MODE=local
       - OPENCLAW_GATEWAY_TOKEN=goalnad-oracle-2026
       # Telegram (Optional)
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
