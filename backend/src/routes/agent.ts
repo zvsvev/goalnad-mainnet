@@ -334,4 +334,56 @@ router.post("/support", (req: Request, res: Response) => {
     }
 });
 
+// ─── GET /api/agent/:wallet — public agent profile ───
+router.get("/:wallet", (req: Request, res: Response) => {
+    try {
+        const { wallet } = req.params;
+
+        const agent = db
+            .prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?")
+            .get(wallet) as any;
+        if (!agent) {
+            return res.status(404).json({ error: "Agent not found" });
+        }
+
+        // Get recent bids with match info
+        const recentBids = db
+            .prepare(
+                `SELECT b.amount, b.type, b.comment, b.created_at,
+                        m.api_match_id, m.home_team, m.away_team, m.match_date,
+                        m.status as match_status, m.league_id
+                 FROM bids b
+                 JOIN matches m ON b.match_id = m.id
+                 WHERE b.agent_wallet = ?
+                 ORDER BY b.created_at DESC
+                 LIMIT 30`
+            )
+            .all(wallet);
+
+        const totalBids = recentBids.length;
+        const winRate =
+            agent.wins + agent.losses > 0
+                ? Math.round((agent.wins / (agent.wins + agent.losses)) * 100)
+                : 0;
+
+        res.json({
+            agent: {
+                wallet: agent.agent_wallet,
+                name: agent.agent_name,
+                balance: agent.balance,
+                supportQuota: agent.support_quota,
+                wins: agent.wins,
+                losses: agent.losses,
+                winRate,
+                personaType: agent.persona_type,
+            },
+            recentBids,
+            totalBids,
+        });
+    } catch (err: any) {
+        console.error("Error fetching agent profile:", err.message);
+        res.status(500).json({ error: "Failed to fetch agent profile" });
+    }
+});
+
 export default router;

@@ -1,14 +1,18 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import Image from "next/image";
 import {
   Swords,
   Shield,
   Bot,
   ExternalLink,
   ArrowLeft,
-  Eye,
   CircleDollarSign,
   Users,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,54 +20,139 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { getMatchBySlug } from "@/lib/mock-data";
+import { fetchMatch, fetchMatchBids, type ApiMatch, type ApiBid } from "@/lib/api";
 
-function PredictionLabel({ prediction }: { prediction: string }) {
-  const labels: Record<string, string> = {
-    "1": "HOME WIN",
-    "2": "AWAY WIN",
-  };
+const PREDICTION_LABELS: Record<number, string> = {
+  1: "HOME WIN",
+  2: "AWAY WIN",
+  3: "DRAW",
+};
+
+function TeamCrest({ src, alt, size = 48 }: { src: string | null; alt: string; size?: number }) {
+  if (!src) {
+    return (
+      <div
+        className="flex items-center justify-center rounded-full bg-secondary text-sm font-bold text-muted-foreground"
+        style={{ width: size, height: size }}
+      >
+        {alt.slice(0, 3).toUpperCase()}
+      </div>
+    );
+  }
   return (
-    <Badge
-      variant="outline"
-      className="border-primary/50 bg-primary/10 text-primary font-mono text-sm"
-    >
-      {labels[prediction] ?? prediction}
-    </Badge>
+    <Image
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      className="object-contain"
+      style={{ width: size, height: size }}
+      unoptimized
+    />
   );
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const match = getMatchBySlug(id);
-  if (!match) return { title: "Match Not Found | Goalnad.fun" };
-  return {
-    title: `${match.home} vs ${match.away} | Goalnad.fun`,
-    description: match.goalnadComment,
-  };
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
 }
 
-export default async function MatchPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const match = getMatchBySlug(id);
-  if (!match) notFound();
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60_000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
+}
 
-  const isLockdown = match.status.includes("LOCKDOWN");
+export default function MatchPage() {
+  const params = useParams();
+  const id = params.id as string;
+
+  const [match, setMatch] = useState<ApiMatch | null>(null);
+  const [bids, setBids] = useState<ApiBid[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const numId = parseInt(id, 10);
+        if (isNaN(numId)) {
+          setError("Invalid match ID");
+          setLoading(false);
+          return;
+        }
+
+        const [matchData, bidsData] = await Promise.all([
+          fetchMatch(numId),
+          fetchMatchBids(numId),
+        ]);
+
+        if (!matchData) {
+          setError("Match not found");
+        } else {
+          setMatch(matchData);
+          setBids(bidsData);
+        }
+      } catch (e) {
+        console.error("Failed to load match:", e);
+        setError("Failed to load match data");
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="flex items-center justify-center py-32">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error || !match) {
+    return (
+      <div className="min-h-screen">
+        <Navbar />
+        <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+          <p className="text-muted-foreground">{error || "Match not found"}</p>
+          <Link href="/" className="mt-4 inline-block text-primary hover:underline text-sm">
+            ← Back to Matches
+          </Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const challenges = bids.filter((b) => b.type === "challenge");
+  const supports = bids.filter((b) => b.type === "support");
+  const hasPrediction = match.oracle_prediction !== null && match.oracle_prediction !== undefined;
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
       <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
-        {/* Breadcrumb + Verify On-Chain */}
+        {/* Breadcrumb + On-chain */}
         <div className="mb-8 flex items-center justify-between">
           <Link
             href="/"
@@ -72,114 +161,97 @@ export default async function MatchPage({
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to Matches
           </Link>
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-mono text-xs"
-            asChild
-          >
-            <a
-              href={`https://testnet.monadscan.com/tx/${match.txHash}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <ExternalLink className="mr-1.5 h-3 w-3" />
-              View on Monad
-            </a>
-          </Button>
+          {match.oracle_tx_hash && (
+            <Button variant="outline" size="sm" className="font-mono text-xs" asChild>
+              <a
+                href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="mr-1.5 h-3 w-3" />
+                View on Monad
+              </a>
+            </Button>
+          )}
         </div>
 
         {/* Match Hero */}
         <div className="text-center space-y-4 mb-10">
-          <div className="flex items-center justify-center gap-3">
-            <Badge
-              variant="secondary"
-              className="font-mono text-[10px] tracking-widest uppercase"
-            >
-              {match.league}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Badge variant="secondary" className="font-mono text-[10px] tracking-widest uppercase">
+              {match.league_id}
             </Badge>
-            <Badge
-              variant={isLockdown ? "destructive" : "default"}
-              className={
-                isLockdown
-                  ? "animate-pulse font-mono text-[10px]"
-                  : "bg-primary/20 text-primary border-primary/30 font-mono text-[10px]"
-              }
-            >
-              {match.status}
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              {match.status === "NS" ? "Upcoming" : match.status}
             </Badge>
+            {match.round && (
+              <Badge variant="secondary" className="font-mono text-[10px]">
+                {match.round}
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-6 sm:gap-10">
-            <div className="text-right flex-1">
-              <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                {match.home}
+            <div className="text-right flex-1 flex flex-col items-end gap-2">
+              <TeamCrest src={match.home_logo} alt={match.home_team} />
+              <p className="text-xl font-bold tracking-tight sm:text-3xl">
+                {match.home_team}
               </p>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-sm text-muted-foreground font-mono">
-                VS
-              </span>
+              {match.status === "FT" || match.status === "LIVE" ? (
+                <span className="font-mono text-3xl font-bold">
+                  {match.home_score ?? 0} - {match.away_score ?? 0}
+                </span>
+              ) : (
+                <span className="text-sm text-muted-foreground font-mono">VS</span>
+              )}
             </div>
-            <div className="text-left flex-1">
-              <p className="text-2xl font-bold tracking-tight sm:text-3xl">
-                {match.away}
+            <div className="text-left flex-1 flex flex-col items-start gap-2">
+              <TeamCrest src={match.away_logo} alt={match.away_team} />
+              <p className="text-xl font-bold tracking-tight sm:text-3xl">
+                {match.away_team}
               </p>
             </div>
           </div>
 
           <p className="text-sm text-muted-foreground font-mono">
-            {match.kickoff}
+            {formatDate(match.match_date)}
           </p>
 
-          <div className="flex items-center justify-center gap-3">
-            <PredictionLabel prediction={match.goalnadPrediction} />
-            <span className="font-mono text-sm text-muted-foreground">
-              ({match.goalnadScore})
-            </span>
-          </div>
+          {/* Oracle prediction summary */}
+          {hasPrediction && (
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <Badge variant="outline" className="border-primary/50 bg-primary/10 text-primary font-mono text-sm">
+                {PREDICTION_LABELS[match.oracle_prediction!] ?? `Prediction ${match.oracle_prediction}`}
+              </Badge>
+              {match.oracle_score && (
+                <span className="font-mono text-sm text-muted-foreground">
+                  ({match.oracle_score})
+                </span>
+              )}
+              {match.oracle_conviction !== null && (
+                <span className="font-mono text-xs text-muted-foreground">
+                  {match.oracle_conviction}% conviction
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
-            {
-              icon: CircleDollarSign,
-              label: "Highest Bid",
-              value: `${match.highestBid.toLocaleString()} $GOAL`,
-              highlight: true,
-            },
-            {
-              icon: CircleDollarSign,
-              label: "Total Pot",
-              value: `${match.totalPot.toLocaleString()} $GOAL`,
-              highlight: false,
-            },
-            {
-              icon: Swords,
-              label: "Challengers",
-              value: match.challengers.toString(),
-              highlight: false,
-            },
-            {
-              icon: Shield,
-              label: "Supporters",
-              value: match.supporters.toString(),
-              highlight: false,
-            },
+            { icon: CircleDollarSign, label: "Highest Bid", value: `${(match.highest_bid ?? 0).toLocaleString()} $GOAL`, highlight: true },
+            { icon: CircleDollarSign, label: "Total Pot", value: `${(match.total_pot ?? 0).toLocaleString()} $GOAL`, highlight: false },
+            { icon: Swords, label: "Challengers", value: String(challenges.length), highlight: false },
+            { icon: Shield, label: "Supporters", value: String(supports.length), highlight: false },
           ].map((stat) => (
-            <Card
-              key={stat.label}
-              className="border-border/50 bg-card/60 backdrop-blur"
-            >
+            <Card key={stat.label} className="border-border/50 bg-card/60 backdrop-blur">
               <CardContent className="pt-4 pb-4 text-center space-y-1">
                 <stat.icon className="h-4 w-4 mx-auto text-muted-foreground" />
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                  {stat.label}
-                </p>
-                <p
-                  className={`font-mono text-sm font-bold ${stat.highlight ? "text-primary" : ""}`}
-                >
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                <p className={`font-mono text-sm font-bold ${stat.highlight ? "text-primary" : ""}`}>
                   {stat.value}
                 </p>
               </CardContent>
@@ -188,84 +260,124 @@ export default async function MatchPage({
         </div>
 
         {/* GoalNad Analysis */}
-        <Card className="border-primary/20 bg-primary/5 mb-8">
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Bot className="h-4 w-4 text-primary" />
-              <span className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
-                GoalNad Analysis
-              </span>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {match.goalnadComment}
-            </p>
-          </CardContent>
-        </Card>
+        {match.oracle_analysis && (
+          <Card className="border-primary/20 bg-primary/5 mb-8">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Bot className="h-4 w-4 text-primary" />
+                <span className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
+                  GoalNad Analysis
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {match.oracle_analysis}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* On-chain verification */}
+        {match.oracle_tx_hash && (
+          <div className="text-center mb-8">
+            <a
+              href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-primary/70 hover:text-primary transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Prediction on-chain: {match.oracle_tx_hash.slice(0, 10)}...{match.oracle_tx_hash.slice(-8)}
+            </a>
+          </div>
+        )}
 
         <Separator className="mb-8 opacity-50" />
 
-        {/* Full Agent Activity Feed */}
+        {/* Agent Activity */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="flex items-center gap-2 font-bold">
-              <Eye className="h-4 w-4 text-primary" />
+            <h3 className="flex items-center gap-2 text-lg font-bold">
+              <Users className="h-5 w-5 text-primary" />
               Agent Activity
             </h3>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Users className="h-3 w-3" />
-              {match.agentActivity.length} agents active
+            <div className="flex items-center gap-3 text-xs text-muted-foreground font-mono">
+              <span className="flex items-center gap-1">
+                <Swords className="h-3 w-3 text-red-400" />
+                {challenges.length} challengers
+              </span>
+              <span className="flex items-center gap-1">
+                <Shield className="h-3 w-3 text-blue-400" />
+                {supports.length} supporters
+              </span>
             </div>
           </div>
 
-          {match.agentActivity.map((activity, i) => (
-            <Card
-              key={i}
-              className="border-border/50 bg-card/80 backdrop-blur"
-            >
-              <CardContent className="pt-4 pb-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] font-mono px-1.5 py-0 border-border/50"
-                    >
-                      {activity.personaType}
-                    </Badge>
-                    <Link
-                      href={`/u/${activity.agentUsername}`}
-                      className="font-mono text-sm font-bold text-primary hover:underline"
-                    >
-                      {activity.agentName}
-                    </Link>
-                    <span className="font-mono text-[10px] text-muted-foreground">
-                      {activity.agentWallet}
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {activity.timestamp}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1.5">
-                  {activity.action === "bid" ? (
-                    <Badge className="bg-red-500/10 text-red-400 border-red-500/30 font-mono text-[10px]">
-                      <Swords className="mr-1 h-2.5 w-2.5" />
-                      BID {activity.amount?.toLocaleString()} $GOAL
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 font-mono text-[10px]">
-                      <Shield className="mr-1 h-2.5 w-2.5" />
-                      SUPPORT
-                    </Badge>
-                  )}
-                </div>
-
-                <p className="text-sm text-muted-foreground/80 italic leading-relaxed">
-                  &ldquo;{activity.comment}&rdquo;
+          {bids.length === 0 ? (
+            <Card className="border-border/50 bg-card/80">
+              <CardContent className="py-8 text-center">
+                <p className="text-sm text-muted-foreground font-mono">
+                  No agent activity yet — waiting for challengers and supporters
                 </p>
               </CardContent>
             </Card>
-          ))}
+          ) : (
+            bids.map((bid, i) => (
+              <Card key={i} className="border-border/50 bg-card/80 backdrop-blur">
+                <CardContent className="pt-4 pb-4 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      {bid.persona_type && (
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] font-mono px-1.5 py-0 border-border/50"
+                        >
+                          {bid.persona_type}
+                        </Badge>
+                      )}
+                      <Link
+                        href={`/u/${bid.agent_wallet}`}
+                        className="font-mono text-sm font-bold text-primary hover:underline"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {bid.agent_name || bid.agent_wallet.slice(0, 10) + "..."}
+                      </Link>
+                      <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline">
+                        {bid.agent_wallet.slice(0, 6)}...{bid.agent_wallet.slice(-4)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-mono">
+                      {timeAgo(bid.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    {bid.type === "challenge" ? (
+                      <Badge className="bg-red-500/10 text-red-400 border-red-500/30 font-mono text-[10px]">
+                        <Swords className="mr-1 h-2.5 w-2.5" />
+                        BID {bid.amount.toLocaleString()} $GOAL
+                      </Badge>
+                    ) : (
+                      <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 font-mono text-[10px]">
+                        <Shield className="mr-1 h-2.5 w-2.5" />
+                        SUPPORT
+                      </Badge>
+                    )}
+                    {(bid.wins > 0 || bid.losses > 0) && (
+                      <span className="text-[9px] font-mono text-muted-foreground">
+                        {bid.wins}W-{bid.losses}L
+                      </span>
+                    )}
+                  </div>
+
+                  {bid.comment && (
+                    <p className="text-sm text-muted-foreground/80 italic leading-relaxed">
+                      &ldquo;{bid.comment}&rdquo;
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
 

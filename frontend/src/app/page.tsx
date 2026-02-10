@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Swords,
@@ -10,7 +10,6 @@ import {
   TrendingUp,
   Bot,
   CircleDollarSign,
-  ArrowRight,
   Eye,
   ExternalLink,
   BookOpen,
@@ -22,10 +21,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { MatchCard } from "@/components/match-card";
 import { FixtureCard } from "@/components/fixture-card";
 import { StandingsTable } from "@/components/standings-table";
-import { MOCK_MATCHES } from "@/lib/mock-data";
 import { fetchMatches, type ApiMatch } from "@/lib/api";
 
 const HOW_IT_WORKS = [
@@ -62,24 +59,32 @@ export default function Home() {
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const [upRes, ftRes] = await Promise.all([
-          fetchMatches({ status: "NS", limit: 20 }),
-          fetchMatches({ status: "FT", limit: 20 }),
-        ]);
-        setUpcoming(upRes);
-        // Show most recent results first
-        setResults(ftRes.reverse().slice(0, 20));
-      } catch (e) {
-        console.error("Failed to load fixtures:", e);
-      } finally {
-        setLoading(false);
-      }
+  const loadData = useCallback(async (isInitial = false) => {
+    try {
+      const [upRes, ftRes] = await Promise.all([
+        fetchMatches({ status: "NS", limit: 50 }),
+        fetchMatches({ status: "FT", limit: 20 }),
+      ]);
+      setUpcoming(upRes);
+      setResults(ftRes.reverse().slice(0, 20));
+    } catch (e) {
+      console.error("Failed to load fixtures:", e);
+    } finally {
+      if (isInitial) setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    loadData(true);
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(() => loadData(false), 30_000);
+    return () => clearInterval(interval);
+  }, [loadData]);
+
+  // Matches with Oracle predictions — unconditional display
+  const predictedMatches = upcoming.filter(
+    (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
+  );
 
   const displayedFixtures = (fixtureTab === "upcoming" ? upcoming : results).filter(
     (m) => leagueFilter === "all" || m.league_id === leagueFilter
@@ -132,7 +137,7 @@ export default function Home() {
             {/* Live stats strip */}
             <div className="mt-12 flex items-center justify-center gap-6 sm:gap-10">
               {[
-                { label: "Active Matches", value: String(MOCK_MATCHES.length) },
+                { label: "Predictions", value: String(predictedMatches.length) },
                 { label: "Upcoming", value: String(upcoming.length) },
                 { label: "AI Agents", value: "38" },
                 { label: "Spectators", value: "1.2K" },
@@ -159,32 +164,45 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 2. Live Arena Matches */}
-      <section id="live-matches" className="border-t border-border/50">
+      {/* 2. Live Arena — Oracle Predictions */}
+      <section id="live-matches" className="border-t border-border/50 bg-gradient-to-b from-primary/5 to-transparent">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-10 flex items-center justify-between">
+          <div className="mb-8 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
+                <Bot className="h-6 w-6 text-primary" />
                 Live Arena
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Watch AI agents battle in real-time auctions
+                GoalNad Oracle predictions — published on-chain, visible immediately
               </p>
             </div>
-            <Button variant="outline" size="sm" className="font-mono text-xs">
-              View All
-              <ArrowRight className="ml-1.5 h-3 w-3" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <span className="font-mono text-xs text-primary">
+                Auto-refreshing
+              </span>
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {MOCK_MATCHES.map((match) => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            </div>
+          ) : predictedMatches.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-mono py-8 text-center">
+              No predictions yet — GoalNad Oracle is scanning matches
+            </p>
+          ) : (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+              {predictedMatches.map((m) => (
+                <FixtureCard key={m.api_match_id} match={m} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* 3. Real Fixtures */}
+      {/* 4. Real Fixtures */}
       <section className="border-t border-border/50 bg-secondary/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mb-6 flex items-center justify-between">
@@ -204,8 +222,8 @@ export default function Home() {
             <button
               onClick={() => setFixtureTab("upcoming")}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                 }`}
             >
               Upcoming
@@ -213,8 +231,8 @@ export default function Home() {
             <button
               onClick={() => setFixtureTab("results")}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                 }`}
             >
               Results
@@ -229,8 +247,8 @@ export default function Home() {
                 key={l.code}
                 onClick={() => setLeagueFilter(l.code)}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
-                    ? "bg-primary/20 text-primary border border-primary/30"
-                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
                   }`}
               >
                 {l.label}
@@ -247,7 +265,7 @@ export default function Home() {
               No {fixtureTab === "upcoming" ? "upcoming fixtures" : "results"} found
             </p>
           ) : (
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
               {displayedFixtures.slice(0, 12).map((m) => (
                 <FixtureCard key={m.api_match_id} match={m} />
               ))}

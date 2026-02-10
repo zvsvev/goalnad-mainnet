@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import Image from "next/image";
+import { Bot, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ApiMatch } from "@/lib/api";
@@ -11,6 +13,12 @@ const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secon
     FT: { label: "FT", variant: "default" },
     PST: { label: "Postponed", variant: "secondary" },
     CANC: { label: "Cancelled", variant: "secondary" },
+};
+
+const PREDICTION_LABELS: Record<number, string> = {
+    1: "HOME WIN",
+    2: "AWAY WIN",
+    3: "DRAW",
 };
 
 function formatDate(iso: string) {
@@ -49,73 +57,130 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
     const statusInfo = STATUS_LABELS[match.status] || { label: match.status, variant: "secondary" as const };
     const isFinished = match.status === "FT";
     const isLive = match.status === "LIVE";
+    const hasPrediction = match.oracle_prediction !== null && match.oracle_prediction !== undefined;
 
     return (
-        <Card className="border-border/50 bg-card/80 backdrop-blur transition-all hover:border-primary/20">
-            <CardContent className="py-3 px-4">
-                {/* Top: league + status */}
-                <div className="flex items-center justify-between mb-3">
-                    <Badge variant="secondary" className="font-mono text-[9px] tracking-widest uppercase">
-                        {match.league_id}
-                    </Badge>
-                    <div className="flex items-center gap-2">
-                        {match.round && (
-                            <span className="text-[10px] text-muted-foreground font-mono">{match.round}</span>
-                        )}
-                        <Badge
-                            variant={statusInfo.variant}
-                            className={isLive ? "animate-pulse font-mono text-[9px]" : "font-mono text-[9px]"}
-                        >
-                            {statusInfo.label}
+        <Link href={`/match/${match.api_match_id}`} className="block">
+            <Card className={`border-border/50 bg-card/80 backdrop-blur transition-all hover:border-primary/30 hover:scale-[1.01] cursor-pointer ${hasPrediction ? "ring-1 ring-primary/20" : ""}`}>
+                <CardContent className="py-3 px-4">
+                    {/* Top: league + status */}
+                    <div className="flex items-center justify-between mb-3">
+                        <Badge variant="secondary" className="font-mono text-[9px] tracking-widest uppercase">
+                            {match.league_id}
                         </Badge>
+                        <div className="flex items-center gap-2">
+                            {match.round && (
+                                <span className="text-[10px] text-muted-foreground font-mono">{match.round}</span>
+                            )}
+                            <Badge
+                                variant={statusInfo.variant}
+                                className={isLive ? "animate-pulse font-mono text-[9px]" : "font-mono text-[9px]"}
+                            >
+                                {statusInfo.label}
+                            </Badge>
+                        </div>
                     </div>
-                </div>
 
-                {/* Match row */}
-                <div className="flex items-center gap-3">
-                    {/* Home */}
-                    <div className="flex flex-1 items-center gap-2 justify-end">
-                        <span className="text-sm font-semibold tracking-tight text-right truncate">
-                            {match.home_team}
-                        </span>
-                        <TeamCrest src={match.home_logo} alt={match.home_team} />
-                    </div>
-
-                    {/* Score / Time */}
-                    <div className="flex-shrink-0 min-w-[56px] text-center">
-                        {isFinished || isLive ? (
-                            <span className="font-mono text-lg font-bold">
-                                {match.home_score ?? 0}
-                                <span className="text-muted-foreground mx-1">-</span>
-                                {match.away_score ?? 0}
+                    {/* Match row */}
+                    <div className="flex items-center gap-3">
+                        {/* Home */}
+                        <div className="flex flex-1 items-center gap-2 justify-end">
+                            <span className="text-sm font-semibold tracking-tight text-right truncate">
+                                {match.home_team}
                             </span>
-                        ) : (
-                            <span className="font-mono text-xs text-muted-foreground">
-                                {new Date(match.match_date).toLocaleTimeString("en-GB", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    timeZone: "UTC",
-                                })}
+                            <TeamCrest src={match.home_logo} alt={match.home_team} />
+                        </div>
+
+                        {/* Score / Time */}
+                        <div className="flex-shrink-0 min-w-[56px] text-center">
+                            {isFinished || isLive ? (
+                                <span className="font-mono text-lg font-bold">
+                                    {match.home_score ?? 0}
+                                    <span className="text-muted-foreground mx-1">-</span>
+                                    {match.away_score ?? 0}
+                                </span>
+                            ) : (
+                                <span className="font-mono text-xs text-muted-foreground">
+                                    {new Date(match.match_date).toLocaleTimeString("en-GB", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        timeZone: "UTC",
+                                    })}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Away */}
+                        <div className="flex flex-1 items-center gap-2">
+                            <TeamCrest src={match.away_logo} alt={match.away_team} />
+                            <span className="text-sm font-semibold tracking-tight truncate">
+                                {match.away_team}
                             </span>
-                        )}
+                        </div>
                     </div>
 
-                    {/* Away */}
-                    <div className="flex flex-1 items-center gap-2">
-                        <TeamCrest src={match.away_logo} alt={match.away_team} />
-                        <span className="text-sm font-semibold tracking-tight truncate">
-                            {match.away_team}
-                        </span>
-                    </div>
-                </div>
+                    {/* Date */}
+                    {!isFinished && !isLive && (
+                        <p className="text-center text-[10px] text-muted-foreground font-mono mt-2">
+                            {formatDate(match.match_date)}
+                        </p>
+                    )}
 
-                {/* Date */}
-                {!isFinished && !isLive && (
-                    <p className="text-center text-[10px] text-muted-foreground font-mono mt-2">
-                        {formatDate(match.match_date)}
-                    </p>
-                )}
-            </CardContent>
-        </Card>
+                    {/* Oracle Prediction — always shown when present */}
+                    {hasPrediction && (
+                        <div className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                    <Bot className="h-3.5 w-3.5 text-primary" />
+                                    <span className="text-[10px] font-mono text-primary font-semibold uppercase tracking-wider">
+                                        GoalNad says
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Badge
+                                        variant="outline"
+                                        className="border-primary/50 bg-primary/10 text-primary font-mono text-[10px] px-1.5"
+                                    >
+                                        {PREDICTION_LABELS[match.oracle_prediction!] ?? `Prediction ${match.oracle_prediction}`}
+                                    </Badge>
+                                    {match.oracle_score && (
+                                        <span className="font-mono text-[10px] text-muted-foreground">
+                                            ({match.oracle_score})
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between mt-1.5">
+                                {match.oracle_conviction !== null && (
+                                    <div className="flex items-center gap-1.5">
+                                        <div className="h-1.5 w-16 rounded-full bg-secondary overflow-hidden">
+                                            <div
+                                                className="h-full rounded-full bg-primary transition-all"
+                                                style={{ width: `${match.oracle_conviction}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-[9px] font-mono text-muted-foreground">
+                                            {match.oracle_conviction}% conviction
+                                        </span>
+                                    </div>
+                                )}
+                                {match.oracle_tx_hash && (
+                                    <a
+                                        href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1 text-[9px] font-mono text-primary/70 hover:text-primary transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <ExternalLink className="h-2.5 w-2.5" />
+                                        On-chain
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </Link>
     );
 }

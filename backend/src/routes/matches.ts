@@ -91,4 +91,35 @@ router.get("/:id", async (req: Request, res: Response) => {
     }
 });
 
+// GET /api/matches/:id/bids — public list of agent activity for a match
+router.get("/:id/bids", (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        // Find match by api_match_id
+        const match = db
+            .prepare("SELECT id FROM matches WHERE api_match_id = ?")
+            .get(id) as any;
+        if (!match) {
+            return res.status(404).json({ error: "Match not found" });
+        }
+
+        const bids = db
+            .prepare(
+                `SELECT b.agent_wallet, b.amount, b.type, b.comment, b.created_at,
+                        a.agent_name, a.persona_type, a.wins, a.losses
+                 FROM bids b
+                 LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet
+                 WHERE b.match_id = ?
+                 ORDER BY b.created_at DESC`
+            )
+            .all(match.id);
+
+        res.json({ count: bids.length, bids });
+    } catch (err: any) {
+        console.error("Error fetching match bids:", err.message);
+        res.status(500).json({ error: "Failed to fetch match bids" });
+    }
+});
+
 export default router;

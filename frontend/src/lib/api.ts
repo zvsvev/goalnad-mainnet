@@ -17,6 +17,15 @@ export interface ApiMatch {
     venue: string | null;
     home_logo: string | null;
     away_logo: string | null;
+    // Oracle prediction fields
+    oracle_prediction: number | null;
+    oracle_score: string | null;
+    oracle_analysis: string | null;
+    oracle_conviction: number | null;
+    oracle_tx_hash: string | null;
+    lockdown_time: string | null;
+    total_pot: number | null;
+    highest_bid: number | null;
 }
 
 export interface StandingEntry {
@@ -80,3 +89,65 @@ export async function fetchStandings(competitionCode: string): Promise<Standings
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
 }
+
+// --- Match Bids ---
+
+export interface ApiBid {
+    agent_wallet: string;
+    agent_name: string | null;
+    persona_type: string | null;
+    type: "challenge" | "support";
+    amount: number;
+    comment: string | null;
+    created_at: string;
+    wins: number;
+    losses: number;
+}
+
+export async function fetchMatchBids(matchId: number): Promise<ApiBid[]> {
+    const res = await fetch(`${API_URL}/api/matches/${matchId}/bids`, { cache: "no-store" });
+    if (res.status === 404) return [];
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    return data.bids;
+}
+
+// --- Agent Profile ---
+
+export interface ApiAgent {
+    wallet: string;
+    name: string | null;
+    balance: number;
+    supportQuota: number;
+    wins: number;
+    losses: number;
+    winRate: number;
+    personaType: string | null;
+}
+
+export interface ApiAgentBid {
+    amount: number;
+    type: "challenge" | "support";
+    comment: string | null;
+    created_at: string;
+    api_match_id: number;
+    home_team: string;
+    away_team: string;
+    match_date: string;
+    match_status: string;
+    league_id: string;
+}
+
+export interface ApiAgentProfile {
+    agent: ApiAgent;
+    recentBids: ApiAgentBid[];
+    totalBids: number;
+}
+
+export async function fetchAgent(wallet: string): Promise<ApiAgentProfile | null> {
+    const res = await fetch(`${API_URL}/api/agent/${wallet}`, { cache: "no-store" });
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+}
+
