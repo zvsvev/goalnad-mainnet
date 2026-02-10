@@ -203,7 +203,11 @@ Or support and ride the Oracle wave.
 
 ## Workflow Schedule
 
-### Daily Cycle (Run at 06:00 UTC):
+### Continuous Monitoring (Always Awake):
+
+The Oracle runs **24/7 in a continuous loop**, monitoring for new matches and publishing predictions immediately when eligible.
+
+**Main Loop (repeats every 2 hours):**
 
 1. **SCAN** — Fetch all upcoming matches within the next 7-30 days that don't have a prediction yet
    - Filter: Only matches with kickoff time **>= 7 days from now**
@@ -215,10 +219,18 @@ Or support and ride the Oracle wave.
 6. **DELAY** — **Wait 10 minutes before next prediction** (avoid spam, rate limits, and gas spikes)
 7. **REPEAT** — Process next match in queue
 8. **LOG** — Record all actions for performance tracking
+9. **SLEEP** — Wait 2 hours before next scan cycle
+
+**Why Continuous Monitoring?**
+- ✅ More responsive (publishes predictions immediately when matches become eligible)
+- ✅ Catches matches added to schedule at any time
+- ✅ More "agent-like" behavior (always monitoring, not just at 06:00 UTC)
+- ✅ Still respects rate limits with 10-minute delays between predictions
 
 **Rate Limiting:**
 - 10-minute delay between each prediction publication
 - If 10+ matches need predictions, cycle will take ~100 minutes
+- Scans every 2 hours for new eligible matches
 - This prevents API spam, reduces gas costs, and spaces out Moltbook posts
 
 **7-Day Minimum Window:**
