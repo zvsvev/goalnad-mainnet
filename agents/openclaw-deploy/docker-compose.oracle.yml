@@ -10,7 +10,16 @@ services:
     container_name: goalnad-oracle
     env_file:
       - .env.oracle
-    command: ["sh", "-c", "while true; do openclaw agent --skill goalnad-oracle --message 'Scan for eligible matches (7+ days). Predict and publish with 10-min delays.' --local; sleep 7200; done"]
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        while true; do
+          echo "🔮 Oracle Scan - $(date -u)"
+          openclaw agent --skill goalnad-oracle --message "Scan matches 7+ days out. Predict with 10-min delays." --local || true
+          echo "⏳ Sleeping 2 hours..."
+          sleep 7200
+        done
     environment:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
