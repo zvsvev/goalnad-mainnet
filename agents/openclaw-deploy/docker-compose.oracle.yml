@@ -8,6 +8,8 @@ services:
   goalnad-oracle:
     image: ghcr.io/phioranex/openclaw-docker:latest
     container_name: goalnad-oracle
+    env_file:
+      - .env.oracle
     environment:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
