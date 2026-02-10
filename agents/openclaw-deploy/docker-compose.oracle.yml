@@ -12,6 +12,8 @@ services:
       - .env.oracle
     command:
       - agent
+      - --agent
+      - oracle
       - --message
       - "Run GoalNad Oracle: Scan upcoming matches (7+ days before kickoff), analyze each match, and publish predictions with 10-minute delays between each prediction."
       - --local
