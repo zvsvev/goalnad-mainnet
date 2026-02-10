@@ -19,6 +19,7 @@ services:
       - --local
     environment:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - ANTHROPIC_API_KEY=${MINIMAX_API_KEY}
       - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
       - ORACLE_WALLET=${ORACLE_WALLET}
       - ORACLE_PRIVATE_KEY=${ORACLE_PRIVATE_KEY}
