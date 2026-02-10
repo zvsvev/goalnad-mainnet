@@ -16,7 +16,7 @@ services:
       - |
         while true; do
           echo "🔮 Oracle Scan - $(date -u)"
-          openclaw agent --skill goalnad-oracle --message "Scan matches 7+ days out. Predict with 10-min delays." --local || true
+          /usr/local/bin/openclaw agent --skill goalnad-oracle --message "Scan matches 7+ days out. Predict with 10-min delays." --local || true
           echo "⏳ Sleeping 2 hours..."
           sleep 7200
         done
