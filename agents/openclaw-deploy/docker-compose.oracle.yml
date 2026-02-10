@@ -19,6 +19,7 @@ services:
       - GOALNAD_API_URL=${GOALNAD_API_URL}
       - ADMIN_API_KEY=${ADMIN_API_KEY}
       - MONAD_RPC_URL=${MONAD_RPC_URL}
+      - OPENCLAW_GATEWAY_TOKEN=goalnad-oracle-2026
     volumes:
       - ../openclaw-skills/goalnad-oracle:/home/user/.openclaw/skills/goalnad-oracle:ro
       - ./oracle-data:/home/user/.openclaw/data
