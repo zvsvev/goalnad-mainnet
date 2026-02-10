@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bot, ExternalLink } from "lucide-react";
+import { Bot, ExternalLink, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ApiMatch } from "@/lib/api";
@@ -33,6 +33,17 @@ function formatDate(iso: string) {
     });
 }
 
+function getBidCountdown(matchDate: string): string | null {
+    const kickoff = new Date(matchDate).getTime();
+    const now = Date.now();
+    const diff = kickoff - now;
+    if (diff <= 0 || diff > 12 * 60 * 60 * 1000) return null;
+    const hours = Math.floor(diff / 3_600_000);
+    const mins = Math.floor((diff % 3_600_000) / 60_000);
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+}
+
 function TeamCrest({ src, alt }: { src: string | null; alt: string }) {
     if (!src) {
         return (
@@ -58,6 +69,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
     const isFinished = match.status === "FT";
     const isLive = match.status === "LIVE";
     const hasPrediction = match.oracle_prediction !== null && match.oracle_prediction !== undefined;
+    const bidCountdown = match.status === "NS" ? getBidCountdown(match.match_date) : null;
 
     return (
         <Link href={`/match/${match.api_match_id}`} className="block">
@@ -124,6 +136,16 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                         <p className="text-center text-[10px] text-muted-foreground font-mono mt-2">
                             {formatDate(match.match_date)}
                         </p>
+                    )}
+
+                    {/* Bid closing countdown */}
+                    {bidCountdown && (
+                        <div className="mt-2 flex items-center justify-center gap-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 py-1.5 px-3">
+                            <Clock className="h-3 w-3 text-amber-400 animate-pulse" />
+                            <span className="text-[10px] font-mono font-semibold text-amber-400">
+                                Bid closes in {bidCountdown}
+                            </span>
+                        </div>
                     )}
 
                     {/* Oracle Prediction — always shown when present */}

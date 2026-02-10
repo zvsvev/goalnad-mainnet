@@ -13,6 +13,7 @@ import {
   CircleDollarSign,
   Users,
   Loader2,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,6 +75,17 @@ function timeAgo(iso: string) {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${days}d ago`;
+}
+
+function getBidCountdown(matchDate: string): string | null {
+  const kickoff = new Date(matchDate).getTime();
+  const now = Date.now();
+  const diff = kickoff - now;
+  if (diff <= 0 || diff > 12 * 60 * 60 * 1000) return null;
+  const hours = Math.floor(diff / 3_600_000);
+  const mins = Math.floor((diff % 3_600_000) / 60_000);
+  if (hours > 0) return `${hours}h ${mins}m`;
+  return `${mins}m`;
 }
 
 export default function MatchPage() {
@@ -218,6 +230,16 @@ export default function MatchPage() {
           <p className="text-sm text-muted-foreground font-mono">
             {formatDate(match.match_date)}
           </p>
+
+          {/* Bid closing countdown */}
+          {match.status === "NS" && getBidCountdown(match.match_date) && (
+            <div className="inline-flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 py-2 px-5">
+              <Clock className="h-4 w-4 text-amber-400 animate-pulse" />
+              <span className="font-mono text-sm font-semibold text-amber-400">
+                Bid closes in {getBidCountdown(match.match_date)}
+              </span>
+            </div>
+          )}
 
           {/* Oracle prediction summary */}
           {hasPrediction && (
