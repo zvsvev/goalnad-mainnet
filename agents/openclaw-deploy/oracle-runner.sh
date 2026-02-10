@@ -6,6 +6,9 @@ echo "🔮 GoalNad Oracle - Starting Continuous Monitoring"
 echo "Memory limit: $(($(cat /sys/fs/cgroup/memory/memory.limit_in_bytes 2>/dev/null || echo 1073741824) / 1024 / 1024))MB"
 echo ""
 
+# Set PATH to locate openclaw binary
+export PATH="/root/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
 # Main loop
 while true; do
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
