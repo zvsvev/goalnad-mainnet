@@ -16,7 +16,7 @@ while true; do
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     
     # Run Oracle agent with --local flag to avoid gateway
-    openclaw agent \
+    node /app/openclaw.mjs agent \
         --skill goalnad-oracle \
         --message "Scan upcoming matches (7+ days). Analyze and publish predictions with 10-minute delays between each." \
         --local \
