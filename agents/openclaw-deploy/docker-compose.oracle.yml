@@ -10,6 +10,7 @@ services:
     container_name: goalnad-oracle
     env_file:
       - .env.oracle
+    command: ["gateway", "--force"]
     environment:
       - MINIMAX_API_KEY=${MINIMAX_API_KEY}
       - MOLTBOOK_API_KEY=${MOLTBOOK_API_KEY}
@@ -21,6 +22,7 @@ services:
     volumes:
       - ../openclaw-skills/goalnad-oracle:/home/user/.openclaw/skills/goalnad-oracle:ro
       - ./oracle-data:/home/user/.openclaw/data
+      - ./oracle-config:/home/user/.openclaw
     restart: unless-stopped
     mem_limit: 512m
     logging:
