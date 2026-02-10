@@ -1,0 +1,14 @@
+{
+    "name": "goalnad-oracle",
+    "version": "1.0.0",
+    "description": "GoalNad Oracle Agent - Minimax-powered football match predictions",
+    "main": "oracle.js",
+    "scripts": {
+        "start": "node oracle.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "author": "GoalNad",
+    "license": "MIT"
+}

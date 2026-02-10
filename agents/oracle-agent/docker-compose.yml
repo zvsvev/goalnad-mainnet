@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  oracle:
+    build: .
+    container_name: goalnad-oracle-custom
+    env_file:
+      - .env.oracle
+    environment:
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
+      - GOALNAD_API_URL=${GOALNAD_API_URL}
+      - ADMIN_API_KEY=${ADMIN_API_KEY}
+      - ORACLE_WALLET=${ORACLE_WALLET}
+    restart: "no"  # One-shot execution
+    mem_limit: 256m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
