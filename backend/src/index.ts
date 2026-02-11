@@ -8,6 +8,7 @@ import agentRouter from "./routes/agent.js";
 import chainRouter from "./routes/chain.js";
 import adminRouter from "./routes/admin.js";
 import oracleRouter from "./routes/oracle.js";
+import leaderboardRouter from "./routes/leaderboard.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
 import { isChainEnabled } from "./services/chain.js";
 
@@ -35,6 +36,7 @@ app.use("/api/agent", agentRouter);
 app.use("/api/chain", chainRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/oracle", oracleRouter);
+app.use("/api/leaderboard", leaderboardRouter);
 
 // --- Start ---
 async function start() {
@@ -77,6 +79,8 @@ async function start() {
         console.log(`   GET  /api/oracle/stats`);
         console.log(`   POST /api/oracle/post-result`);
         console.log(`   POST /api/oracle/hype`);
+        console.log(`   GET  /api/matches/feed/recent`);
+        console.log(`   GET  /api/leaderboard`);
     });
 }
 

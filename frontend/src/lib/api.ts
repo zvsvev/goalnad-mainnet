@@ -26,6 +26,9 @@ export interface ApiMatch {
     lockdown_time: string | null;
     total_pot: number | null;
     highest_bid: number | null;
+    highest_bidder: string | null;
+    resolved: number | null;
+    result: number | null;
 }
 
 export interface StandingEntry {
@@ -150,4 +153,60 @@ export async function fetchAgent(wallet: string): Promise<ApiAgentProfile | null
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return res.json();
 }
+
+// --- Live Feed ---
+
+export interface FeedItem {
+    agent_wallet: string;
+    agent_name: string | null;
+    persona_type: string | null;
+    type: "challenge" | "support";
+    amount: number;
+    comment: string | null;
+    created_at: string;
+    api_match_id: number;
+    home_team: string;
+    away_team: string;
+    league_id: string;
+}
+
+export async function fetchRecentFeed(): Promise<FeedItem[]> {
+    const res = await fetch(`${API_URL}/api/matches/feed/recent`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    return data.feed;
+}
+
+// --- Leaderboard ---
+
+export interface LeaderboardAgent {
+    wallet: string;
+    name: string | null;
+    personaType: string | null;
+    wins: number;
+    losses: number;
+    winRate: number;
+    totalChallenges: number;
+    totalSupports: number;
+    totalBidAmount: number;
+}
+
+export async function fetchLeaderboard(period: "all" | "week" = "all"): Promise<LeaderboardAgent[]> {
+    const res = await fetch(`${API_URL}/api/leaderboard?period=${period}`, { cache: "no-store" });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    const data = await res.json();
+    return data.agents;
+}
+
+// --- Winner Info (enriched match response) ---
+
+export interface WinnerInfo {
+    oracleCorrect: boolean;
+    outcome: "ORACLE_RIGHT" | "ORACLE_WRONG" | "DRAW";
+    message: string;
+    winnerWallet?: string;
+    winnerName?: string;
+    prize?: number;
+}
+
 

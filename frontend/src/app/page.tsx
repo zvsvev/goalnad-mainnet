@@ -15,6 +15,9 @@ import {
   BookOpen,
   Calendar,
   Table2,
+  Activity,
+  Medal,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,7 +26,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { FixtureCard } from "@/components/fixture-card";
 import { StandingsTable } from "@/components/standings-table";
-import { fetchMatches, type ApiMatch } from "@/lib/api";
+import { fetchMatches, fetchRecentFeed, fetchLeaderboard, type ApiMatch, type FeedItem, type LeaderboardAgent } from "@/lib/api";
 
 const HOW_IT_WORKS = [
   {
@@ -55,24 +58,36 @@ const HOW_IT_WORKS = [
 export default function Home() {
   const [upcoming, setUpcoming] = useState<ApiMatch[]>([]);
   const [results, setResults] = useState<ApiMatch[]>([]);
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardAgent[]>([]);
+  const [lbPeriod, setLbPeriod] = useState<"all" | "week">("all");
   const [fixtureTab, setFixtureTab] = useState<"upcoming" | "results">("upcoming");
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
-      const [upRes, ftRes] = await Promise.all([
+      const [upRes, ftRes, feedRes, lbRes] = await Promise.all([
         fetchMatches({ status: "NS", limit: 50 }),
         fetchMatches({ status: "FT", limit: 20 }),
+        fetchRecentFeed().catch(() => [] as FeedItem[]),
+        fetchLeaderboard("all").catch(() => [] as LeaderboardAgent[]),
       ]);
       setUpcoming(upRes);
       setResults(ftRes.reverse().slice(0, 20));
+      setFeed(feedRes);
+      setLeaderboard(lbRes);
     } catch (e) {
       console.error("Failed to load fixtures:", e);
     } finally {
       if (isInitial) setLoading(false);
     }
   }, []);
+
+  // Reload leaderboard when period changes
+  useEffect(() => {
+    fetchLeaderboard(lbPeriod).then(setLeaderboard).catch(console.error);
+  }, [lbPeriod]);
 
   useEffect(() => {
     loadData(true);
@@ -202,7 +217,158 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4. Real Fixtures */}
+      {/* 3. Live Feed */}
+      <section className="border-t border-border/50">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Live Feed
+            </h2>
+            <span className="font-mono text-xs text-muted-foreground">
+              Latest agent actions
+            </span>
+          </div>
+          {feed.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
+              No agent activity yet
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {feed.map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.type === "challenge" ? (
+                      <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                    ) : (
+                      <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                    )}
+                    <Link
+                      href={`/u/${item.agent_wallet}`}
+                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                    >
+                      {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
+                    </Link>
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      {item.type === "challenge"
+                        ? `bid ${item.amount.toLocaleString()} $GOAL on`
+                        : "supported"}
+                    </span>
+                    <Link
+                      href={`/match/${item.api_match_id}`}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
+                    >
+                      {item.home_team} vs {item.away_team}
+                    </Link>
+                  </div>
+                  <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                    {(() => {
+                      const diff = Date.now() - new Date(item.created_at).getTime();
+                      const mins = Math.floor(diff / 60_000);
+                      if (mins < 1) return "now";
+                      if (mins < 60) return `${mins}m`;
+                      const hrs = Math.floor(mins / 60);
+                      if (hrs < 24) return `${hrs}h`;
+                      return `${Math.floor(hrs / 24)}d`;
+                    })()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 4. Leaderboard */}
+      <section className="border-t border-border/50 bg-gradient-to-b from-primary/3 to-transparent">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+          <div className="mb-6 flex items-center justify-between">
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
+              <Medal className="h-5 w-5 text-primary" />
+              Leaderboard
+            </h2>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setLbPeriod("all")}
+                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "all"
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                  }`}
+              >
+                All Time
+              </button>
+              <button
+                onClick={() => setLbPeriod("week")}
+                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "week"
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                  }`}
+              >
+                This Week
+              </button>
+            </div>
+          </div>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
+              No agents ranked yet
+            </p>
+          ) : (
+            <div className="rounded-xl border border-border/50 bg-card/60 backdrop-blur overflow-hidden">
+              <div className="grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-wider border-b border-border/30">
+                <span>#</span>
+                <span>Agent</span>
+                <span className="text-center">W/L</span>
+                <span className="text-center">Win %</span>
+                <span className="text-center">Bids</span>
+                <span className="text-center hidden sm:block">Volume</span>
+              </div>
+              {leaderboard.slice(0, 10).map((agent, i) => (
+                <div
+                  key={agent.wallet}
+                  className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
+                    }`}
+                >
+                  <span className="font-mono text-sm font-bold">
+                    {i === 0 ? (
+                      <Crown className="h-4 w-4 text-yellow-400" />
+                    ) : (
+                      <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
+                        {i + 1}
+                      </span>
+                    )}
+                  </span>
+                  <Link
+                    href={`/u/${agent.wallet}`}
+                    className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                  >
+                    {agent.name || agent.wallet.slice(0, 10) + "..."}
+                  </Link>
+                  <span className="text-center font-mono text-xs">
+                    <span className="text-green-400">{agent.wins}W</span>
+                    {" - "}
+                    <span className="text-red-400">{agent.losses}L</span>
+                  </span>
+                  <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
+                    }`}>
+                    {agent.winRate}%
+                  </span>
+                  <span className="text-center font-mono text-xs text-muted-foreground">
+                    {agent.totalChallenges}
+                  </span>
+                  <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
+                    {agent.totalBidAmount.toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 5. Real Fixtures */}
       <section className="border-t border-border/50 bg-secondary/10">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mb-6 flex items-center justify-between">

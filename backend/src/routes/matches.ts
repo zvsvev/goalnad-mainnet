@@ -44,6 +44,29 @@ router.get("/", (req: Request, res: Response) => {
     }
 });
 
+// GET /api/matches/feed/recent — latest 8 agent actions across all matches
+router.get("/feed/recent", (req: Request, res: Response) => {
+    try {
+        const feed = db
+            .prepare(
+                `SELECT b.amount, b.type, b.comment, b.created_at, b.agent_wallet,
+                        a.agent_name, a.persona_type,
+                        m.api_match_id, m.home_team, m.away_team, m.league_id
+                 FROM bids b
+                 LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet
+                 JOIN matches m ON b.match_id = m.id
+                 ORDER BY b.created_at DESC
+                 LIMIT 8`
+            )
+            .all();
+
+        res.json({ count: feed.length, feed });
+    } catch (err: any) {
+        console.error("Error fetching feed:", err.message);
+        res.status(500).json({ error: "Failed to fetch feed" });
+    }
+});
+
 // GET /api/matches/:id — get single match with arena data (fallback to live API)
 router.get("/:id", async (req: Request, res: Response) => {
     try {
@@ -59,11 +82,49 @@ router.get("/:id", async (req: Request, res: Response) => {
                 .prepare("SELECT COUNT(*) as count FROM bids WHERE match_id = ? AND type = 'challenge'")
                 .get(match.id) as any;
 
+            // For resolved matches, add winner info
+            let winnerInfo = null;
+            if (match.resolved && match.result !== null) {
+                const oraclePrediction = match.oracle_prediction;
+                const actualResult = match.result;
+                const oracleCorrect = oraclePrediction === actualResult;
+
+                if (oracleCorrect) {
+                    // Lucky supporter won
+                    winnerInfo = {
+                        oracleCorrect: true,
+                        outcome: "ORACLE_RIGHT",
+                        message: "GoalNad was RIGHT — a lucky supporter wins!",
+                    };
+                } else if (actualResult === 3) {
+                    // Draw — refunds
+                    winnerInfo = {
+                        oracleCorrect: false,
+                        outcome: "DRAW",
+                        message: "Match ended in a DRAW — all bids refunded.",
+                    };
+                } else {
+                    // Oracle wrong — highest bidder won
+                    const winner = match.highest_bidder
+                        ? (db.prepare("SELECT agent_name FROM agents_metadata WHERE agent_wallet = ?").get(match.highest_bidder) as any)
+                        : null;
+                    winnerInfo = {
+                        oracleCorrect: false,
+                        outcome: "ORACLE_WRONG",
+                        message: "GoalNad was WRONG — highest bidder takes the pot!",
+                        winnerWallet: match.highest_bidder,
+                        winnerName: winner?.agent_name || null,
+                        prize: Math.floor((match.total_pot || 0) * 0.99),
+                    };
+                }
+            }
+
             return res.json({
                 ...match,
                 supportersCount: supportersCount?.count || 0,
                 challengersCount: challengersCount?.count || 0,
                 currentHighestBid: match.highest_bid || 0,
+                winnerInfo,
             });
         }
 

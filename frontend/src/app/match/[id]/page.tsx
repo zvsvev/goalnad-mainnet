@@ -14,6 +14,7 @@ import {
   Users,
   Loader2,
   Clock,
+  Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,11 +23,18 @@ import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { fetchMatch, fetchMatchBids, type ApiMatch, type ApiBid } from "@/lib/api";
+import type { WinnerInfo } from "@/lib/api";
 
 const PREDICTION_LABELS: Record<number, string> = {
   1: "HOME WIN",
   2: "AWAY WIN",
   3: "DRAW",
+};
+
+const RESULT_LABELS: Record<number, string> = {
+  1: "Home Win",
+  2: "Away Win",
+  3: "Draw",
 };
 
 function TeamCrest({ src, alt, size = 48 }: { src: string | null; alt: string; size?: number }) {
@@ -158,6 +166,7 @@ export default function MatchPage() {
   const challenges = bids.filter((b) => b.type === "challenge");
   const supports = bids.filter((b) => b.type === "support");
   const hasPrediction = match.oracle_prediction !== null && match.oracle_prediction !== undefined;
+  const winnerInfo = (match as any).winnerInfo as WinnerInfo | null;
 
   return (
     <div className="min-h-screen">
@@ -260,6 +269,68 @@ export default function MatchPage() {
             </div>
           )}
         </div>
+
+        {/* Match Result Banner */}
+        {winnerInfo && (
+          <Card className={`mb-8 border-2 ${winnerInfo.outcome === "ORACLE_RIGHT"
+            ? "border-green-500/30 bg-green-500/5"
+            : winnerInfo.outcome === "ORACLE_WRONG"
+              ? "border-red-500/30 bg-red-500/5"
+              : "border-yellow-500/30 bg-yellow-500/5"
+            }`}>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-3">
+                <Badge className={`font-mono text-sm px-4 py-1 ${winnerInfo.outcome === "ORACLE_RIGHT"
+                  ? "bg-green-500/20 text-green-400 border-green-500/30"
+                  : winnerInfo.outcome === "ORACLE_WRONG"
+                    ? "bg-red-500/20 text-red-400 border-red-500/30"
+                    : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"
+                  }`}>
+                  {winnerInfo.outcome === "ORACLE_RIGHT" ? "✅ ORACLE RIGHT" : winnerInfo.outcome === "ORACLE_WRONG" ? "❌ ORACLE WRONG" : "🤝 DRAW"}
+                </Badge>
+                <p className="text-sm text-muted-foreground">
+                  {winnerInfo.message}
+                </p>
+                {winnerInfo.winnerName && (
+                  <div className="flex items-center justify-center gap-2">
+                    <Trophy className="h-4 w-4 text-yellow-400" />
+                    <Link
+                      href={`/u/${winnerInfo.winnerWallet}`}
+                      className="font-mono text-sm font-bold text-primary hover:underline"
+                    >
+                      {winnerInfo.winnerName}
+                    </Link>
+                    <span className="font-mono text-sm text-green-400 font-bold">
+                      +{(winnerInfo.prize ?? 0).toLocaleString()} $GOAL
+                    </span>
+                  </div>
+                )}
+                {/* Prediction vs Actual */}
+                {hasPrediction && match.status === "FT" && (
+                  <div className="flex items-center justify-center gap-6 pt-2">
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Predicted</p>
+                      <p className="font-mono text-xs font-bold">
+                        {PREDICTION_LABELS[match.oracle_prediction!]}
+                        {match.oracle_score && ` (${match.oracle_score})`}
+                      </p>
+                    </div>
+                    <span className="text-muted-foreground">→</span>
+                    <div className="text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Actual</p>
+                      <p className="font-mono text-xs font-bold">
+                        {match.home_score} - {match.away_score}
+                        {match.result !== undefined && match.result !== null && (
+                          <span className="ml-1 text-muted-foreground">({RESULT_LABELS[match.result]})</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
