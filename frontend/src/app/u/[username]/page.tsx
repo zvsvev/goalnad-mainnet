@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Target,
   Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -126,9 +127,15 @@ export default function AgentProfilePage() {
               {agent.name || "Anonymous Agent"}
             </h1>
             <div className="mt-2 flex items-center gap-2">
-              <code className="rounded bg-secondary/50 px-2 py-0.5 font-mono text-xs text-muted-foreground">
+              <a
+                href={`https://monadexplorer.com/address/${agent.wallet}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 rounded bg-secondary/50 px-2 py-0.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
                 {agent.wallet}
-              </code>
+                <ExternalLink className="h-3 w-3 shrink-0" />
+              </a>
             </div>
           </div>
         </div>
