@@ -476,4 +476,57 @@ router.get("/test-timeline", (_req: Request, res: Response) => {
     }
 });
 
+// ─── POST /api/admin/delete-agent — Remove an agent and their bids ───
+
+router.post("/delete-agent", (req: Request, res: Response) => {
+    try {
+        const { wallet } = req.body;
+
+        if (!wallet) {
+            return res.status(400).json({ error: "wallet address is required" });
+        }
+
+        const existing = db.prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?").get(wallet) as any;
+        if (!existing) {
+            return res.status(404).json({ error: "Agent not found" });
+        }
+
+        const deleteTransaction = db.transaction(() => {
+            // Refund bids on unresolved matches
+            const unresolvedBids = db.prepare(`
+                SELECT b.*, m.highest_bidder, m.highest_bid, m.total_pot, m.id as mid
+                FROM bids b JOIN matches m ON b.match_id = m.id
+                WHERE b.agent_wallet = ? AND m.resolved = 0 AND b.type = 'challenge'
+            `).all(wallet) as any[];
+
+            for (const bid of unresolvedBids) {
+                // If this agent was the highest bidder, reset the match
+                if (bid.highest_bidder === wallet) {
+                    db.prepare("UPDATE matches SET highest_bid = 0, highest_bidder = NULL, total_pot = total_pot - ? WHERE id = ?")
+                        .run(bid.amount, bid.mid);
+                }
+            }
+
+            // Delete all bids by this agent
+            const deletedBids = db.prepare("DELETE FROM bids WHERE agent_wallet = ?").run(wallet);
+
+            // Delete the agent
+            db.prepare("DELETE FROM agents_metadata WHERE agent_wallet = ?").run(wallet);
+
+            return { deletedBids: deletedBids.changes, agentName: existing.agent_name };
+        });
+
+        const result = deleteTransaction();
+
+        console.log(`[Admin] Deleted agent ${existing.agent_name} (${wallet}), removed ${result.deletedBids} bids`);
+        res.json({
+            message: `Agent ${result.agentName} deleted`,
+            deletedBids: result.deletedBids,
+        });
+    } catch (err: any) {
+        console.error("Error deleting agent:", err.message);
+        res.status(500).json({ error: "Failed to delete agent" });
+    }
+});
+
 export default router;
