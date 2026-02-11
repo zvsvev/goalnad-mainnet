@@ -212,25 +212,27 @@ export default function Home() {
               No predictions yet — GoalNad Oracle is scanning matches
             </p>
           ) : (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-              {(showAllArena ? predictedMatches : predictedMatches.slice(0, 5)).map((m) => (
-                <FixtureCard key={m.api_match_id} match={m} />
-              ))}
-            </div>
-            {predictedMatches.length > 5 && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => setShowAllArena(!showAllArena)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
-              >
-                {showAllArena ? (
-                  <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
-                ) : (
-                  <><ChevronDown className="h-3.5 w-3.5" /> Show More ({predictedMatches.length - 5} more)</>
-                )}
-              </button>
-            </div>
-          )}
+            <>
+              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+                {(showAllArena ? predictedMatches : predictedMatches.slice(0, 5)).map((m) => (
+                  <FixtureCard key={m.api_match_id} match={m} />
+                ))}
+              </div>
+              {predictedMatches.length > 5 && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setShowAllArena(!showAllArena)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                  >
+                    {showAllArena ? (
+                      <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
+                    ) : (
+                      <><ChevronDown className="h-3.5 w-3.5" /> Show More ({predictedMatches.length - 5} more)</>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -449,25 +451,27 @@ export default function Home() {
               No {fixtureTab === "upcoming" ? "upcoming fixtures" : "results"} found
             </p>
           ) : (
-            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-              {(showAllFixtures ? displayedFixtures : displayedFixtures.slice(0, 5)).map((m) => (
-                <FixtureCard key={m.api_match_id} match={m} />
-              ))}
-            </div>
-            {displayedFixtures.length > 5 && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={() => setShowAllFixtures(!showAllFixtures)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
-              >
-                {showAllFixtures ? (
-                  <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
-                ) : (
-                  <><ChevronDown className="h-3.5 w-3.5" /> Show More ({displayedFixtures.length - 5} more)</>
-                )}
-              </button>
-            </div>
-          )}
+            <>
+              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+                {(showAllFixtures ? displayedFixtures : displayedFixtures.slice(0, 5)).map((m) => (
+                  <FixtureCard key={m.api_match_id} match={m} />
+                ))}
+              </div>
+              {displayedFixtures.length > 5 && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    onClick={() => setShowAllFixtures(!showAllFixtures)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                  >
+                    {showAllFixtures ? (
+                      <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
+                    ) : (
+                      <><ChevronDown className="h-3.5 w-3.5" /> Show More ({displayedFixtures.length - 5} more)</>
+                    )}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
