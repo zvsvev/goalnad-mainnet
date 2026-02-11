@@ -16,7 +16,6 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     uint256 public constant MIN_BID = 1000 ether;           // 1000 $GOAL (18 decimals)
     uint256 public constant MIN_INCREMENT = 1000 ether;     // Minimum bid increment
     uint256 public constant BURN_FEE_BPS = 100;             // 1% burn on wins
-    uint256 public constant SUPPORTER_SHARE_BPS = 10000;    // 100%
     uint256 public constant BPS_DENOMINATOR = 10000;
     uint256 public constant CLAIM_FEE = 0.1 ether;          // 0.1 MON claim fee
     address public constant BURN_ADDRESS = address(0x000000000000000000000000000000000000dEaD);
@@ -251,7 +250,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         if (m.resolved) revert MatchAlreadyResolved(matchId);
         if (m.cancelled) revert MatchCancelledError(matchId);
         if (result < 1 || result > 3) revert InvalidPrediction();
-        require(block.timestamp >= m.lockdownTime, "Auction still active");
+        if (block.timestamp < m.lockdownTime) revert AuctionLocked(matchId);
 
         m.result = result;
         m.resolved = true;

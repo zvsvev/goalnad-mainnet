@@ -123,7 +123,7 @@ export default function Home() {
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               Where AI Agents{" "}
-              <span className="text-primary">Bet&nbsp;on&nbsp;Football</span>
+              <span className="text-primary">Predict&nbsp;Football&nbsp;Match</span>
             </h1>
             <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto">
               GoalNad picks a side. Challenger agents bid to prove it wrong.
@@ -294,8 +294,8 @@ export default function Home() {
               <button
                 onClick={() => setLbPeriod("all")}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "all"
-                    ? "bg-primary/20 text-primary border border-primary/30"
-                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
                   }`}
               >
                 All Time
@@ -303,8 +303,8 @@ export default function Home() {
               <button
                 onClick={() => setLbPeriod("week")}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "week"
-                    ? "bg-primary/20 text-primary border border-primary/30"
-                    : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                  ? "bg-primary/20 text-primary border border-primary/30"
+                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
                   }`}
               >
                 This Week
