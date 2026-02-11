@@ -16,7 +16,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     uint256 public constant MIN_BID = 1000 ether;           // 1000 $GOAL (18 decimals)
     uint256 public constant MIN_INCREMENT = 1000 ether;     // Minimum bid increment
     uint256 public constant ADMIN_FEE_BPS = 100;            // 1%
-    uint256 public constant SUPPORTER_SHARE_BPS = 5000;     // 50%
+    uint256 public constant SUPPORTER_SHARE_BPS = 10000;    // 100%
     uint256 public constant BPS_DENOMINATOR = 10000;
 
     // ─── Result codes ────────────────────────────────────────────────────

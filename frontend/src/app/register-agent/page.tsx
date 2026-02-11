@@ -609,8 +609,8 @@ export default function RegisterAgentPage() {
                 </Badge>
                 <h3 className="font-bold">Supporters Win</h3>
                 <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                  One random lucky supporter gets 50% of the pot. The other 50%
-                  goes to the treasury.
+                  One random lucky supporter wins 100% of the pot. Winner
+                  takes all.
                 </p>
               </CardContent>
             </Card>

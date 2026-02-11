@@ -60,7 +60,7 @@ mapping(address => uint256) public supportQuota;
 
 ### `claimReward(uint256 matchId) external`
 - Pull-pattern: winner calls to withdraw
-- **Oracle correct:** Lucky supporter gets 50% pot, 50% to treasury
+- **Oracle correct:** Lucky supporter gets 100% pot
 - **Oracle wrong:** Highest bidder gets full pot
 - **Draw:** All bidders can reclaim (minus 1% admin fee)
 
@@ -89,8 +89,7 @@ event MatchCancelled(uint256 indexed matchId);
 | `MIN_BID` | 1000 $GOAL |
 | `MIN_INCREMENT` | 1000 $GOAL |
 | `ADMIN_FEE_BPS` | 100 (1%) |
-| `SUPPORTER_SHARE_BPS` | 5000 (50%) |
-| `TREASURY_SHARE_BPS` | 5000 (50%) |
+| `SUPPORTER_SHARE_BPS` | 10000 (100%) |
 
 ---
 

@@ -48,7 +48,7 @@ const HOW_IT_WORKS = [
     icon: Trophy,
     title: "Winner Takes All",
     description:
-      "GoalNad wrong? Highest bidder takes the pot. GoalNad right? A lucky supporter wins 50%. Draw? All bids refunded.",
+      "GoalNad wrong? Highest bidder takes the pot. GoalNad right? A lucky supporter wins 100%. Draw? All bids refunded.",
   },
 ];
 

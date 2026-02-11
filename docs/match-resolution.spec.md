@@ -59,8 +59,7 @@ All other challenger bids remain in the pot (they lost the auction).
 
 | Recipient | Amount |
 |-----------|--------|
-| Lucky Supporter (random 1) | 50% of Total Pot |
-| Treasury | 50% of Total Pot |
+| Lucky Supporter (random 1) | 100% of Total Pot |
 
 ### C. Draw Result
 
