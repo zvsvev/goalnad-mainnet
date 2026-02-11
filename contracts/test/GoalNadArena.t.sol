@@ -53,7 +53,7 @@ contract GoalNadArenaTest is Test {
 
     function _publishMatch(uint256 apiMatchId, uint8 prediction) internal returns (uint256) {
         vm.prank(oracleAddr);
-        return arena.publishPrediction(apiMatchId, prediction, block.timestamp + ONE_DAY);
+        return arena.publishPrediction(apiMatchId, prediction, "2-1", "Oracle prediction", block.timestamp + ONE_DAY);
     }
 
     // ─── GoalToken Tests ─────────────────────────────────────────────────
@@ -101,7 +101,7 @@ contract GoalNadArenaTest is Test {
         uint256 matchId = _publishMatch(42001, 1);
         assertEq(matchId, 0);
 
-        (uint256 apiMatchId, uint8 pred,,,,,,, ) = arena.matches(matchId);
+        (uint256 apiMatchId, uint8 pred,,,,,,,, ) = arena.matches(matchId);
         assertEq(apiMatchId, 42001);
         assertEq(pred, 1);
     }
@@ -109,17 +109,17 @@ contract GoalNadArenaTest is Test {
     function test_PublishPrediction_InvalidPrediction() public {
         vm.prank(oracleAddr);
         vm.expectRevert(GoalNadArena.InvalidPrediction.selector);
-        arena.publishPrediction(42001, 0, block.timestamp + ONE_DAY);
+        arena.publishPrediction(42001, 0, "0-0", "test", block.timestamp + ONE_DAY);
 
         vm.prank(oracleAddr);
         vm.expectRevert(GoalNadArena.InvalidPrediction.selector);
-        arena.publishPrediction(42001, 4, block.timestamp + ONE_DAY);
+        arena.publishPrediction(42001, 4, "0-0", "test", block.timestamp + ONE_DAY);
     }
 
     function test_PublishPrediction_OnlyOracle() public {
         vm.prank(agent1);
         vm.expectRevert(GoalNadArena.NotOracle.selector);
-        arena.publishPrediction(42001, 1, block.timestamp + ONE_DAY);
+        arena.publishPrediction(42001, 1, "2-1", "test", block.timestamp + ONE_DAY);
     }
 
     function test_PublishMultipleMatches() public {
@@ -153,7 +153,7 @@ contract GoalNadArenaTest is Test {
         vm.prank(agent2);
         arena.bid(matchId, 2000 ether);
 
-        (, , , uint256 highestBid, address highestBidder, uint256 totalPot, , , ) = arena.matches(matchId);
+        (, , , , uint256 highestBid, address highestBidder, uint256 totalPot, , , ) = arena.matches(matchId);
         assertEq(highestBid, 2000 ether);
         assertEq(highestBidder, agent2);
         assertEq(totalPot, 3000 ether);
@@ -296,18 +296,22 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         // Resolve: Away win (Oracle was wrong)
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 2, address(0));
 
-        // Agent2 (highest bidder) gets full pot (5000 + 7000 = 12000)
-        assertEq(arena.claimable(matchId, agent2), 12000 ether);
+        // Agent2 (highest bidder) gets 99% of pot (12000 - 1% burn = 11880)
+        uint256 pot = 12000 ether;
+        uint256 burnAmount = pot / 100; // 1%
+        uint256 winnerShare = pot - burnAmount;
+        assertEq(arena.claimable(matchId, agent2), winnerShare);
         assertEq(arena.claimable(matchId, agent1), 0); // Losing challenger gets nothing
 
         // Claim
         uint256 balBefore = token.balanceOf(agent2);
+        vm.deal(agent2, 1 ether);
         vm.prank(agent2);
-        arena.claimReward(matchId);
-        assertEq(token.balanceOf(agent2), balBefore + 12000 ether);
+        arena.claimReward{value: 0.1 ether}(matchId);
+        assertEq(token.balanceOf(agent2), balBefore + winnerShare);
     }
 
     function test_Resolve_OracleWins_WithSupporter() public {
@@ -329,21 +333,21 @@ contract GoalNadArenaTest is Test {
 
         vm.warp(block.timestamp + ONE_DAY + 1);
 
-        uint256 treasuryBefore = token.balanceOf(treasuryAddr);
+        uint256 pot = 8000 ether;
+        uint256 burnAmount = pot / 100; // 1% burn
+        uint256 supporterShare = pot - burnAmount; // 99% to lucky supporter
 
         // Resolve: Home win (Oracle correct), agent1 is lucky supporter
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 1, agent1);
 
-        // Lucky supporter gets 50% of pot (8000 * 50% = 4000)
-        assertEq(arena.claimable(matchId, agent1), 4000 ether);
-
-        // Treasury gets 50% (4000)
-        assertEq(token.balanceOf(treasuryAddr), treasuryBefore + 4000 ether);
+        // Lucky supporter gets 99% of pot
+        assertEq(arena.claimable(matchId, agent1), supporterShare);
 
         // Claim
+        vm.deal(agent1, 1 ether);
         vm.prank(agent1);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
     }
 
     function test_Resolve_OracleWins_NoSupporters() public {
@@ -356,11 +360,14 @@ contract GoalNadArenaTest is Test {
 
         uint256 treasuryBefore = token.balanceOf(treasuryAddr);
 
-        // Resolve: Home win, no supporters → 100% to treasury
-        vm.prank(owner);
+        // Resolve: Home win, no supporters → 99% to treasury (1% burned)
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 1, address(0));
 
-        assertEq(token.balanceOf(treasuryAddr), treasuryBefore + 5000 ether);
+        uint256 pot = 5000 ether;
+        uint256 burnAmount = pot / 100; // 1%
+        uint256 treasuryShare = pot - burnAmount;
+        assertEq(token.balanceOf(treasuryAddr), treasuryBefore + treasuryShare);
     }
 
     function test_Resolve_Draw_Refund() public {
@@ -377,21 +384,20 @@ contract GoalNadArenaTest is Test {
 
         uint256 treasuryBefore = token.balanceOf(treasuryAddr);
 
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 3, address(0));
 
-        // Agent1: 5000 - 1% = 4950
-        assertEq(arena.claimable(matchId, agent1), 4950 ether);
-        // Agent2: 7000 - 1% = 6930
-        assertEq(arena.claimable(matchId, agent2), 6930 ether);
-        // Treasury: 50 + 70 = 120
-        assertEq(token.balanceOf(treasuryAddr), treasuryBefore + 120 ether);
+        // Draw refund: full refund, no fees
+        assertEq(arena.claimable(matchId, agent1), 5000 ether);
+        assertEq(arena.claimable(matchId, agent2), 7000 ether);
 
         // Both can claim
+        vm.deal(agent1, 1 ether);
+        vm.deal(agent2, 1 ether);
         vm.prank(agent1);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
         vm.prank(agent2);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
     }
 
     function test_Resolve_DrawPredictedDraw() public {
@@ -414,11 +420,13 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         // Resolve: Draw (Oracle predicted Draw → Oracle correct)
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 3, agent1);
 
-        // Lucky supporter gets 50%
-        assertEq(arena.claimable(matchId, agent1), 3000 ether);
+        // Lucky supporter gets 99% of pot (6000 - 1% burn = 5940)
+        uint256 pot = 6000 ether;
+        uint256 burnAmount = pot / 100;
+        assertEq(arena.claimable(matchId, agent1), pot - burnAmount);
     }
 
     function test_Resolve_NoBids() public {
@@ -427,10 +435,10 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         // Should resolve without error even with no bids
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 1, address(0));
 
-        (, , , , , , , bool resolved, ) = arena.matches(matchId);
+        (, , , , , , , , bool resolved, ) = arena.matches(matchId);
         assertTrue(resolved);
     }
 
@@ -439,10 +447,10 @@ contract GoalNadArenaTest is Test {
 
         vm.warp(block.timestamp + ONE_DAY + 1);
 
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 1, address(0));
 
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         vm.expectRevert(abi.encodeWithSelector(GoalNadArena.MatchAlreadyResolved.selector, matchId));
         arena.resolveMatch(matchId, 2, address(0));
     }
@@ -465,10 +473,12 @@ contract GoalNadArenaTest is Test {
         assertEq(arena.claimable(matchId, agent1), 5000 ether);
         assertEq(arena.claimable(matchId, agent2), 7000 ether);
 
+        vm.deal(agent1, 1 ether);
+        vm.deal(agent2, 1 ether);
         vm.prank(agent1);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
         vm.prank(agent2);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
 
         assertEq(token.balanceOf(agent1), INITIAL_BALANCE);
         assertEq(token.balanceOf(agent2), INITIAL_BALANCE);
@@ -484,15 +494,16 @@ contract GoalNadArenaTest is Test {
 
         vm.warp(block.timestamp + ONE_DAY + 1);
 
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 2, address(0));
 
+        vm.deal(agent1, 1 ether);
         vm.prank(agent1);
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
 
         vm.prank(agent1);
         vm.expectRevert(abi.encodeWithSelector(GoalNadArena.AlreadyClaimed.selector, matchId));
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
     }
 
     function test_Claim_NothingToClaim() public {
@@ -503,13 +514,14 @@ contract GoalNadArenaTest is Test {
 
         vm.warp(block.timestamp + ONE_DAY + 1);
 
-        vm.prank(owner);
+        vm.prank(oracleAddr);
         arena.resolveMatch(matchId, 1, address(0)); // Oracle wins, no supporters
 
         // Agent1 (challenger) has nothing to claim since Oracle won
+        vm.deal(agent1, 1 ether);
         vm.prank(agent1);
         vm.expectRevert(abi.encodeWithSelector(GoalNadArena.NothingToClaim.selector, matchId));
-        arena.claimReward(matchId);
+        arena.claimReward{value: 0.1 ether}(matchId);
     }
 
     // ─── View Functions ──────────────────────────────────────────────────

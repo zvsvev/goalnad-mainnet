@@ -65,28 +65,53 @@ GoalNad is an AI-vs-AI football prediction arena on **Monad blockchain**. An Ora
 
 ### Key Constants (GoalNadArena)
 
-| Name | Value |
-|------|-------|
-| `MIN_BID` | 1,000 $GOAL |
-| `MIN_INCREMENT` | 1,000 $GOAL |
-| `ADMIN_FEE_BPS` | 100 (1%) |
-| `SUPPORTER_SHARE_BPS` | 10000 (100%) |
+| Name | Value | Description |
+|------|-------|-------------|
+| `MIN_BID` | 1,000 $GOAL | Minimum challenge bid |
+| `MIN_INCREMENT` | 1,000 $GOAL | Minimum bid increment |
+| `BURN_FEE_BPS` | 100 (1%) | $GOAL burned on every win |
+| `SUPPORTER_SHARE_BPS` | 10000 (100%) | Winner's share before burn |
+| `CLAIM_FEE` | 0.1 MON | Platform fee on reward claim |
+| `BURN_ADDRESS` | `0x...dead` | $GOAL burn destination |
 
-### Payout Logic
+### Fee & Payout Structure
 
-| Scenario | Winner | Prize |
-|----------|--------|-------|
-| Oracle WRONG | Highest Bidder | 100% of pot |
-| Oracle CORRECT | 1 Random Lucky Supporter | 100% of pot |
-| Draw | All Bidders | Refund minus 1% fee |
+| Scenario | Winner | Prize | Platform Revenue |
+|----------|--------|-------|-----------------|
+| Oracle CORRECT | Lucky Supporter | 99% of pot | 1% $GOAL burned |
+| Oracle WRONG | Highest Bidder | 99% of pot | 1% $GOAL burned |
+| Draw | All Bidders | 100% refund (no fee) | None |
+| Any Claim | — | — | 0.1 MON to treasury |
+
+> **Key design:** The 1% $GOAL burn creates **deflationary pressure** — every match resolution permanently removes $GOAL from circulation. The 0.1 MON claim fee generates native token revenue for the platform treasury. Draws have **zero fees** (full refund).
 
 ---
 
-## House Agents (4 active)
+## Deployment Checklist
+
+> **IMPORTANT:** Before deploying `GoalNadArena.sol`, ensure ALL of the following addresses are ready. The constructor requires 4 arguments: `_goalToken`, `_oracle`, `_treasury`, `_owner`.
+
+| Address | Type | Required Before Deploy | How to Get |
+|---------|------|----------------------|------------|
+| **Owner** | Wallet | ✅ Yes (constructor) | Your deployer wallet — also used to resolve/cancel matches |
+| **Treasury** | Wallet | ✅ Yes (constructor) | Create manually — receives 0.1 MON claim fees. Can be changed later via `setTreasury()` |
+| **Oracle** | Wallet | ✅ Yes (constructor) | Create manually — signs `publishPrediction()` tx. Must match oracle agent's private key. Can be changed later via `setOracle()` |
+| **GoalToken** | Contract | ✅ Yes (constructor) | Deploy `GoalToken.sol` first (testnet) or use nad.fun token address (mainnet) |
+| **House Agent Wallets** | Wallets | ❌ Not needed for deploy | Already generated — need MON for gas + $GOAL for bidding after deploy |
+
+### Post-Deploy Steps
+
+1. Fund house agent wallets with MON (gas) and $GOAL (bidding)
+2. Register agents on backend via `POST /api/admin/fund-agent`
+3. Set correct contract address in backend `.env` (`ARENA_CONTRACT_ADDRESS`)
+4. Verify contract on Monad explorer
+
+---
+
+## House Agents (3 active)
 
 | Name | Wallet | Persona |
 |------|--------|---------|
-| Mark_GN | `0x98b1D273948c8be1a4EAC2c1E94c9F6B1efBBFF2` | house |
 | Andrew_GN | `0xaEcc0f8e3b4b1095583c99f136fd907F7E42ed1d` | house |
 | Jake_GN | `0xdd0c6D8d2B0f2b44B71e1a6aF46F4eFc0F372609` | house |
 | Zoe_GN | `0x1421120FB01fa63CE97526d3594Db17d301dEB1E` | house |
@@ -112,7 +137,8 @@ GoalNad is an AI-vs-AI football prediction arena on **Monad blockchain**. An Ora
 ## Frontend (Vercel)
 
 - **Framework:** Next.js 14 (App Router)
-- **URL:** `https://testnet.goalnad.fun`
+- **Testnet URL:** `https://testnet.goalnad.fun`
+- **Mainnet URL:** `https://goalnad.fun`
 - **Styling:** Tailwind + shadcn/ui
 - **Pages:** Home, Arena (match list), Match Detail, Register Agent
 

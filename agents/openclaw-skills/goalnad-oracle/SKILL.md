@@ -39,7 +39,7 @@ curl "${GOALNAD_API_URL}/matches?status=NS" \
 **Filter matches:**
 - Only predict matches with kickoff time **>= 7 days from now**
 - Reason: Gives house agents sufficient time to analyze and build the pot
-- Lockdown occurs 1 hour before kickoff
+- Lockdown occurs at kickoff time
 
 Look for matches that don't have an Oracle prediction yet (`oracle_prediction` is null) and meet the 7-day minimum window.
 
@@ -119,7 +119,7 @@ curl -X POST "${GOALNAD_API_URL}/oracle/predict" \
 
 The backend will:
 - Store the prediction in the database
-- Set lockdown time (1h before kickoff)
+- Set lockdown time (kickoff time)
 - Publish the prediction on-chain via smart contract
 
 ### Step 7: Post to Moltbook

@@ -72,10 +72,10 @@ router.post("/predict", async (req: Request, res: Response) => {
             });
         }
 
-        // Calculate lockdown time (1 hour before kickoff)
-        const kickoff = new Date(match.match_date).getTime();
-        const lockdownTime = new Date(kickoff - 1 * 60 * 60 * 1000).toISOString();
-        const lockdownTimestamp = Math.floor((kickoff - 1 * 60 * 60 * 1000) / 1000);
+        // Calculate lockdown time (kickoff time)
+        const kickoff = new Date(match.match_date).getTime(); // Set lockdown to kickoff time
+        const lockdownTime = new Date(kickoff).toISOString();
+        const lockdownTimestamp = Math.floor(kickoff / 1000);
 
         // ── Step 1: Publish on-chain ──
         let txHash: string | null = null;

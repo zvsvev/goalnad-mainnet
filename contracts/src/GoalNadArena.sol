@@ -15,9 +15,11 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     // ─── Constants ───────────────────────────────────────────────────────
     uint256 public constant MIN_BID = 1000 ether;           // 1000 $GOAL (18 decimals)
     uint256 public constant MIN_INCREMENT = 1000 ether;     // Minimum bid increment
-    uint256 public constant ADMIN_FEE_BPS = 100;            // 1%
+    uint256 public constant BURN_FEE_BPS = 100;             // 1% burn on wins
     uint256 public constant SUPPORTER_SHARE_BPS = 10000;    // 100%
     uint256 public constant BPS_DENOMINATOR = 10000;
+    uint256 public constant CLAIM_FEE = 0.1 ether;          // 0.1 MON claim fee
+    address public constant BURN_ADDRESS = address(0x000000000000000000000000000000000000dEaD);
 
     // ─── Result codes ────────────────────────────────────────────────────
     uint8 public constant RESULT_UNRESOLVED = 0;
@@ -33,6 +35,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     struct Match {
         uint256 apiMatchId;
         uint8   oraclePrediction;     // 1=Home, 2=Away, 3=Draw
+        string  exactScore;           // Predicted score e.g. "2-1"
         uint256 lockdownTime;
         uint256 highestBid;
         address highestBidder;
@@ -73,11 +76,20 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     uint256 public nextMatchId;
 
     // ─── Events ──────────────────────────────────────────────────────────
-    event PredictionPublished(uint256 indexed matchId, uint256 apiMatchId, uint8 prediction, uint256 lockdownTime);
+    event PredictionPublished(
+        uint256 indexed matchId,
+        uint256 apiMatchId,
+        uint8 prediction,
+        string exactScore,
+        string comment,
+        uint256 lockdownTime
+    );
     event BidPlaced(uint256 indexed matchId, address indexed bidder, uint256 amount, uint256 totalBid);
     event Supported(uint256 indexed matchId, address indexed supporter);
     event MatchResolved(uint256 indexed matchId, uint8 result, address luckySupporter);
     event RewardClaimed(uint256 indexed matchId, address indexed winner, uint256 amount);
+    event GoalBurned(uint256 indexed matchId, uint256 amount);
+    event ClaimFeePaid(uint256 indexed matchId, address indexed claimer, uint256 fee);
     event MatchCancelled(uint256 indexed matchId);
     event OracleUpdated(address indexed newOracle);
     event TreasuryUpdated(address indexed newTreasury);
@@ -137,10 +149,14 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     /// @notice Oracle publishes a prediction for a match
     /// @param apiMatchId The football-data.org match ID
     /// @param prediction 1=Home, 2=Away, 3=Draw
-    /// @param lockdownTime Timestamp when auction closes (kickoff - 1h)
+    /// @param exactScore Predicted score e.g. "2-1" (stored on-chain)
+    /// @param comment Oracle analysis visible on block explorer
+    /// @param lockdownTime Timestamp when auction closes (kickoff time)
     function publishPrediction(
         uint256 apiMatchId,
         uint8 prediction,
+        string calldata exactScore,
+        string calldata comment,
         uint256 lockdownTime
     ) external onlyOracle returns (uint256 matchId) {
         if (prediction < 1 || prediction > 3) revert InvalidPrediction();
@@ -149,9 +165,10 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         Match storage m = matches[matchId];
         m.apiMatchId = apiMatchId;
         m.oraclePrediction = prediction;
+        m.exactScore = exactScore;
         m.lockdownTime = lockdownTime;
 
-        emit PredictionPublished(matchId, apiMatchId, prediction, lockdownTime);
+        emit PredictionPublished(matchId, apiMatchId, prediction, exactScore, comment, lockdownTime);
     }
 
     // ─── Agent: Bid (Challenge the Oracle) ───────────────────────────────
@@ -162,8 +179,10 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
+        if (m.resolved) revert MatchAlreadyResolved(matchId);
         if (m.cancelled) revert MatchCancelledError(matchId);
         if (hasSupported[matchId][msg.sender]) revert MutualExclusivity(matchId);
+        require(amount > 0, "Zero bid");
 
         uint256 currentBid = bids[matchId][msg.sender];
         uint256 newTotalBid = currentBid + amount;
@@ -204,6 +223,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
+        if (m.resolved) revert MatchAlreadyResolved(matchId);
         if (m.cancelled) revert MatchCancelledError(matchId);
         if (hasBid[matchId][msg.sender]) revert MutualExclusivity(matchId);
         if (hasSupported[matchId][msg.sender]) revert AlreadySupported(matchId);
@@ -225,12 +245,13 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         uint256 matchId,
         uint8 result,
         address luckySupporter
-    ) external onlyOwner nonReentrant {
+    ) external onlyOracle nonReentrant {
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (m.resolved) revert MatchAlreadyResolved(matchId);
         if (m.cancelled) revert MatchCancelledError(matchId);
         if (result < 1 || result > 3) revert InvalidPrediction();
+        require(block.timestamp >= m.lockdownTime, "Auction still active");
 
         m.result = result;
         m.resolved = true;
@@ -282,11 +303,12 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     }
 
     // ─── Agent: Claim Reward ─────────────────────────────────────────────
-    /// @notice Pull-pattern: winners claim their rewards
-    function claimReward(uint256 matchId) external nonReentrant {
+    /// @notice Pull-pattern: winners claim their rewards. Requires 0.1 MON platform fee.
+    function claimReward(uint256 matchId) external payable nonReentrant {
         Match storage m = matches[matchId];
         if (!m.resolved && !m.cancelled) revert MatchNotResolved(matchId);
         if (claimed[matchId][msg.sender]) revert AlreadyClaimed(matchId);
+        require(msg.value >= CLAIM_FEE, "Insufficient claim fee (0.1 MON)");
 
         uint256 reward = claimable[matchId][msg.sender];
         if (reward == 0) revert NothingToClaim(matchId);
@@ -294,8 +316,13 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         claimed[matchId][msg.sender] = true;
         claimable[matchId][msg.sender] = 0;
 
+        // Send claim fee to treasury
+        (bool sent, ) = treasury.call{value: msg.value}("");
+        require(sent, "Fee transfer failed");
+
         goalToken.safeTransfer(msg.sender, reward);
 
+        emit ClaimFeePaid(matchId, msg.sender, msg.value);
         emit RewardClaimed(matchId, msg.sender, reward);
     }
 
@@ -319,6 +346,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     struct MatchView {
         uint256 apiMatchId;
         uint8   oraclePrediction;
+        string  exactScore;
         uint256 lockdownTime;
         uint256 highestBid;
         address highestBidder;
@@ -335,6 +363,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         return MatchView({
             apiMatchId: m.apiMatchId,
             oraclePrediction: m.oraclePrediction,
+            exactScore: m.exactScore,
             lockdownTime: m.lockdownTime,
             highestBid: m.highestBid,
             highestBidder: m.highestBidder,
@@ -349,48 +378,49 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
 
     // ─── Internal Payout Logic ───────────────────────────────────────────
 
-    /// @dev Oracle correct: lucky supporter gets 100% of the pot
+    /// @dev Oracle correct: lucky supporter gets 99% of the pot, 1% burned
     function _distributeOracleWin(uint256 matchId, uint256 pot, address luckySupporter) internal {
-        uint256 supporterShare = (pot * SUPPORTER_SHARE_BPS) / BPS_DENOMINATOR;
-        uint256 treasuryShare = pot - supporterShare;
+        uint256 burnAmount = (pot * BURN_FEE_BPS) / BPS_DENOMINATOR;
+        uint256 supporterShare = pot - burnAmount;
+
+        // Burn 1% of pot
+        if (burnAmount > 0) {
+            goalToken.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit GoalBurned(matchId, burnAmount);
+        }
 
         if (luckySupporter != address(0) && hasSupported[matchId][luckySupporter]) {
             claimable[matchId][luckySupporter] = supporterShare;
         } else {
-            // No valid supporter — 100% to treasury
-            treasuryShare = pot;
-        }
-
-        // Transfer treasury share directly
-        if (treasuryShare > 0) {
-            goalToken.safeTransfer(treasury, treasuryShare);
+            // No valid supporter — remaining to treasury
+            goalToken.safeTransfer(treasury, supporterShare);
         }
     }
 
-    /// @dev Oracle wrong: highest bidder gets full pot
+    /// @dev Oracle wrong: highest bidder gets 99% of pot, 1% burned
     function _distributeChallengerWin(uint256 matchId, uint256 pot) internal {
         Match storage m = matches[matchId];
-        claimable[matchId][m.highestBidder] = pot;
+        uint256 burnAmount = (pot * BURN_FEE_BPS) / BPS_DENOMINATOR;
+        uint256 winnerShare = pot - burnAmount;
+
+        // Burn 1% of pot
+        if (burnAmount > 0) {
+            goalToken.safeTransfer(BURN_ADDRESS, burnAmount);
+            emit GoalBurned(matchId, burnAmount);
+        }
+
+        claimable[matchId][m.highestBidder] = winnerShare;
     }
 
-    /// @dev Draw: refund all bidders minus 1% admin fee
+    /// @dev Draw: full refund to all bidders (no fee)
     function _distributeDraw(uint256 matchId, uint256 pot) internal {
         address[] storage bidders = _bidders[matchId];
-        uint256 totalFee;
 
         for (uint256 i = 0; i < bidders.length; i++) {
             uint256 bidAmount = bids[matchId][bidders[i]];
             if (bidAmount > 0) {
-                uint256 fee = (bidAmount * ADMIN_FEE_BPS) / BPS_DENOMINATOR;
-                uint256 refund = bidAmount - fee;
-                claimable[matchId][bidders[i]] = refund;
-                totalFee += fee;
+                claimable[matchId][bidders[i]] = bidAmount;
             }
-        }
-
-        // Send fees to treasury
-        if (totalFee > 0) {
-            goalToken.safeTransfer(treasury, totalFee);
         }
     }
 }

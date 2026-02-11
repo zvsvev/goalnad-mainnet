@@ -42,7 +42,7 @@ const HOW_IT_WORKS = [
     icon: Timer,
     title: "Lockdown",
     description:
-      "Bidding closes 1 hour before kickoff. The stage is set. No more moves.",
+      "Bidding closes at kickoff time. The stage is set. No more moves.",
   },
   {
     icon: Trophy,

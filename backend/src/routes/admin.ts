@@ -220,22 +220,21 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
             }
 
             if (matchResult === 3 && match.oracle_prediction !== 3) {
-                // Draw: refund all challengers minus 1% fee
+                // Draw: full refund to all challengers (no fee)
                 for (const bid of challengers) {
-                    const fee = Math.floor(bid.amount * 0.01);
-                    const refund = bid.amount - fee;
                     db.prepare("UPDATE agents_metadata SET balance = balance + ? WHERE agent_wallet = ?")
-                        .run(refund, bid.agent_wallet);
+                        .run(bid.amount, bid.agent_wallet);
                 }
                 return { winners: [], distribution: "draw_refund", challengers: challengers.length, supporters: supporters.length };
             }
 
             if (oracleCorrect) {
-                // Oracle correct: pick random supporter -> 50% of pot
+                // Oracle correct: pick random supporter -> 99% of pot (1% burned)
                 if (supporters.length > 0) {
                     const luckyIdx = Math.floor(Math.random() * supporters.length);
                     const luckySupporter = supporters[luckyIdx];
-                    const supporterPrize = match.total_pot; // 100% to lucky supporter
+                    const burnAmount = Math.floor(match.total_pot * 0.01);
+                    const supporterPrize = match.total_pot - burnAmount;
 
                     db.prepare("UPDATE agents_metadata SET balance = balance + ?, wins = wins + 1 WHERE agent_wallet = ?")
                         .run(supporterPrize, luckySupporter.agent_wallet);
@@ -247,6 +246,7 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
 
                     return {
                         winners: [{ wallet: luckySupporter.agent_wallet, prize: supporterPrize, type: "luckySupporter" }],
+                        burned: burnAmount,
                         distribution: "oracle_win",
                         challengers: challengers.length,
                         supporters: supporters.length,
@@ -254,10 +254,12 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
                 }
                 return { winners: [], distribution: "oracle_win_no_supporters", challengers: challengers.length, supporters: 0 };
             } else {
-                // Oracle wrong: highest bidder wins the pot
+                // Oracle wrong: highest bidder wins 99% of pot (1% burned)
                 const highestBidder = challengers.reduce((a: any, b: any) => a.amount > b.amount ? a : b);
+                const burnAmount = Math.floor(match.total_pot * 0.01);
+                const winnerPrize = match.total_pot - burnAmount;
                 db.prepare("UPDATE agents_metadata SET balance = balance + ?, wins = wins + 1 WHERE agent_wallet = ?")
-                    .run(match.total_pot, highestBidder.agent_wallet);
+                    .run(winnerPrize, highestBidder.agent_wallet);
 
                 for (const bid of challengers) {
                     if (bid.agent_wallet !== highestBidder.agent_wallet) {
@@ -267,7 +269,8 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
                 }
 
                 return {
-                    winners: [{ wallet: highestBidder.agent_wallet, prize: match.total_pot, type: "highestBidder" }],
+                    winners: [{ wallet: highestBidder.agent_wallet, prize: winnerPrize, type: "highestBidder" }],
+                    burned: burnAmount,
                     distribution: "challenger_win",
                     challengers: challengers.length,
                     supporters: supporters.length,
@@ -339,9 +342,9 @@ router.post("/oracle-predict", (req: Request, res: Response) => {
             return res.status(404).json({ error: "Match not found" });
         }
 
-        // Set lockdown to 1 hour before kickoff
+        // Set lockdown to kickoff time
         const kickoff = new Date(match.match_date).getTime();
-        const lockdownTime = new Date(kickoff - 1 * 60 * 60 * 1000).toISOString();
+        const lockdownTime = new Date(kickoff).toISOString();
 
         db.prepare(`
       UPDATE matches SET oracle_prediction = ?, oracle_score = ?, lockdown_time = ?, updated_at = CURRENT_TIMESTAMP
