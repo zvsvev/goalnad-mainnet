@@ -349,7 +349,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
 
     // ─── Internal Payout Logic ───────────────────────────────────────────
 
-    /// @dev Oracle correct: lucky supporter gets 50%, treasury gets 50%
+    /// @dev Oracle correct: lucky supporter gets 100% of the pot
     function _distributeOracleWin(uint256 matchId, uint256 pot, address luckySupporter) internal {
         uint256 supporterShare = (pot * SUPPORTER_SHARE_BPS) / BPS_DENOMINATOR;
         uint256 treasuryShare = pot - supporterShare;

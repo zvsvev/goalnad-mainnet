@@ -235,7 +235,7 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
                 if (supporters.length > 0) {
                     const luckyIdx = Math.floor(Math.random() * supporters.length);
                     const luckySupporter = supporters[luckyIdx];
-                    const supporterPrize = Math.floor(match.total_pot * 0.5);
+                    const supporterPrize = match.total_pot; // 100% to lucky supporter
 
                     db.prepare("UPDATE agents_metadata SET balance = balance + ?, wins = wins + 1 WHERE agent_wallet = ?")
                         .run(supporterPrize, luckySupporter.agent_wallet);
@@ -387,6 +387,37 @@ router.post("/fund-agent", (req: Request, res: Response) => {
     } catch (err: any) {
         console.error("Error funding agent:", err.message);
         res.status(500).json({ error: "Failed to fund agent" });
+    }
+});
+
+// ─── POST /api/admin/rename-agent — Rename an agent in the DB ────────
+
+router.post("/rename-agent", (req: Request, res: Response) => {
+    try {
+        const { wallet, newName } = req.body;
+
+        if (!wallet || !newName) {
+            return res.status(400).json({ error: "wallet and newName are required" });
+        }
+
+        const existing = db.prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?").get(wallet) as any;
+        if (!existing) {
+            return res.status(404).json({ error: "Agent not found" });
+        }
+
+        db.prepare("UPDATE agents_metadata SET agent_name = ? WHERE agent_wallet = ?")
+            .run(newName, wallet);
+
+        // Also update the name in any existing bids
+        db.prepare("UPDATE bids SET agent_name = ? WHERE agent_wallet = ?")
+            .run(newName, wallet);
+
+        const agent = db.prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?").get(wallet);
+        console.log(`[Admin] Renamed agent ${wallet}: ${existing.agent_name} → ${newName}`);
+        res.json({ message: `Agent renamed: ${existing.agent_name} → ${newName}`, agent });
+    } catch (err: any) {
+        console.error("Error renaming agent:", err.message);
+        res.status(500).json({ error: "Failed to rename agent" });
     }
 });
 
