@@ -18,6 +18,8 @@ import {
   Activity,
   Medal,
   Crown,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,6 +66,8 @@ export default function Home() {
   const [fixtureTab, setFixtureTab] = useState<"upcoming" | "results">("upcoming");
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [showAllArena, setShowAllArena] = useState(false);
+  const [showAllFixtures, setShowAllFixtures] = useState(false);
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
@@ -209,10 +213,24 @@ export default function Home() {
             </p>
           ) : (
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-              {predictedMatches.map((m) => (
+              {(showAllArena ? predictedMatches : predictedMatches.slice(0, 5)).map((m) => (
                 <FixtureCard key={m.api_match_id} match={m} />
               ))}
             </div>
+            {predictedMatches.length > 5 && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowAllArena(!showAllArena)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+              >
+                {showAllArena ? (
+                  <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
+                ) : (
+                  <><ChevronDown className="h-3.5 w-3.5" /> Show More ({predictedMatches.length - 5} more)</>
+                )}
+              </button>
+            </div>
+          )}
           )}
         </div>
       </section>
@@ -386,7 +404,7 @@ export default function Home() {
           {/* Tabs + Filter */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
             <button
-              onClick={() => setFixtureTab("upcoming")}
+              onClick={() => { setFixtureTab("upcoming"); setShowAllFixtures(false); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -395,7 +413,7 @@ export default function Home() {
               Upcoming
             </button>
             <button
-              onClick={() => setFixtureTab("results")}
+              onClick={() => { setFixtureTab("results"); setShowAllFixtures(false); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -411,7 +429,7 @@ export default function Home() {
             ].map((l) => (
               <button
                 key={l.code}
-                onClick={() => setLeagueFilter(l.code)}
+                onClick={() => { setLeagueFilter(l.code); setShowAllFixtures(false); }}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
@@ -432,10 +450,24 @@ export default function Home() {
             </p>
           ) : (
             <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-              {displayedFixtures.slice(0, 12).map((m) => (
+              {(showAllFixtures ? displayedFixtures : displayedFixtures.slice(0, 5)).map((m) => (
                 <FixtureCard key={m.api_match_id} match={m} />
               ))}
             </div>
+            {displayedFixtures.length > 5 && (
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => setShowAllFixtures(!showAllFixtures)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+              >
+                {showAllFixtures ? (
+                  <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
+                ) : (
+                  <><ChevronDown className="h-3.5 w-3.5" /> Show More ({displayedFixtures.length - 5} more)</>
+                )}
+              </button>
+            </div>
+          )}
           )}
         </div>
       </section>
