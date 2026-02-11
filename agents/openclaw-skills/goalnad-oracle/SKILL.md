@@ -32,9 +32,11 @@ You run **continuously in an infinite loop**, monitoring for new matches that ne
 ### Step 1: Fetch Upcoming Matches
 
 ```bash
-curl "${GOALNAD_API_URL}/matches?status=NS" \
+curl "${GOALNAD_API_URL}/matches?status=NS&limit=30" \
   -H "Content-Type: application/json"
 ```
+
+> **IMPORTANT:** Do NOT pipe curl output to `python3`, `jq`, or any other tool. Read the JSON response directly and process it yourself. These tools may not be available in your environment.
 
 **Filter matches:**
 - Only predict matches with kickoff time **>= 7 days from now**
