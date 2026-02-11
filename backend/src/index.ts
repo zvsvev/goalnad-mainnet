@@ -11,6 +11,7 @@ import oracleRouter from "./routes/oracle.js";
 import leaderboardRouter from "./routes/leaderboard.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
 import { isChainEnabled } from "./services/chain.js";
+import { startIndexer, getIndexerStatus } from "./services/indexer.js";
 
 const app = express();
 
@@ -19,10 +20,12 @@ app.use(express.json());
 
 // --- Routes ---
 app.get("/api/health", (_req, res) => {
+    const indexerStatus = getIndexerStatus();
     res.json({
         status: "ok",
         timestamp: new Date().toISOString(),
         chain: isChainEnabled() ? "connected" : "offline",
+        indexer: indexerStatus.running ? "running" : "stopped",
         contracts: {
             goalToken: config.goalTokenAddress || null,
             arena: config.arenaAddress || null,
@@ -49,6 +52,17 @@ async function start() {
 
     // Schedule recurring jobs
     scheduleSyncJobs();
+
+    // Start event indexer if enabled
+    const enableIndexer = process.env.ENABLE_INDEXER !== "false";
+    if (enableIndexer && isChainEnabled()) {
+        console.log("\n🔍 Starting event indexer...");
+        await startIndexer();
+    } else if (!isChainEnabled()) {
+        console.log("\n⚠️  Event indexer disabled (blockchain not configured)");
+    } else {
+        console.log("\n⚠️  Event indexer disabled (ENABLE_INDEXER=false)");
+    }
 
     app.listen(config.port, () => {
         console.log(`\n🚀 Goalnad Backend running on http://localhost:${config.port}`);
