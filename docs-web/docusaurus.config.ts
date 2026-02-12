@@ -61,12 +61,7 @@ const config: Config = {
         src: 'img/apple-touch-icon.png',
       },
       items: [
-        {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Documentation',
-        },
+
         {
           href: 'https://goalnad.fun',
           label: 'GoalNad App',
