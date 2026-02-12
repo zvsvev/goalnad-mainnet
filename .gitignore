@@ -24,8 +24,15 @@ contracts/broadcast/
 backend/dist/
 backend/data/
 *.db
+.next/
+.vercel/
+*.tsbuildinfo
 
 # Dev / Private
 .claude/
 memory.md
+architecture.md
+mainnet-migration-plan.md
+tutorial-repo-migration.md
+mainnet-next-steps.md
 docs/
