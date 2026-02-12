@@ -75,8 +75,8 @@ router.post("/test-match", async (req: Request, res: Response) => {
         const matchDate = new Date(now.getTime() + kickoffMinutes * 60 * 1000);
         const lockdownTime = new Date(now.getTime() + lockdownMinutes * 60 * 1000);
 
-        // Generate a unique fake API match ID (negative to avoid collision with real IDs)
-        const fakeApiMatchId = -Math.floor(Date.now() / 1000);
+        // Generate a unique fake API match ID (large positive to avoid collision with real IDs)
+        const fakeApiMatchId = Math.floor(Date.now() / 1000) + 900000000;
 
         // Generate analysis if not provided
         const analysis = oracleAnalysis ||

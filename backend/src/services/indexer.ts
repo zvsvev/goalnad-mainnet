@@ -9,6 +9,7 @@ import type { Address } from "viem";
 const ARENA_ADDRESS = config.arenaAddress as Address;
 const POLL_INTERVAL = parseInt(process.env.INDEXER_POLL_INTERVAL_MS || "5000", 10);
 const START_BLOCK = BigInt(process.env.INDEXER_START_BLOCK || "0");
+const MAX_BLOCK_RANGE = 100n; // Monad RPC limits eth_getLogs to 100 blocks
 
 let isRunning = false;
 let lastProcessedBlock = START_BLOCK;
@@ -231,56 +232,61 @@ async function pollEvents() {
         const latestBlock = await publicClient.getBlockNumber();
 
         if (lastProcessedBlock >= latestBlock) {
-            // No new blocks, skip
             return;
         }
 
-        const fromBlock = lastProcessedBlock + 1n;
-        const toBlock = latestBlock;
+        const startFrom = lastProcessedBlock + 1n;
 
-        console.log(`[Indexer] Scanning blocks ${fromBlock} to ${toBlock}...`);
+        // Chunk into MAX_BLOCK_RANGE-sized windows (Monad RPC limit)
+        let cursor = startFrom;
+        let totalEvents = 0;
 
-        // Fetch all events from the arena contract
-        const logs = await publicClient.getContractEvents({
-            address: ARENA_ADDRESS,
-            abi: GoalNadArenaABI,
-            fromBlock,
-            toBlock,
-        });
+        while (cursor <= latestBlock) {
+            const chunkEnd = cursor + MAX_BLOCK_RANGE - 1n > latestBlock
+                ? latestBlock
+                : cursor + MAX_BLOCK_RANGE - 1n;
 
-        // Process each event
-        for (const log of logs) {
-            // @ts-ignore - eventName exists on parsed logs
-            const eventName = log.eventName;
+            const logs = await publicClient.getContractEvents({
+                address: ARENA_ADDRESS,
+                abi: GoalNadArenaABI,
+                fromBlock: cursor,
+                toBlock: chunkEnd,
+            });
 
-            switch (eventName) {
-                case "PredictionPublished":
-                    await handlePredictionPublished(log);
-                    break;
-                case "BidPlaced":
-                    await handleBidPlaced(log);
-                    break;
-                case "Supported":
-                    await handleSupported(log);
-                    break;
-                case "MatchResolved":
-                    await handleMatchResolved(log);
-                    break;
-                case "MatchCancelled":
-                    await handleMatchCancelled(log);
-                    break;
-                default:
-                    // Ignore other events (RewardClaimed, GoalBurned, etc.)
-                    break;
+            for (const log of logs) {
+                // @ts-ignore - eventName exists on parsed logs
+                const eventName = log.eventName;
+
+                switch (eventName) {
+                    case "PredictionPublished":
+                        await handlePredictionPublished(log);
+                        break;
+                    case "BidPlaced":
+                        await handleBidPlaced(log);
+                        break;
+                    case "Supported":
+                        await handleSupported(log);
+                        break;
+                    case "MatchResolved":
+                        await handleMatchResolved(log);
+                        break;
+                    case "MatchCancelled":
+                        await handleMatchCancelled(log);
+                        break;
+                    default:
+                        break;
+                }
             }
+
+            totalEvents += logs.length;
+            cursor = chunkEnd + 1n;
         }
 
-        if (logs.length > 0) {
-            console.log(`[Indexer] ✅ Processed ${logs.length} events from blocks ${fromBlock}-${toBlock}`);
+        if (totalEvents > 0) {
+            console.log(`[Indexer] ✅ Processed ${totalEvents} events from blocks ${startFrom}-${latestBlock}`);
         }
 
-        // Update last processed block
-        lastProcessedBlock = toBlock;
+        lastProcessedBlock = latestBlock;
 
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error polling events:`, err.message);
