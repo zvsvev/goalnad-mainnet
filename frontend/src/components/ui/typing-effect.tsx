@@ -10,7 +10,7 @@ export function TypingEffect({ text, className = "" }: { text: string; className
     return (
         <motion.p
             ref={ref}
-            className={className}
+            className={`inline-block ${className}`}
             initial="hidden"
             animate={isInView ? "visible" : "hidden"}
             variants={{
@@ -23,13 +23,26 @@ export function TypingEffect({ text, className = "" }: { text: string; className
                 <motion.span
                     key={index}
                     variants={{
-                        hidden: { opacity: 0 },
-                        visible: { opacity: 1 },
+                        hidden: { opacity: 0, display: "none" },
+                        visible: { opacity: 1, display: "inline" },
                     }}
+                    transition={{ duration: 0 }}
                 >
                     {char}
                 </motion.span>
             ))}
+            <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: [1, 1, 0, 0] }}
+                transition={{
+                    duration: 0.8,
+                    repeat: Infinity,
+                    times: [0, 0.5, 0.51, 1],
+                    ease: "linear",
+                    repeatDelay: 0.1
+                }}
+                className="inline-block w-2.5 h-[1.2em] ml-0.5 align-text-bottom bg-primary"
+            />
         </motion.p>
     );
 }
