@@ -129,9 +129,10 @@ router.post("/test-match", async (req: Request, res: Response) => {
                 db.prepare("UPDATE matches SET oracle_tx_hash = ?, onchain_match_id = ? WHERE id = ?")
                     .run(txHash, onchainMatchId, match.id);
 
-                console.log(`[Admin] On-chain test match published: tx=${txHash}, onchainMatchId=${onchainMatchId}`);
+                console.log(`[Admin] ✅ On-chain test match successfully published: tx=${txHash}, onchainMatchId=${onchainMatchId}`);
             } catch (chainErr: any) {
-                console.warn(`[Admin] On-chain publish failed: ${chainErr.message}`);
+                console.error(`[Admin] ❌ On-chain publish failed: ${chainErr.message}`);
+                // txHash and onchainMatchId remain null, so DB is not updated with invalid values
             }
         }
 

@@ -175,6 +175,11 @@ export async function publishPredictionOnChain(
 
     console.log(`[Chain] publishPrediction tx: ${hash}`);
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status === "reverted") {
+        throw new Error(`Transaction reverted: ${hash}`);
+    }
+
     console.log(`[Chain] publishPrediction confirmed in block ${receipt.blockNumber}, onchainMatchId=${onchainMatchId}`);
     return { txHash: hash, onchainMatchId };
 }

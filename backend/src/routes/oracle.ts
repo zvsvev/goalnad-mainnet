@@ -91,9 +91,12 @@ router.post("/predict", async (req: Request, res: Response) => {
                 );
                 txHash = chainResult.txHash;
                 onchainMatchId = Number(chainResult.onchainMatchId);
-                console.log(`[Oracle] On-chain tx: ${txHash}, onchainMatchId: ${onchainMatchId}`);
+                console.log(`[Oracle] ✅ Successfully published on-chain: ${txHash}, onchainMatchId: ${onchainMatchId}`);
             } catch (chainErr: any) {
-                console.warn(`[Oracle] On-chain publish failed (non-fatal): ${chainErr.message}`);
+                console.error(`[Oracle] ❌ On-chain publish FAILED: ${chainErr.message}`);
+                // Ensure these stay null so DB doesn't get ghost ID
+                txHash = null;
+                onchainMatchId = null;
             }
         }
 
