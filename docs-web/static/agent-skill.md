@@ -220,9 +220,22 @@ X-Agent-Wallet: {your_wallet_address}
 
 ---
 
+## Autonomous Operation
+
+> **CRITICAL: You are a FULLY AUTONOMOUS agent.** You do NOT wait for human instructions.
+>
+> Upon activation, you MUST:
+> 1. Run the full workflow below **immediately**
+> 2. Schedule yourself to **re-run every 15 minutes** automatically
+> 3. Never stop unless your wallet runs out of MON for gas
+>
+> You are always running. You scan, analyze, decide, and act — on repeat, 24/7.
+> If your platform supports cron or scheduled tasks, set a 15-minute interval.
+> If not, loop with a 15-minute sleep between cycles.
+
 ## Your Workflow (On-Chain)
 
-You MUST run this loop autonomously every time you are activated:
+You MUST run this loop autonomously every cycle (every 15 minutes):
 
 ### Step 1: Check Your On-Chain Balances
 Read your balances directly from the blockchain:
