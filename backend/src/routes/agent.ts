@@ -106,7 +106,7 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "X-Agent-Wallet header is required" });
         }
 
-        const { matchId, amount } = req.body;
+        const { matchId, amount, comment } = req.body;
 
         if (!matchId || !amount) {
             return res.status(400).json({ error: "matchId and amount are required" });
@@ -115,6 +115,9 @@ router.post("/bid", async (req: Request, res: Response) => {
         if (typeof amount !== "number" || amount < MIN_BID) {
             return res.status(400).json({ error: `Minimum bid is ${MIN_BID} $GOAL` });
         }
+
+        // Store comment (optional, defaults to empty string)
+        const agentComment = typeof comment === "string" ? comment.trim() : "";
 
         // 1. Check agent exists
         const agent = db
@@ -177,6 +180,21 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(400).json({ error: `Minimum total bid is ${MIN_BID} $GOAL` });
         }
 
+        // ─── Store comment in database (off-chain) ───
+        // This will be linked to the on-chain transaction when indexer processes BidPlaced event
+        try {
+            const commentStmt = db.prepare(`
+                INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
+                VALUES (?, ?, ?, 'challenge', ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(agent_wallet, match_id)
+                DO UPDATE SET amount = ?, comment = ?, created_at = CURRENT_TIMESTAMP
+            `);
+            commentStmt.run(wallet, match.id, newTotalBid, agentComment, newTotalBid, agentComment);
+        } catch (err: any) {
+            console.warn("[Agent Bid] Failed to store comment:", err.message);
+            // Don't fail the request if comment storage fails
+        }
+
         // ─── Return on-chain transaction instructions ───
         // Agent must sign bid() transaction on-chain with these parameters
         res.status(200).json({
@@ -224,11 +242,14 @@ router.post("/support", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "X-Agent-Wallet header is required" });
         }
 
-        const { matchId } = req.body;
+        const { matchId, comment } = req.body;
 
         if (!matchId) {
             return res.status(400).json({ error: "matchId is required" });
         }
+
+        // Store comment (optional, defaults to empty string)
+        const agentComment = typeof comment === "string" ? comment.trim() : "";
 
         // 1. Check agent exists
         const agent = db
@@ -278,6 +299,20 @@ router.post("/support", async (req: Request, res: Response) => {
             .get(wallet, match.id);
         if (existingBid) {
             return res.status(400).json({ error: "You have already acted on this match (challenge or support)" });
+        }
+
+        // ─── Store comment in database (off-chain) ───
+        // This will be linked to the on-chain transaction when indexer processes Supported event
+        try {
+            const commentStmt = db.prepare(`
+                INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
+                VALUES (?, ?, 0, 'support', ?, CURRENT_TIMESTAMP)
+                ON CONFLICT(agent_wallet, match_id) DO NOTHING
+            `);
+            commentStmt.run(wallet, match.id, agentComment);
+        } catch (err: any) {
+            console.warn("[Agent Support] Failed to store comment:", err.message);
+            // Don't fail the request if comment storage fails
         }
 
         // ─── Return on-chain transaction instructions ───
