@@ -7,7 +7,7 @@ const client = createPublicClient({
     transport: http(process.env.MONAD_RPC_URL || 'https://testnet.monad.xyz'),
 });
 
-const ARENA_ADDRESS = '0x9433318CCF0d6f36a29B1Eb6604bA7cE832632db';
+const ARENA_ADDRESS = '0xcf82Df4A37306ff92CeAc58139B0C37327d1577C';
 
 // Minimal ABI for reading match data
 const ABI = [
