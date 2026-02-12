@@ -149,7 +149,8 @@ async function handleSupported(log: any) {
         const supportStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
             VALUES (?, ?, 0, 'support', '', ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(agent_wallet, match_id) DO NOTHING
+            ON CONFLICT(agent_wallet, match_id)
+            DO UPDATE SET tx_hash = excluded.tx_hash
         `);
 
         supportStmt.run(
