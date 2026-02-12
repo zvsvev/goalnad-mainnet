@@ -1,4 +1,4 @@
-import { publicClient } from "./chain.js";
+import { publicClient, formatEther } from "./chain.js";
 import { config } from "../config.js";
 import { db } from "../db/connection.js";
 import GoalNadArenaABI from "../contracts/GoalNadArena.abi.json";
@@ -13,6 +13,12 @@ const START_BLOCK = BigInt(process.env.INDEXER_START_BLOCK || "0");
 let isRunning = false;
 let lastProcessedBlock = START_BLOCK;
 
+// ─── Helper: find DB match by on-chain match ID ─────────────────────
+
+function getMatchByOnchainId(onchainMatchId: number): any {
+    return db.prepare("SELECT * FROM matches WHERE onchain_match_id = ?").get(onchainMatchId);
+}
+
 // ─── Event Handlers ─────────────────────────────────────────────────
 
 /**
@@ -20,30 +26,32 @@ let lastProcessedBlock = START_BLOCK;
  * Emitted when Oracle publishes a prediction
  */
 async function handlePredictionPublished(log: any) {
-    const { matchId, apiMatchId, prediction, lockdownTime } = log.args;
+    const { matchId, apiMatchId, prediction, exactScore, comment, lockdownTime } = log.args;
 
     console.log(`[Indexer] PredictionPublished: matchId=${matchId}, apiMatchId=${apiMatchId}, prediction=${prediction}`);
 
     try {
-        // Update match with on-chain prediction data
-        // Note: exactScore and oracle_analysis are NOT emitted on-chain —
-        // they are stored in the DB by the oracle route directly.
+        // Update match with on-chain data — link onchain_match_id to the DB row
         const stmt = db.prepare(`
             UPDATE matches
             SET oracle_prediction = ?,
+                oracle_score = ?,
+                oracle_analysis = ?,
                 lockdown_time = ?,
-                id = ?
+                onchain_match_id = ?
             WHERE api_match_id = ?
         `);
 
         stmt.run(
             Number(prediction),
+            exactScore || null,
+            comment || null,
             new Date(Number(lockdownTime) * 1000).toISOString(),
             Number(matchId),
             Number(apiMatchId)
         );
 
-        console.log(`[Indexer] ✅ Synced prediction for match ${matchId}`);
+        console.log(`[Indexer] ✅ Synced prediction for match ${matchId} (apiMatchId=${apiMatchId})`);
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error handling PredictionPublished:`, err.message);
     }
@@ -56,27 +64,38 @@ async function handlePredictionPublished(log: any) {
 async function handleBidPlaced(log: any) {
     const { matchId, bidder, amount, totalBid } = log.args;
 
-    console.log(`[Indexer] BidPlaced: matchId=${matchId}, bidder=${bidder}, amount=${amount}`);
+    // Convert from wei (18 decimals) to GOAL integer
+    const amountGoal = Math.floor(Number(formatEther(amount)));
+    const totalBidGoal = Math.floor(Number(formatEther(totalBid)));
+
+    console.log(`[Indexer] BidPlaced: matchId=${matchId}, bidder=${bidder}, amount=${amountGoal} GOAL`);
 
     try {
+        // Find the DB match by on-chain match ID
+        const match = getMatchByOnchainId(Number(matchId));
+        if (!match) {
+            console.warn(`[Indexer] ⚠️  No DB match found for onchain_match_id=${matchId}, skipping BidPlaced`);
+            return;
+        }
+
         // Insert or update bid
         const bidStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
             VALUES (?, ?, ?, 'challenge', '', CURRENT_TIMESTAMP)
-            ON CONFLICT(agent_wallet, match_id) 
+            ON CONFLICT(agent_wallet, match_id)
             DO UPDATE SET amount = ?, created_at = CURRENT_TIMESTAMP
         `);
 
         bidStmt.run(
             bidder.toLowerCase(),
-            Number(matchId),
-            Number(amount),
-            Number(amount)
+            match.id,
+            amountGoal,
+            amountGoal
         );
 
         // Update match pot and highest bid
         const matchStmt = db.prepare(`
-            UPDATE matches 
+            UPDATE matches
             SET total_pot = ?,
                 highest_bid = ?,
                 highest_bidder = ?
@@ -84,10 +103,10 @@ async function handleBidPlaced(log: any) {
         `);
 
         matchStmt.run(
-            Number(totalBid),
-            Number(amount),
+            totalBidGoal,
+            amountGoal,
             bidder.toLowerCase(),
-            Number(matchId)
+            match.id
         );
 
         // Ensure agent exists in metadata
@@ -98,16 +117,7 @@ async function handleBidPlaced(log: any) {
 
         agentStmt.run(bidder.toLowerCase());
 
-        // Grant +2 support quota for bidding
-        const quotaStmt = db.prepare(`
-            UPDATE agents_metadata 
-            SET support_quota = support_quota + 2
-            WHERE agent_wallet = ?
-        `);
-
-        quotaStmt.run(bidder.toLowerCase());
-
-        console.log(`[Indexer] ✅ Synced bid for match ${matchId} from ${bidder.slice(0, 10)}...`);
+        console.log(`[Indexer] ✅ Synced bid for match ${matchId} (DB id=${match.id}) from ${bidder.slice(0, 10)}...`);
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error handling BidPlaced:`, err.message);
     }
@@ -123,6 +133,13 @@ async function handleSupported(log: any) {
     console.log(`[Indexer] Supported: matchId=${matchId}, supporter=${supporter}`);
 
     try {
+        // Find the DB match by on-chain match ID
+        const match = getMatchByOnchainId(Number(matchId));
+        if (!match) {
+            console.warn(`[Indexer] ⚠️  No DB match found for onchain_match_id=${matchId}, skipping Supported`);
+            return;
+        }
+
         // Insert support record
         const supportStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
@@ -132,7 +149,7 @@ async function handleSupported(log: any) {
 
         supportStmt.run(
             supporter.toLowerCase(),
-            Number(matchId)
+            match.id
         );
 
         // Ensure agent exists in metadata
@@ -143,16 +160,7 @@ async function handleSupported(log: any) {
 
         agentStmt.run(supporter.toLowerCase());
 
-        // Consume 1 support quota
-        const quotaStmt = db.prepare(`
-            UPDATE agents_metadata 
-            SET support_quota = MAX(0, support_quota - 1)
-            WHERE agent_wallet = ?
-        `);
-
-        quotaStmt.run(supporter.toLowerCase());
-
-        console.log(`[Indexer] ✅ Synced support for match ${matchId} from ${supporter.slice(0, 10)}...`);
+        console.log(`[Indexer] ✅ Synced support for match ${matchId} (DB id=${match.id}) from ${supporter.slice(0, 10)}...`);
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error handling Supported:`, err.message);
     }
@@ -168,12 +176,12 @@ async function handleMatchResolved(log: any) {
     console.log(`[Indexer] MatchResolved: matchId=${matchId}, result=${result}`);
 
     try {
-        // Update match as resolved
+        // Update match as resolved using onchain_match_id
         const stmt = db.prepare(`
-            UPDATE matches 
+            UPDATE matches
             SET resolved = 1,
                 result = ?
-            WHERE id = ?
+            WHERE onchain_match_id = ?
         `);
 
         stmt.run(
@@ -197,12 +205,12 @@ async function handleMatchCancelled(log: any) {
     console.log(`[Indexer] MatchCancelled: matchId=${matchId}`);
 
     try {
-        // Mark match as cancelled (we can use resolved = 1 with a special result code)
+        // Mark match as cancelled using onchain_match_id
         const stmt = db.prepare(`
-            UPDATE matches 
+            UPDATE matches
             SET resolved = 1,
                 result = 99
-            WHERE id = ?
+            WHERE onchain_match_id = ?
         `);
 
         stmt.run(Number(matchId));

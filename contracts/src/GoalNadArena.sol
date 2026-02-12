@@ -170,6 +170,70 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         emit PredictionPublished(matchId, apiMatchId, prediction, exactScore, comment, lockdownTime);
     }
 
+    // ─── Admin: Bid on Behalf of Agent ──────────────────────────────────
+    /// @notice Admin places a challenge bid on behalf of an agent.
+    ///         Tokens come from admin wallet; bid is attributed to agent address.
+    /// @param matchId The arena match ID
+    /// @param amount The $GOAL amount to bid
+    /// @param agent The agent address to attribute the bid to
+    function bidOnBehalf(uint256 matchId, uint256 amount, address agent) external onlyOwner nonReentrant {
+        Match storage m = matches[matchId];
+        if (m.lockdownTime == 0) revert MatchNotFound(matchId);
+        if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
+        if (m.resolved) revert MatchAlreadyResolved(matchId);
+        if (m.cancelled) revert MatchCancelledError(matchId);
+        if (hasSupported[matchId][agent]) revert MutualExclusivity(matchId);
+        require(amount > 0, "Zero bid");
+
+        uint256 currentBid = bids[matchId][agent];
+        uint256 newTotalBid = currentBid + amount;
+
+        if (newTotalBid < MIN_BID) revert BidTooLow(MIN_BID, newTotalBid);
+        if (newTotalBid < m.highestBid + MIN_INCREMENT && agent != m.highestBidder) {
+            revert BidTooLow(m.highestBid + MIN_INCREMENT, newTotalBid);
+        }
+
+        // Transfer tokens from admin (msg.sender), attributed to agent
+        goalToken.safeTransferFrom(msg.sender, address(this), amount);
+
+        if (!hasBid[matchId][agent]) {
+            hasBid[matchId][agent] = true;
+            _bidders[matchId].push(agent);
+            supportQuota[agent] += 2;
+        }
+
+        bids[matchId][agent] = newTotalBid;
+        m.totalPot += amount;
+
+        if (newTotalBid > m.highestBid) {
+            m.highestBid = newTotalBid;
+            m.highestBidder = agent;
+        }
+
+        emit BidPlaced(matchId, agent, amount, newTotalBid);
+    }
+
+    // ─── Admin: Support on Behalf of Agent ───────────────────────────────
+    /// @notice Admin supports on behalf of an agent
+    /// @param matchId The arena match ID
+    /// @param agent The agent address to attribute the support to
+    function supportOnBehalf(uint256 matchId, address agent) external onlyOwner {
+        Match storage m = matches[matchId];
+        if (m.lockdownTime == 0) revert MatchNotFound(matchId);
+        if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
+        if (m.resolved) revert MatchAlreadyResolved(matchId);
+        if (m.cancelled) revert MatchCancelledError(matchId);
+        if (hasBid[matchId][agent]) revert MutualExclusivity(matchId);
+        if (hasSupported[matchId][agent]) revert AlreadySupported(matchId);
+        if (supportQuota[agent] == 0) revert InsufficientQuota();
+
+        supportQuota[agent] -= 1;
+        hasSupported[matchId][agent] = true;
+        _supporters[matchId].push(agent);
+
+        emit Supported(matchId, agent);
+    }
+
     // ─── Agent: Bid (Challenge the Oracle) ───────────────────────────────
     /// @notice Place a challenge bid against the Oracle's prediction
     /// @param matchId The arena match ID

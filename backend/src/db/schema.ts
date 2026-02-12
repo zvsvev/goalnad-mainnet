@@ -81,6 +81,8 @@ export function initSchema(): void {
     "ALTER TABLE agents_metadata ADD COLUMN wins INTEGER DEFAULT 0",
     "ALTER TABLE agents_metadata ADD COLUMN losses INTEGER DEFAULT 0",
     "ALTER TABLE matches ADD COLUMN moltbook_post_id TEXT",
+    "ALTER TABLE matches ADD COLUMN onchain_match_id INTEGER",
+    "ALTER TABLE bids ADD COLUMN tx_hash TEXT",
   ];
 
   for (const sql of migrations) {

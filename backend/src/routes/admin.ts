@@ -111,20 +111,25 @@ router.post("/test-match", async (req: Request, res: Response) => {
 
         // Publish on-chain if enabled
         let txHash: string | null = null;
+        let onchainMatchId: number | null = null;
         if (publishOnChain && isChainEnabled()) {
             try {
                 const lockdownTimestamp = Math.floor(lockdownTime.getTime() / 1000);
-                txHash = await publishPredictionOnChain(
+                const chainResult = await publishPredictionOnChain(
                     fakeApiMatchId,
                     oraclePrediction,
+                    oracleScore || "",
+                    analysis,
                     lockdownTimestamp
                 );
+                txHash = chainResult.txHash;
+                onchainMatchId = Number(chainResult.onchainMatchId);
 
-                // Store tx hash
-                db.prepare("UPDATE matches SET oracle_tx_hash = ? WHERE id = ?")
-                    .run(txHash, match.id);
+                // Store tx hash and on-chain match ID
+                db.prepare("UPDATE matches SET oracle_tx_hash = ?, onchain_match_id = ? WHERE id = ?")
+                    .run(txHash, onchainMatchId, match.id);
 
-                console.log(`[Admin] On-chain test match published: tx=${txHash}`);
+                console.log(`[Admin] On-chain test match published: tx=${txHash}, onchainMatchId=${onchainMatchId}`);
             } catch (chainErr: any) {
                 console.warn(`[Admin] On-chain publish failed: ${chainErr.message}`);
             }
@@ -282,16 +287,14 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
 
         // Resolve on-chain too
         let onChainTxHash: string | null = null;
-        if (resolveOnChain && isChainEnabled() && match.oracle_tx_hash) {
+        if (resolveOnChain && isChainEnabled() && match.onchain_match_id != null) {
             try {
                 const luckyAddress = (resolution.winners?.length > 0
                     ? resolution.winners[0].wallet
                     : "0x0000000000000000000000000000000000000000") as Address;
 
-                // We need to figure out the on-chain matchId from the api_match_id
-                // The contract assigns sequential IDs, so we use api_match_id
                 onChainTxHash = await resolveMatchOnChain(
-                    BigInt(match.api_match_id),
+                    BigInt(match.onchain_match_id),
                     matchResult,
                     luckyAddress
                 );

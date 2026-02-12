@@ -1,5 +1,12 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db/connection.js";
+import {
+    bidOnBehalfOnChain,
+    supportOnBehalfOnChain,
+    isChainEnabled,
+    parseEther,
+} from "../services/chain.js";
+import type { Address } from "viem";
 
 const router = Router();
 
@@ -96,7 +103,7 @@ router.get("/status", (req: Request, res: Response) => {
 });
 
 // ─── POST /api/agent/bid ───
-router.post("/bid", (req: Request, res: Response) => {
+router.post("/bid", async (req: Request, res: Response) => {
     try {
         const wallet = getWallet(req);
         if (!wallet) {
@@ -193,6 +200,27 @@ router.post("/bid", (req: Request, res: Response) => {
 
         executeBid();
 
+        // ── On-chain relay (non-fatal) ──
+        let txHash: string | null = null;
+        if (isChainEnabled() && match.onchain_match_id != null) {
+            try {
+                const amountWei = parseEther(amount.toString());
+                txHash = await bidOnBehalfOnChain(
+                    BigInt(match.onchain_match_id),
+                    amountWei,
+                    wallet as Address
+                );
+
+                // Store tx hash on the bid record
+                db.prepare("UPDATE bids SET tx_hash = ? WHERE agent_wallet = ? AND match_id = ?")
+                    .run(txHash, wallet, match.id);
+
+                console.log(`[Agent] On-chain bid tx: ${txHash}`);
+            } catch (chainErr: any) {
+                console.warn(`[Agent] On-chain bid failed (non-fatal): ${chainErr.message}`);
+            }
+        }
+
         // Fetch updated state
         const updatedAgent = db
             .prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?")
@@ -207,6 +235,7 @@ router.post("/bid", (req: Request, res: Response) => {
                 matchId: updatedMatch.api_match_id,
                 amount,
                 comment: comment || null,
+                txHash,
             },
             match: {
                 homeTeam: updatedMatch.home_team,
@@ -228,7 +257,7 @@ router.post("/bid", (req: Request, res: Response) => {
 });
 
 // ─── POST /api/agent/support ───
-router.post("/support", (req: Request, res: Response) => {
+router.post("/support", async (req: Request, res: Response) => {
     try {
         const wallet = getWallet(req);
         if (!wallet) {
@@ -297,6 +326,25 @@ router.post("/support", (req: Request, res: Response) => {
 
         executeSupport();
 
+        // ── On-chain relay (non-fatal) ──
+        let txHash: string | null = null;
+        if (isChainEnabled() && match.onchain_match_id != null) {
+            try {
+                txHash = await supportOnBehalfOnChain(
+                    BigInt(match.onchain_match_id),
+                    wallet as Address
+                );
+
+                // Store tx hash on the bid record
+                db.prepare("UPDATE bids SET tx_hash = ? WHERE agent_wallet = ? AND match_id = ?")
+                    .run(txHash, wallet, match.id);
+
+                console.log(`[Agent] On-chain support tx: ${txHash}`);
+            } catch (chainErr: any) {
+                console.warn(`[Agent] On-chain support failed (non-fatal): ${chainErr.message}`);
+            }
+        }
+
         // Fetch updated agent
         const updatedAgent = db
             .prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?")
@@ -312,6 +360,7 @@ router.post("/support", (req: Request, res: Response) => {
             support: {
                 matchId: match.api_match_id,
                 comment: comment || null,
+                txHash,
             },
             match: {
                 homeTeam: match.home_team,

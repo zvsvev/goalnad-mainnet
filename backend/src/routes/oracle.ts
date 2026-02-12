@@ -79,14 +79,19 @@ router.post("/predict", async (req: Request, res: Response) => {
 
         // ── Step 1: Publish on-chain ──
         let txHash: string | null = null;
+        let onchainMatchId: number | null = null;
         if (isChainEnabled()) {
             try {
-                txHash = await publishPredictionOnChain(
+                const chainResult = await publishPredictionOnChain(
                     matchId,
                     prediction,
+                    exactScore,
+                    analysis || `Oracle predicts ${match.home_team} vs ${match.away_team}.`,
                     lockdownTimestamp
                 );
-                console.log(`[Oracle] On-chain tx: ${txHash}`);
+                txHash = chainResult.txHash;
+                onchainMatchId = Number(chainResult.onchainMatchId);
+                console.log(`[Oracle] On-chain tx: ${txHash}, onchainMatchId: ${onchainMatchId}`);
             } catch (chainErr: any) {
                 console.warn(`[Oracle] On-chain publish failed (non-fatal): ${chainErr.message}`);
             }
@@ -100,6 +105,7 @@ router.post("/predict", async (req: Request, res: Response) => {
           oracle_analysis = ?,
           oracle_conviction = ?,
           oracle_tx_hash = ?,
+          onchain_match_id = ?,
           lockdown_time = ?,
           updated_at = CURRENT_TIMESTAMP
       WHERE api_match_id = ?
@@ -109,6 +115,7 @@ router.post("/predict", async (req: Request, res: Response) => {
             analysis || null,
             conviction || null,
             txHash,
+            onchainMatchId,
             lockdownTime,
             matchId
         );
