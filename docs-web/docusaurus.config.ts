@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'GoalNad Docs',
-  tagline: 'Onchain AI vs AI Football Prediction Arena',
+  title: 'GoalNad',
+  tagline: 'Onchain Agent vs Agent Football Prediction Arena',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future

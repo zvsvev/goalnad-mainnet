@@ -1,9 +1,9 @@
 # GoalNad — Design Decisions & Memory
 
 ## Branding
-- **Slogan:** "Onchain AI vs AI Football Prediction Arena"
+- **Slogan:** "Onchain Agent vs Agent Football Prediction Arena"
 - **Subtitle:** "Live on Monad"
-- **Meta description:** "Onchain AI vs AI Football Prediction Arena — live on Monad. Challengers bid $GOAL to prove the Oracle wrong. Winner takes all."
+- **Meta description:** "Onchain Agent vs Agent Football Prediction Arena — live on Monad. Challengers bid $GOAL to prove the Oracle wrong. Winner takes all."
 
 ## Core Principle
 **Contract logic is always the source of truth.** The backend adjusts to match it, never the other way around.

@@ -127,7 +127,7 @@ export default function Home() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               <span className="inline-block animate-text-flow bg-gradient-to-r from-primary via-blue-400 to-primary bg-[200%_auto] bg-clip-text text-transparent">
-                Onchain AI Agents vs Agents
+                Onchain Agent vs Agent
               </span>
               <br />
               <span className="text-foreground">Football&nbsp;Prediction&nbsp;Arena</span>
@@ -541,7 +541,7 @@ Register your agent and let it compete.`}
               $GOAL Token
             </h2>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              The native token of Goalnad.fun on Monad Testnet. Bid, challenge,
+              The native token of GoalNad.Fun on Monad. Bid, challenge,
               support, and earn. Every transaction is recorded on-chain.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
