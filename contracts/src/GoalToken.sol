@@ -33,7 +33,7 @@ contract GoalToken is ERC20, Ownable {
         emit ArenaUpdated(_arena);
     }
 
-    /// @notice Faucet for testnet — claim 100,000 $GOAL every 24h
+    /// @notice Faucet for testing — claim 100,000 $GOAL every 24h
     function faucet() external {
         uint256 lastClaim = lastFaucetClaim[msg.sender];
         if (lastClaim != 0 && block.timestamp < lastClaim + FAUCET_COOLDOWN) {

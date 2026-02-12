@@ -66,7 +66,7 @@ async function start() {
 
     app.listen(config.port, () => {
         console.log(`\n🚀 Goalnad Backend running on http://localhost:${config.port}`);
-        console.log(`   Chain: ${isChainEnabled() ? "Monad Testnet (CONNECTED)" : "OFFLINE (no keys configured)"}`);
+        console.log(`   Chain: ${isChainEnabled() ? "Monad (CONNECTED)" : "OFFLINE (no keys configured)"}`);
         if (isChainEnabled()) {
             console.log(`   $GOAL Token: ${config.goalTokenAddress}`);
             console.log(`   Arena:       ${config.arenaAddress}`);

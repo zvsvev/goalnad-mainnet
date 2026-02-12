@@ -444,7 +444,7 @@ export default function MatchPage() {
                       </span>
                       {bid.tx_hash && (
                         <a
-                          href={`https://testnet.monadscan.com/tx/${bid.tx_hash}`}
+                          href={`https://monadscan.com/tx/${bid.tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors"

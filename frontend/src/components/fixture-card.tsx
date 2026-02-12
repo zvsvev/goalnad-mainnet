@@ -188,7 +188,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                                 )}
                                 {match.oracle_tx_hash && (
                                     <a
-                                        href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+                                        href={`https://monadscan.com/tx/${match.oracle_tx_hash}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="flex items-center gap-1 text-[9px] font-mono text-primary/70 hover:text-primary transition-colors"

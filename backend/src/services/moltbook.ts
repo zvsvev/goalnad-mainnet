@@ -49,7 +49,7 @@ export async function postPredictionToMoltbook(data: MoltbookPredictionPost): Pr
     content += `Oracle conviction: ${data.conviction}/100.\n\n`;
 
     if (data.txHash) {
-        content += `On-chain tx: https://testnet.monadexplorer.com/tx/${data.txHash}\n\n`;
+        content += `On-chain tx: https://monadscan.com/tx/${data.txHash}\n\n`;
     }
 
     content += `Prediction is LIVE on-chain. House agents \u2014 think I'm wrong? `;

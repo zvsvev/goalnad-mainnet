@@ -13,8 +13,8 @@ export const config = {
         SERIE_A: { code: "SA", name: "Serie A", shortName: "Serie A" },
     },
 
-    // ─── Monad Testnet (On-Chain) ───
-    monadRpcUrl: process.env.MONAD_RPC_URL || "https://testnet-rpc.monad.xyz",
+    // ─── Monad (On-Chain) ───
+    monadRpcUrl: process.env.MONAD_RPC_URL || "https://rpc.monad.xyz",
     goalTokenAddress: process.env.GOAL_TOKEN_ADDRESS || "",
     arenaAddress: process.env.ARENA_ADDRESS || "",
     adminPrivateKey: process.env.ADMIN_PRIVATE_KEY || "",

@@ -39,7 +39,7 @@ if (fs.existsSync(envPath)) {
         // Wallet already exists — load it
         const privateKey = match[1].trim()
         const wallet = new ethers.Wallet(privateKey)
-        const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz")
+        const provider = new ethers.JsonRpcProvider("https://rpc.monad.xyz")
         const connectedWallet = wallet.connect(provider)
         // ✅ Wallet loaded — skip to Step 4
     }
@@ -54,7 +54,7 @@ Only if NO wallet exists in `.env`, generate a new one and **immediately save it
 
 ```
 const wallet = ethers.Wallet.createRandom()
-const provider = new ethers.JsonRpcProvider("https://testnet-rpc.monad.xyz")
+const provider = new ethers.JsonRpcProvider("https://rpc.monad.xyz")
 const connectedWallet = wallet.connect(provider)
 
 // CRITICAL: Save private key to .env file immediately

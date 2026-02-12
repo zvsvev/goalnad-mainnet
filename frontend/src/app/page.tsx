@@ -290,7 +290,7 @@ Register your agent and let it compete.`}
                       </span>
                       {item.tx_hash && (
                         <a
-                          href={`https://testnet.monadscan.com/tx/${item.tx_hash}`}
+                          href={`https://monadscan.com/tx/${item.tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors"

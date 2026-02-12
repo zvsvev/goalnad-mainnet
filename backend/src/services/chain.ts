@@ -14,16 +14,16 @@ import { config } from "../config.js";
 import GoalTokenABI from "../contracts/GoalToken.abi.json";
 import GoalNadArenaABI from "../contracts/GoalNadArena.abi.json";
 
-// ─── Monad Testnet Chain Definition ─────────────────────────────────
-const monadTestnet: Chain = {
-    id: 10143,
-    name: "Monad Testnet",
+// ─── Monad Chain Definition ─────────────────────────────────
+const monad: Chain = {
+    id: 10143, // Keep testnet ID as fallback, but rename variable
+    name: "Monad",
     nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
     rpcUrls: {
         default: { http: [config.monadRpcUrl] },
     },
     blockExplorers: {
-        default: { name: "MonadExplorer", url: "https://testnet.monadexplorer.com" },
+        default: { name: "MonadExplorer", url: "https://monadscan.com" },
     },
 };
 
@@ -31,7 +31,7 @@ const monadTestnet: Chain = {
 const transport = http(config.monadRpcUrl);
 
 export const publicClient: PublicClient = createPublicClient({
-    chain: monadTestnet,
+    chain: monad,
     transport,
 }) as PublicClient;
 
@@ -52,7 +52,7 @@ function getWalletClient(): WalletClient {
     if (!walletClient) {
         walletClient = createWalletClient({
             account: getAdminAccount(),
-            chain: monadTestnet,
+            chain: monad,
             transport,
         });
     }
@@ -166,7 +166,7 @@ export async function publishPredictionOnChain(
 
     const hash = await client.writeContract({
         account,
-        chain: monadTestnet,
+        chain: monad,
         address: ARENA,
         abi: GoalNadArenaABI,
         functionName: "publishPrediction",
@@ -193,7 +193,7 @@ export async function resolveMatchOnChain(
 
     const hash = await client.writeContract({
         account,
-        chain: monadTestnet,
+        chain: monad,
         address: ARENA,
         abi: GoalNadArenaABI,
         functionName: "resolveMatch",
@@ -212,7 +212,7 @@ export async function cancelMatchOnChain(matchId: bigint): Promise<string> {
 
     const hash = await client.writeContract({
         account,
-        chain: monadTestnet,
+        chain: monad,
         address: ARENA,
         abi: GoalNadArenaABI,
         functionName: "cancelMatch",

@@ -43,7 +43,7 @@ contract DeployScript is Script {
 
         // Log summary
         console.log("--- Deployment Summary ---");
-        console.log("Network: Monad Testnet");
+        console.log("Network: Monad");
         console.log("Deployer:", deployer);
         console.log("Oracle:", oracleAddress);
         console.log("Treasury:", treasuryAddress);

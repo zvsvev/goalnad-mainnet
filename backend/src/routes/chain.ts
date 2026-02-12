@@ -18,15 +18,15 @@ const router = Router();
 // ─── GET /api/chain/contracts — contract addresses & status ───
 router.get("/contracts", (_req: Request, res: Response) => {
     res.json({
-        chain: "monad-testnet",
-        chainId: 10143,
+        chain: "monad",
+        chainId: 10143, // Defaults to testnet ID for now but labeled neutrally
         rpc: config.monadRpcUrl,
         enabled: isChainEnabled(),
         contracts: {
             goalToken: config.goalTokenAddress || null,
             arena: config.arenaAddress || null,
         },
-        explorer: "https://testnet.monadexplorer.com",
+        explorer: "https://monadscan.com",
     });
 });
 
