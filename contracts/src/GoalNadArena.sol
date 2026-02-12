@@ -98,6 +98,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     error MatchAlreadyExists(uint256 matchId);
     error MatchNotFound(uint256 matchId);
     error AuctionLocked(uint256 matchId);
+    error MatchNotReady(uint256 matchId);
     error BidTooLow(uint256 required, uint256 sent);
     error InsufficientQuota();
     error AlreadyBid(uint256 matchId);
@@ -109,7 +110,9 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     error NothingToClaim(uint256 matchId);
     error MatchAlreadyResolved(uint256 matchId);
     error InvalidPrediction();
+    error LockdownInPast();
     error ZeroAddress();
+    error NoSupporters(uint256 matchId);
 
     // ─── Modifiers ───────────────────────────────────────────────────────
     modifier onlyOracle() {
@@ -159,6 +162,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
         uint256 lockdownTime
     ) external onlyOracle returns (uint256 matchId) {
         if (prediction < 1 || prediction > 3) revert InvalidPrediction();
+        if (lockdownTime <= block.timestamp) revert LockdownInPast();
 
         matchId = nextMatchId++;
         Match storage m = matches[matchId];
@@ -177,6 +181,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     /// @param amount The $GOAL amount to bid
     /// @param agent The agent address to attribute the bid to
     function bidOnBehalf(uint256 matchId, uint256 amount, address agent) external onlyOwner nonReentrant {
+        if (agent == address(0)) revert ZeroAddress();
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
@@ -218,6 +223,7 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     /// @param matchId The arena match ID
     /// @param agent The agent address to attribute the support to
     function supportOnBehalf(uint256 matchId, address agent) external onlyOwner {
+        if (agent == address(0)) revert ZeroAddress();
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (block.timestamp >= m.lockdownTime) revert AuctionLocked(matchId);
@@ -303,18 +309,16 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
     /// @notice Resolve a match after it finishes. Sets payouts for winners.
     /// @param matchId The arena match ID
     /// @param result 1=Home, 2=Away, 3=Draw
-    /// @param luckySupporter Address of randomly selected supporter (off-chain)
     function resolveMatch(
         uint256 matchId,
-        uint8 result,
-        address luckySupporter
+        uint8 result
     ) external onlyOracle nonReentrant {
         Match storage m = matches[matchId];
         if (m.lockdownTime == 0) revert MatchNotFound(matchId);
         if (m.resolved) revert MatchAlreadyResolved(matchId);
         if (m.cancelled) revert MatchCancelledError(matchId);
         if (result < 1 || result > 3) revert InvalidPrediction();
-        if (block.timestamp < m.lockdownTime) revert AuctionLocked(matchId);
+        if (block.timestamp < m.lockdownTime) revert MatchNotReady(matchId);
 
         m.result = result;
         m.resolved = true;
@@ -334,7 +338,8 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
             _distributeDraw(matchId, pot);
             emit MatchResolved(matchId, result, address(0));
         } else if (oracleCorrect) {
-            // Oracle was right → supporters win
+            // Oracle was right → select random supporter on-chain
+            address luckySupporter = _selectRandomSupporter(matchId);
             _distributeOracleWin(matchId, pot, luckySupporter);
             emit MatchResolved(matchId, result, luckySupporter);
         } else {
@@ -437,6 +442,20 @@ contract GoalNadArena is Ownable, ReentrancyGuard {
             supporterCount: _supporters[matchId].length,
             bidderCount: _bidders[matchId].length
         });
+    }
+
+    // ─── Internal: Random Supporter Selection ────────────────────────────
+    /// @dev Selects a random supporter using on-chain randomness (block.prevrandao)
+    /// @param matchId The arena match ID
+    /// @return selected The randomly selected supporter address
+    function _selectRandomSupporter(uint256 matchId) internal view returns (address selected) {
+        address[] storage supporters = _supporters[matchId];
+        uint256 count = supporters.length;
+        if (count == 0) return address(0);
+        uint256 randomIndex = uint256(
+            keccak256(abi.encodePacked(block.prevrandao, matchId, block.timestamp))
+        ) % count;
+        return supporters[randomIndex];
     }
 
     // ─── Internal Payout Logic ───────────────────────────────────────────

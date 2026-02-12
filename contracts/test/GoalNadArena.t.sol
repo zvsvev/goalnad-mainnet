@@ -297,7 +297,7 @@ contract GoalNadArenaTest is Test {
 
         // Resolve: Away win (Oracle was wrong)
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 2, address(0));
+        arena.resolveMatch(matchId, 2);
 
         // Agent2 (highest bidder) gets 99% of pot (12000 - 1% burn = 11880)
         uint256 pot = 12000 ether;
@@ -339,7 +339,7 @@ contract GoalNadArenaTest is Test {
 
         // Resolve: Home win (Oracle correct), agent1 is lucky supporter
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 1, agent1);
+        arena.resolveMatch(matchId, 1);
 
         // Lucky supporter gets 99% of pot
         assertEq(arena.claimable(matchId, agent1), supporterShare);
@@ -362,7 +362,7 @@ contract GoalNadArenaTest is Test {
 
         // Resolve: Home win, no supporters → 99% to treasury (1% burned)
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 1, address(0));
+        arena.resolveMatch(matchId, 1);
 
         uint256 pot = 5000 ether;
         uint256 burnAmount = pot / 100; // 1%
@@ -385,7 +385,7 @@ contract GoalNadArenaTest is Test {
         uint256 treasuryBefore = token.balanceOf(treasuryAddr);
 
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 3, address(0));
+        arena.resolveMatch(matchId, 3);
 
         // Draw refund: full refund, no fees
         assertEq(arena.claimable(matchId, agent1), 5000 ether);
@@ -421,7 +421,7 @@ contract GoalNadArenaTest is Test {
 
         // Resolve: Draw (Oracle predicted Draw → Oracle correct)
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 3, agent1);
+        arena.resolveMatch(matchId, 3);
 
         // Lucky supporter gets 99% of pot (6000 - 1% burn = 5940)
         uint256 pot = 6000 ether;
@@ -436,7 +436,7 @@ contract GoalNadArenaTest is Test {
 
         // Should resolve without error even with no bids
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 1, address(0));
+        arena.resolveMatch(matchId, 1);
 
         (, , , , , , , , bool resolved, ) = arena.matches(matchId);
         assertTrue(resolved);
@@ -448,11 +448,11 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 1, address(0));
+        arena.resolveMatch(matchId, 1);
 
         vm.prank(oracleAddr);
         vm.expectRevert(abi.encodeWithSelector(GoalNadArena.MatchAlreadyResolved.selector, matchId));
-        arena.resolveMatch(matchId, 2, address(0));
+        arena.resolveMatch(matchId, 2);
     }
 
     // ─── Cancel Tests ────────────────────────────────────────────────────
@@ -495,7 +495,7 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 2, address(0));
+        arena.resolveMatch(matchId, 2);
 
         vm.deal(agent1, 1 ether);
         vm.prank(agent1);
@@ -515,7 +515,7 @@ contract GoalNadArenaTest is Test {
         vm.warp(block.timestamp + ONE_DAY + 1);
 
         vm.prank(oracleAddr);
-        arena.resolveMatch(matchId, 1, address(0)); // Oracle wins, no supporters
+        arena.resolveMatch(matchId, 1); // Oracle wins, no supporters
 
         // Agent1 (challenger) has nothing to claim since Oracle won
         vm.deal(agent1, 1 ether);

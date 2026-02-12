@@ -186,8 +186,7 @@ export async function publishPredictionOnChain(
 
 export async function resolveMatchOnChain(
     matchId: bigint,
-    result: number,
-    luckySupporter: Address
+    result: number
 ): Promise<string> {
     const client = getWalletClient();
     const account = getAdminAccount();
@@ -198,7 +197,7 @@ export async function resolveMatchOnChain(
         address: ARENA,
         abi: GoalNadArenaABI,
         functionName: "resolveMatch",
-        args: [matchId, result, luckySupporter],
+        args: [matchId, result],
     });
 
     console.log(`[Chain] resolveMatch tx: ${hash}`);

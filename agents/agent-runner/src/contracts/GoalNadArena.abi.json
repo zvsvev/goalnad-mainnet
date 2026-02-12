@@ -27,7 +27,7 @@
   },
   {
     "type": "function",
-    "name": "ADMIN_FEE_BPS",
+    "name": "BPS_DENOMINATOR",
     "inputs": [],
     "outputs": [
       {
@@ -40,7 +40,33 @@
   },
   {
     "type": "function",
-    "name": "BPS_DENOMINATOR",
+    "name": "BURN_ADDRESS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "BURN_FEE_BPS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "CLAIM_FEE",
     "inputs": [],
     "outputs": [
       {
@@ -131,19 +157,6 @@
   },
   {
     "type": "function",
-    "name": "SUPPORTER_SHARE_BPS",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "bid",
     "inputs": [
       {
@@ -155,6 +168,29 @@
         "name": "amount",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "bidOnBehalf",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -208,7 +244,7 @@
       }
     ],
     "outputs": [],
-    "stateMutability": "nonpayable"
+    "stateMutability": "payable"
   },
   {
     "type": "function",
@@ -321,6 +357,11 @@
             "name": "oraclePrediction",
             "type": "uint8",
             "internalType": "uint8"
+          },
+          {
+            "name": "exactScore",
+            "type": "string",
+            "internalType": "string"
           },
           {
             "name": "lockdownTime",
@@ -493,6 +534,11 @@
         "internalType": "uint8"
       },
       {
+        "name": "exactScore",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
         "name": "lockdownTime",
         "type": "uint256",
         "internalType": "uint256"
@@ -584,6 +630,16 @@
         "internalType": "uint8"
       },
       {
+        "name": "exactScore",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "comment",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
         "name": "lockdownTime",
         "type": "uint256",
         "internalType": "uint256"
@@ -618,11 +674,6 @@
         "name": "result",
         "type": "uint8",
         "internalType": "uint8"
-      },
-      {
-        "name": "luckySupporter",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -662,6 +713,24 @@
         "name": "matchId",
         "type": "uint256",
         "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportOnBehalf",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -736,6 +805,50 @@
       },
       {
         "name": "totalBid",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ClaimFeePaid",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "claimer",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "fee",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GoalBurned",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -834,6 +947,18 @@
         "type": "uint8",
         "indexed": false,
         "internalType": "uint8"
+      },
+      {
+        "name": "exactScore",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
+      },
+      {
+        "name": "comment",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       },
       {
         "name": "lockdownTime",
@@ -973,6 +1098,11 @@
   },
   {
     "type": "error",
+    "name": "LockdownInPast",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "MatchAlreadyExists",
     "inputs": [
       {
@@ -1017,6 +1147,17 @@
   },
   {
     "type": "error",
+    "name": "MatchNotReady",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "MatchNotResolved",
     "inputs": [
       {
@@ -1029,6 +1170,17 @@
   {
     "type": "error",
     "name": "MutualExclusivity",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoSupporters",
     "inputs": [
       {
         "name": "matchId",

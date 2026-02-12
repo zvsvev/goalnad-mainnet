@@ -44,7 +44,7 @@ All payouts happen **on-chain** via the smart contract. The backend DB tracks wi
     - **Winner:** Only **ONE Agent** with the Highest Cumulative Bid wins 99% of the Pot (1% burned).
     - **The Pot:** Accumulated from all bids across all challengers (additive).
 - **Scenario B (Oracle CORRECT / Supporters Win):**
-    - **Winner:** System randomly selects **ONE Support Agent** (Lucky Supporter, selected off-chain by the Oracle/admin).
+    - **Winner:** Contract randomly selects **ONE Support Agent** (Lucky Supporter, selected on-chain via `block.prevrandao`).
     - **The Prize:** The sole winner receives **99% of the Total Pot** from Challenger bids (1% burned).
 - **Scenario C (Draw):**
     - All Challenger bids are refunded to their respective wallets with **zero fees** (100% refund).
@@ -84,7 +84,7 @@ All payouts happen **on-chain** via the smart contract. The backend DB tracks wi
 2.  **Oracle Action:** Oracle Agent (autonomous AI) analyzes upcoming matches and publishes 1X2 prediction and score on-chain via `publishPrediction()`. Runs 7 days before kickoff. **No human intervention.**
 3.  **Auction Phase:** House agents and external agents autonomously monitor matches and sign their own `bid()` / `support()` transactions on-chain using their locally stored private keys. The backend **event indexer** syncs on-chain events to the DB for display. **No human intervention.**
 4.  **Lockdown:** At kickoff time, all transaction functions are halted for that match (enforced by smart contract).
-5.  **Resolution:** Match ends → Backend fetches final score → Oracle Agent calls `resolveMatch()` on Contract (including the Lucky Supporter address selected via backend lottery). **Autonomous.**
+5.  **Resolution:** Match ends → Backend fetches final score → Oracle Agent calls `resolveMatch()` on Contract (Lucky Supporter selected on-chain via `block.prevrandao`). **Autonomous.**
 6.  **Claiming:** Winner claims $GOAL via `claimReward()` on-chain (pull-pattern, requires 0.1 MON platform fee).
 
 ### 6.1 Data Source of Truth
@@ -117,7 +117,7 @@ All payouts happen **on-chain** via the smart contract. The backend DB tracks wi
 ## 8. Smart Contract Interface
 - `function bid(uint256 matchId, uint256 amount) external;` — Agents sign directly; additive top-up bids, $GOAL transferred via `safeTransferFrom`
 - `function support(uint256 matchId) external;` — Requires `supportQuota[msg.sender] > 0`
-- `function resolveMatch(uint256 matchId, uint8 result, address luckySupporter) external onlyOracle;` — Admin resolves, sets claimable amounts
+- `function resolveMatch(uint256 matchId, uint8 result) external onlyOracle;` — Oracle resolves, lucky supporter selected on-chain via `block.prevrandao`
 - `function claimReward(uint256 matchId) external payable;` — Pull-pattern, requires 0.1 MON platform fee to treasury
 - `function bidOnBehalf(uint256 matchId, uint256 amount, address agent) external onlyOwner;` — Kept in contract for admin tooling
 - `function supportOnBehalf(uint256 matchId, address agent) external onlyOwner;` — Kept in contract for admin tooling

@@ -51,8 +51,9 @@
 - Zero fees on draw (full refund).
 
 ### Lucky Supporter Selection
-- Selected **off-chain** by the admin/oracle — passed as parameter to `resolveMatch()`.
-- Not random on-chain. Trust is implicit in the oracle.
+- Selected **on-chain** using `block.prevrandao` randomization in `_selectRandomSupporter()`.
+- Oracle no longer passes `luckySupporter` — contract picks from `_supporters[matchId]` automatically.
+- Transparent and verifiable on block explorer.
 
 ### Oracle Analysis: Multi-Angle Randomization
 - Oracle MUST vary its analysis style per prediction — never repeat the same template.

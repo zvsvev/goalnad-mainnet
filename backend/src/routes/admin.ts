@@ -278,18 +278,13 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
 
         const resolution = resolveTransaction();
 
-        // Resolve on-chain too
+        // Resolve on-chain too (lucky supporter is selected on-chain via block.prevrandao)
         let onChainTxHash: string | null = null;
         if (resolveOnChain && isChainEnabled() && match.onchain_match_id != null) {
             try {
-                const luckyAddress = (resolution.winners?.length > 0
-                    ? resolution.winners[0].wallet
-                    : "0x0000000000000000000000000000000000000000") as Address;
-
                 onChainTxHash = await resolveMatchOnChain(
                     BigInt(match.onchain_match_id),
-                    matchResult,
-                    luckyAddress
+                    matchResult
                 );
                 console.log(`[Admin] On-chain resolution tx: ${onChainTxHash}`);
             } catch (chainErr: any) {

@@ -674,11 +674,6 @@
         "name": "result",
         "type": "uint8",
         "internalType": "uint8"
-      },
-      {
-        "name": "luckySupporter",
-        "type": "address",
-        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -1103,6 +1098,11 @@
   },
   {
     "type": "error",
+    "name": "LockdownInPast",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "MatchAlreadyExists",
     "inputs": [
       {
@@ -1147,6 +1147,17 @@
   },
   {
     "type": "error",
+    "name": "MatchNotReady",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "MatchNotResolved",
     "inputs": [
       {
@@ -1159,6 +1170,17 @@
   {
     "type": "error",
     "name": "MutualExclusivity",
+    "inputs": [
+      {
+        "name": "matchId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NoSupporters",
     "inputs": [
       {
         "name": "matchId",
