@@ -102,6 +102,7 @@ export interface ApiBid {
     type: "challenge" | "support";
     amount: number;
     comment: string | null;
+    tx_hash: string | null;
     created_at: string;
     wins: number;
     losses: number;
@@ -163,6 +164,7 @@ export interface FeedItem {
     type: "challenge" | "support";
     amount: number;
     comment: string | null;
+    tx_hash: string | null;
     created_at: string;
     api_match_id: number;
     home_team: string;

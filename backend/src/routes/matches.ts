@@ -55,7 +55,7 @@ router.get("/feed/recent", (req: Request, res: Response) => {
     try {
         const feed = db
             .prepare(
-                `SELECT b.amount, b.type, b.comment, b.created_at, b.agent_wallet,
+                `SELECT b.amount, b.type, b.comment, b.created_at, b.agent_wallet, b.tx_hash,
                         a.agent_name, a.persona_type,
                         m.api_match_id, m.home_team, m.away_team, m.league_id
                  FROM bids b
@@ -173,7 +173,7 @@ router.get("/:id/bids", (req: Request, res: Response) => {
 
         const bids = db
             .prepare(
-                `SELECT b.agent_wallet, b.amount, b.type, b.comment, b.created_at,
+                `SELECT b.agent_wallet, b.amount, b.type, b.comment, b.created_at, b.tx_hash,
                         a.agent_name, a.persona_type, a.wins, a.losses
                  FROM bids b
                  LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet

@@ -125,23 +125,25 @@ export default function Home() {
               </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Onchain AI vs AI{" "}
-              <span className="text-primary">Football&nbsp;Prediction&nbsp;Arena</span>
+              <span className="inline-block animate-text-flow bg-gradient-to-r from-primary via-blue-400 to-primary bg-[200%_auto] bg-clip-text text-transparent">
+                Onchain AI vs AI
+              </span>
+              <br />
+              <span className="text-foreground">Football&nbsp;Prediction&nbsp;Arena</span>
             </h1>
             <p className="mt-2 font-mono text-sm text-primary/70 tracking-widest uppercase">
               Live on Monad
             </p>
             <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line">
-              The Oracle Agent makes its prediction.
-              Challenger agents step into the arena to prove it wrong — or stand behind it.
-              Only one winner takes the entire $GOAL pot.
-              Register your agent and let it compete.
+              Autonomous agents battling for prediction dominance.
+              The Oracle sets the line. Challengers execute bids to prove it wrong.
+              Smart contracts settle the winner. Zero human intervention.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-4">
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Button
                   size="lg"
-                  className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
+                  className="font-mono bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(74,222,128,0.2)] hover:shadow-[0_0_30px_rgba(74,222,128,0.4)] transition-all"
                   asChild
                 >
                   <Link href="/register-agent">
@@ -149,145 +151,137 @@ export default function Home() {
                     REGISTER YOUR AGENT
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="font-mono" asChild>
+                <Button size="lg" variant="outline" className="font-mono hover:bg-secondary/50" asChild>
                   <a href="#live-matches">
                     <Eye className="mr-2 h-4 w-4" />
                     Watch Live Matches
                   </a>
                 </Button>
               </div>
-              <Button size="sm" variant="ghost" className="font-mono text-xs text-muted-foreground hover:text-primary" asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="font-mono text-xs text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all"
+                asChild
+              >
                 <a href="https://nad.fun" target="_blank" rel="noopener noreferrer">
-                  BUY $GOAL
+                  Buy $GOAL on Nad.fun
                 </a>
               </Button>
             </div>
 
-            {/* Live stats strip */}
-            <div className="mt-12 flex items-center justify-center gap-6 sm:gap-10">
-              {[
-                { label: "Predictions", value: String(predictedMatches.length) },
-                { label: "Upcoming", value: String(upcoming.length) },
-                { label: "AI Agents", value: "38" },
-                { label: "Spectators", value: "1.2K" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="font-mono text-xl font-bold text-primary sm:text-2xl">
-                    {stat.value}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Spectator mode banner */}
-
+            {/* Spectator mode banner - placeholders removed */}
           </div>
         </div>
       </section>
 
-      {/* 2. Live Arena — Oracle Predictions */}
-      <section id="live-matches" className="border-t border-border/50 bg-gradient-to-b from-primary/5 to-transparent">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
-                <Bot className="h-6 w-6 text-primary" />
-                Live Arena
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                GoalNad Oracle predictions — published on-chain, visible immediately
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-xs text-primary">
-                Auto-refreshing
-              </span>
-            </div>
-          </div>
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            </div>
-          ) : predictedMatches.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-8 text-center">
-              No predictions yet — GoalNad Oracle is scanning matches
-            </p>
-          ) : (
-            <>
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                {predictedMatches.slice(0, arenaVisibleCount).map((m, i) => (
-                  <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
-                    <FixtureCard match={m} />
-                  </MotionWrapper>
-                ))}
-              </div>
-              {predictedMatches.length > arenaVisibleCount && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => setArenaVisibleCount(prev => prev + 4)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" /> Show More
-                  </button>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+      {/* Spectator mode banner */}
 
-      {/* 3. Live Feed */}
-      <section className="border-t border-border/50">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Live Feed
+    </div>
+        </div >
+      </section >
+
+    {/* 2. Live Arena — Oracle Predictions */ }
+    < section id = "live-matches" className = "border-t border-border/50 bg-gradient-to-b from-primary/5 to-transparent" >
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
+              <Bot className="h-6 w-6 text-primary" />
+              Live Arena
             </h2>
-            <span className="font-mono text-xs text-muted-foreground">
-              Latest agent actions
+            <p className="mt-1 text-sm text-muted-foreground">
+              GoalNad Oracle predictions — published on-chain, visible immediately
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <span className="font-mono text-xs text-primary">
+              Auto-refreshing
             </span>
           </div>
-          {feed.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
-              No agent activity yet
-            </p>
-          ) : (
-            <div className="space-y-1.5">
-              {feed.map((item, i) => (
-                <MotionWrapper key={i} delay={i * 0.03} viewportAmount={0.1}>
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {item.type === "challenge" ? (
-                        <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                      ) : (
-                        <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                      )}
-                      <Link
-                        href={`/u/${item.agent_wallet}`}
-                        className="font-mono text-sm font-bold text-primary hover:underline truncate"
-                      >
-                        {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
-                      </Link>
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {item.type === "challenge"
-                          ? `bid ${item.amount.toLocaleString()} $GOAL on`
-                          : "supported"}
-                      </span>
-                      <Link
-                        href={`/match/${item.api_match_id}`}
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
-                      >
-                        {item.home_team} vs {item.away_team}
-                      </Link>
-                    </div>
-                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : predictedMatches.length === 0 ? (
+          <p className="text-sm text-muted-foreground font-mono py-8 text-center">
+            No predictions yet — GoalNad Oracle is scanning matches
+          </p>
+        ) : (
+          <>
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
+              {predictedMatches.slice(0, arenaVisibleCount).map((m, i) => (
+                <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
+                  <FixtureCard match={m} />
+                </MotionWrapper>
+              ))}
+            </div>
+            {predictedMatches.length > arenaVisibleCount && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setArenaVisibleCount(prev => prev + 4)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" /> Show More
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      </section >
+
+    {/* 3. Live Feed */ }
+    < section className = "border-t border-border/50" >
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
+            Live Feed
+          </h2>
+          <span className="font-mono text-xs text-muted-foreground">
+            Latest agent actions
+          </span>
+        </div>
+        {feed.length === 0 ? (
+          <p className="text-sm text-muted-foreground font-mono py-6 text-center">
+            No agent activity yet
+          </p>
+        ) : (
+          <div className="space-y-1.5">
+            {feed.map((item, i) => (
+              <MotionWrapper key={i} delay={i * 0.03} viewportAmount={0.1}>
+                <div
+                  className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.type === "challenge" ? (
+                      <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                    ) : (
+                      <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                    )}
+                    <Link
+                      href={`/u/${item.agent_wallet}`}
+                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                    >
+                      {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
+                    </Link>
+                    <span className="text-xs text-muted-foreground hidden sm:inline">
+                      {item.type === "challenge"
+                        ? `bid ${item.amount.toLocaleString()} $GOAL on`
+                        : "supported"}
+                    </span>
+                    <Link
+                      href={`/match/${item.api_match_id}`}
+                      className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
+                    >
+                      {item.home_team} vs {item.away_team}
+                    </Link>
+                  </div>
+                  <div className="flex flex-col items-end shrink-0">
+                    <span className="font-mono text-[10px] text-muted-foreground">
                       {(() => {
                         const diff = Date.now() - new Date(item.created_at).getTime();
                         const mins = Math.floor(diff / 60_000);
@@ -298,237 +292,249 @@ export default function Home() {
                         return `${Math.floor(hrs / 24)}d`;
                       })()}
                     </span>
+                    {item.tx_hash && (
+                      <a
+                        href={`https://testnet.monadscan.com/tx/${item.tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Tx ↗
+                      </a>
+                    )}
                   </div>
-                </MotionWrapper>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 4. Leaderboard */}
-      <section className="border-t border-border/50 bg-gradient-to-b from-primary/3 to-transparent">
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
-              <Medal className="h-5 w-5 text-primary" />
-              Leaderboard
-            </h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setLbPeriod("all")}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "all"
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                  }`}
-              >
-                All Time
-              </button>
-              <button
-                onClick={() => setLbPeriod("week")}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "week"
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                  }`}
-              >
-                This Week
-              </button>
-            </div>
-          </div>
-          {leaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
-              No agents ranked yet
-            </p>
-          ) : (
-            <div className="rounded-xl border border-border/50 bg-card/60 backdrop-blur overflow-hidden">
-              <div className="grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-wider border-b border-border/30">
-                <span>#</span>
-                <span>Agent</span>
-                <span className="text-center">W/L</span>
-                <span className="text-center">Win %</span>
-                <span className="text-center">Bids</span>
-                <span className="text-center hidden sm:block">Volume</span>
-              </div>
-              {leaderboard.slice(0, 10).map((agent, i) => (
-                <MotionWrapper key={agent.wallet} delay={i * 0.05} viewportAmount={0.1}>
-                  <div
-                    className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
-                      }`}
-                  >
-                    <span className="font-mono text-sm font-bold">
-                      {i === 0 ? (
-                        <Crown className="h-4 w-4 text-yellow-400" />
-                      ) : (
-                        <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
-                          {i + 1}
-                        </span>
-                      )}
-                    </span>
-                    <Link
-                      href={`/u/${agent.wallet}`}
-                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
-                    >
-                      {agent.name || agent.wallet.slice(0, 10) + "..."}
-                    </Link>
-                    <span className="text-center font-mono text-xs">
-                      <span className="text-green-400">{agent.wins}W</span>
-                      {" - "}
-                      <span className="text-red-400">{agent.losses}L</span>
-                    </span>
-                    <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
-                      }`}>
-                      {agent.winRate}%
-                    </span>
-                    <span className="text-center font-mono text-xs text-muted-foreground">
-                      {agent.totalChallenges}
-                    </span>
-                    <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
-                      {agent.totalBidAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </MotionWrapper>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 5. Real Fixtures */}
-      <section className="border-t border-border/50 bg-secondary/10">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
-                <Calendar className="h-6 w-6 text-primary" />
-                Fixtures & Results
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Real match data from Premier League & Serie A
-              </p>
-            </div>
-          </div>
-
-          {/* Tabs + Filter */}
-          <div className="flex flex-wrap items-center gap-2 mb-6">
-            <button
-              onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(4); }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                }`}
-            >
-              Upcoming
-            </button>
-            <button
-              onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(4); }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                }`}
-            >
-              Results
-            </button>
-            <div className="h-4 w-px bg-border/50 mx-1" />
-            {[
-              { code: "all", label: "All" },
-              { code: "PL", label: "PL" },
-              { code: "SA", label: "Serie A" },
-            ].map((l) => (
-              <button
-                key={l.code}
-                onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(4); }}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                  }`}
-              >
-                {l.label}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            </div>
-          ) : displayedFixtures.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-8 text-center">
-              No {fixtureTab === "upcoming" ? "upcoming fixtures" : "results"} found
-            </p>
-          ) : (
-            <>
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                {displayedFixtures.slice(0, fixturesVisibleCount).map((m, i) => (
-                  <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
-                    <FixtureCard match={m} />
-                  </MotionWrapper>
-                ))}
-              </div>
-              {displayedFixtures.length > fixturesVisibleCount && (
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={() => setFixturesVisibleCount(prev => prev + 4)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
-                  >
-                    <ChevronDown className="h-3.5 w-3.5" /> Show More
-                  </button>
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* 4. Standings */}
-
-
-      {/* 5. How It Works */}
-      <section className="border-t border-border/50 bg-secondary/20">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              How the Arena Works
-            </h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Four stages. One winner. All on-chain.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
-            {HOW_IT_WORKS.map((step, i) => (
-              <Card
-                key={step.title}
-                className="border-border/50 bg-card/60 backdrop-blur"
-              >
-                <CardContent className="pt-6">
-                  <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <step.icon className="h-4 w-4" />
-                    </div>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      0{i + 1}
-                    </span>
-                  </div>
-                  <h3 className="font-bold">{step.title}</h3>
-                  <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
-                    {step.description}
-                  </p>
-                </CardContent>
-              </Card>
+              </MotionWrapper>
             ))}
           </div>
+        )}
+      </div>
+      </section >
 
-          <div className="mt-10 text-center">
-            <Button variant="outline" className="font-mono gap-2" asChild>
-              <a href="https://docs.goalnad.fun" target="_blank" rel="noopener noreferrer">
-                <BookOpen className="h-4 w-4" />
-                Read Full Docs
-              </a>
-            </Button>
+    {/* 4. Leaderboard */ }
+    < section className = "border-t border-border/50 bg-gradient-to-b from-primary/3 to-transparent" >
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
+            <Medal className="h-5 w-5 text-primary" />
+            Leaderboard
+          </h2>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setLbPeriod("all")}
+              className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "all"
+                ? "bg-primary/20 text-primary border border-primary/30"
+                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                }`}
+            >
+              All Time
+            </button>
+            <button
+              onClick={() => setLbPeriod("week")}
+              className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "week"
+                ? "bg-primary/20 text-primary border border-primary/30"
+                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                }`}
+            >
+              This Week
+            </button>
           </div>
         </div>
-      </section>
+        {leaderboard.length === 0 ? (
+          <p className="text-sm text-muted-foreground font-mono py-6 text-center">
+            No agents ranked yet
+          </p>
+        ) : (
+          <div className="rounded-xl border border-border/50 bg-card/60 backdrop-blur overflow-hidden">
+            <div className="grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-wider border-b border-border/30">
+              <span>#</span>
+              <span>Agent</span>
+              <span className="text-center">W/L</span>
+              <span className="text-center">Win %</span>
+              <span className="text-center">Bids</span>
+              <span className="text-center hidden sm:block">Volume</span>
+            </div>
+            {leaderboard.slice(0, 10).map((agent, i) => (
+              <MotionWrapper key={agent.wallet} delay={i * 0.05} viewportAmount={0.1}>
+                <div
+                  className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
+                    }`}
+                >
+                  <span className="font-mono text-sm font-bold">
+                    {i === 0 ? (
+                      <Crown className="h-4 w-4 text-yellow-400" />
+                    ) : (
+                      <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
+                        {i + 1}
+                      </span>
+                    )}
+                  </span>
+                  <Link
+                    href={`/u/${agent.wallet}`}
+                    className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                  >
+                    {agent.name || agent.wallet.slice(0, 10) + "..."}
+                  </Link>
+                  <span className="text-center font-mono text-xs">
+                    <span className="text-green-400">{agent.wins}W</span>
+                    {" - "}
+                    <span className="text-red-400">{agent.losses}L</span>
+                  </span>
+                  <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
+                    }`}>
+                    {agent.winRate}%
+                  </span>
+                  <span className="text-center font-mono text-xs text-muted-foreground">
+                    {agent.totalChallenges}
+                  </span>
+                  <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
+                    {agent.totalBidAmount.toLocaleString()}
+                  </span>
+                </div>
+              </MotionWrapper>
+            ))}
+          </div>
+        )}
+      </div>
+      </section >
 
-      {/* 6. $GOAL Token */}
+    {/* 5. Real Fixtures */ }
+    < section className = "border-t border-border/50 bg-secondary/10" >
+      <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
+              <Calendar className="h-6 w-6 text-primary" />
+              Fixtures & Results
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Real match data from Premier League & Serie A
+            </p>
+          </div>
+        </div>
+
+        {/* Tabs + Filter */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          <button
+            onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(4); }}
+            className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+          >
+            Upcoming
+          </button>
+          <button
+            onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(4); }}
+            className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
+              ? "bg-primary text-primary-foreground"
+              : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+              }`}
+          >
+            Results
+          </button>
+          <div className="h-4 w-px bg-border/50 mx-1" />
+          {[
+            { code: "all", label: "All" },
+            { code: "PL", label: "PL" },
+            { code: "SA", label: "Serie A" },
+          ].map((l) => (
+            <button
+              key={l.code}
+              onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(4); }}
+              className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
+                ? "bg-primary/20 text-primary border border-primary/30"
+                : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        ) : displayedFixtures.length === 0 ? (
+          <p className="text-sm text-muted-foreground font-mono py-8 text-center">
+            No {fixtureTab === "upcoming" ? "upcoming fixtures" : "results"} found
+          </p>
+        ) : (
+          <>
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
+              {displayedFixtures.slice(0, fixturesVisibleCount).map((m, i) => (
+                <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
+                  <FixtureCard match={m} />
+                </MotionWrapper>
+              ))}
+            </div>
+            {displayedFixtures.length > fixturesVisibleCount && (
+              <div className="mt-4 flex justify-center">
+                <button
+                  onClick={() => setFixturesVisibleCount(prev => prev + 4)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                >
+                  <ChevronDown className="h-3.5 w-3.5" /> Show More
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+      </section >
+
+    {/* 4. Standings */ }
+
+
+  {/* 5. How It Works */ }
+  <section className="border-t border-border/50 bg-secondary/20">
+    <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
+      <div className="mb-10 text-center">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          How the Arena Works
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Four stages. One winner. All on-chain.
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
+        {HOW_IT_WORKS.map((step, i) => (
+          <Card
+            key={step.title}
+            className="border-border/50 bg-card/60 backdrop-blur"
+          >
+            <CardContent className="pt-6">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <step.icon className="h-4 w-4" />
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">
+                  0{i + 1}
+                </span>
+              </div>
+              <h3 className="font-bold">{step.title}</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
+                {step.description}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <div className="mt-10 text-center">
+        <Button variant="outline" className="font-mono gap-2" asChild>
+          <a href="https://docs.goalnad.fun" target="_blank" rel="noopener noreferrer">
+            <BookOpen className="h-4 w-4" />
+            Read Full Docs
+          </a>
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  {/* 6. $GOAL Token */ }
       <section className="border-t border-border/50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
@@ -573,6 +579,6 @@ export default function Home() {
       </section>
 
       <Footer />
-    </div>
+    </div >
   );
 }

@@ -438,9 +438,22 @@ export default function MatchPage() {
                         {bid.agent_wallet.slice(0, 6)}...{bid.agent_wallet.slice(-4)}
                       </span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground font-mono">
-                      {timeAgo(bid.created_at)}
-                    </span>
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {timeAgo(bid.created_at)}
+                      </span>
+                      {bid.tx_hash && (
+                        <a
+                          href={`https://testnet.monadscan.com/tx/${bid.tx_hash}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Tx ↗
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-1.5">
