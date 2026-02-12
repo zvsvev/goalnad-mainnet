@@ -203,7 +203,7 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
         const finalHomeScore = homeScore ?? (matchResult === 1 ? 2 : matchResult === 2 ? 0 : 1);
         const finalAwayScore = awayScore ?? (matchResult === 1 ? 0 : matchResult === 2 ? 2 : 1);
 
-        // Resolve the match in DB
+        // Resolve the match in DB (stats/leaderboard only — on-chain handles real payouts)
         const resolveTransaction = db.transaction(() => {
             // Update match status
             db.prepare(`
@@ -225,33 +225,26 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
             }
 
             if (matchResult === 3 && match.oracle_prediction !== 3) {
-                // Draw: full refund to all challengers (no fee)
-                for (const bid of challengers) {
-                    db.prepare("UPDATE agents_metadata SET balance = balance + ? WHERE agent_wallet = ?")
-                        .run(bid.amount, bid.agent_wallet);
-                }
+                // Draw: on-chain handles full refund to all challengers (no fee)
                 return { winners: [], distribution: "draw_refund", challengers: challengers.length, supporters: supporters.length };
             }
 
             if (oracleCorrect) {
-                // Oracle correct: pick random supporter -> 99% of pot (1% burned)
+                // Oracle correct: on-chain distributes 99% to lucky supporter, 1% burned
                 if (supporters.length > 0) {
                     const luckyIdx = Math.floor(Math.random() * supporters.length);
                     const luckySupporter = supporters[luckyIdx];
-                    const burnAmount = Math.floor(match.total_pot * 0.01);
-                    const supporterPrize = match.total_pot - burnAmount;
 
-                    db.prepare("UPDATE agents_metadata SET balance = balance + ?, wins = wins + 1 WHERE agent_wallet = ?")
-                        .run(supporterPrize, luckySupporter.agent_wallet);
-
+                    // Track stats only — no balance changes
                     for (const bid of challengers) {
                         db.prepare("UPDATE agents_metadata SET losses = losses + 1 WHERE agent_wallet = ?")
                             .run(bid.agent_wallet);
                     }
+                    db.prepare("UPDATE agents_metadata SET wins = wins + 1 WHERE agent_wallet = ?")
+                        .run(luckySupporter.agent_wallet);
 
                     return {
-                        winners: [{ wallet: luckySupporter.agent_wallet, prize: supporterPrize, type: "luckySupporter" }],
-                        burned: burnAmount,
+                        winners: [{ wallet: luckySupporter.agent_wallet, type: "luckySupporter" }],
                         distribution: "oracle_win",
                         challengers: challengers.length,
                         supporters: supporters.length,
@@ -259,12 +252,12 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
                 }
                 return { winners: [], distribution: "oracle_win_no_supporters", challengers: challengers.length, supporters: 0 };
             } else {
-                // Oracle wrong: highest bidder wins 99% of pot (1% burned)
+                // Oracle wrong: on-chain distributes 99% to highest bidder, 1% burned
                 const highestBidder = challengers.reduce((a: any, b: any) => a.amount > b.amount ? a : b);
-                const burnAmount = Math.floor(match.total_pot * 0.01);
-                const winnerPrize = match.total_pot - burnAmount;
-                db.prepare("UPDATE agents_metadata SET balance = balance + ?, wins = wins + 1 WHERE agent_wallet = ?")
-                    .run(winnerPrize, highestBidder.agent_wallet);
+
+                // Track stats only — no balance changes
+                db.prepare("UPDATE agents_metadata SET wins = wins + 1 WHERE agent_wallet = ?")
+                    .run(highestBidder.agent_wallet);
 
                 for (const bid of challengers) {
                     if (bid.agent_wallet !== highestBidder.agent_wallet) {
@@ -274,8 +267,7 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
                 }
 
                 return {
-                    winners: [{ wallet: highestBidder.agent_wallet, prize: winnerPrize, type: "highestBidder" }],
-                    burned: burnAmount,
+                    winners: [{ wallet: highestBidder.agent_wallet, type: "highestBidder" }],
                     distribution: "challenger_win",
                     challengers: challengers.length,
                     supporters: supporters.length,
@@ -414,9 +406,8 @@ router.post("/rename-agent", (req: Request, res: Response) => {
         db.prepare("UPDATE agents_metadata SET agent_name = ? WHERE agent_wallet = ?")
             .run(newName, wallet);
 
-        // Also update the name in any existing bids
-        db.prepare("UPDATE bids SET agent_name = ? WHERE agent_wallet = ?")
-            .run(newName, wallet);
+        // Note: bids table doesn't have agent_name column.
+        // Agent names are resolved via JOIN with agents_metadata.
 
         const agent = db.prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?").get(wallet);
         console.log(`[Admin] Renamed agent ${wallet}: ${existing.agent_name} → ${newName}`);

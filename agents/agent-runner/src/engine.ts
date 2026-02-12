@@ -6,12 +6,20 @@ import {
     placeBid,
     placeSupport,
 } from "./api.js";
+import {
+    placeBidOnChain,
+    placeSupportOnChain,
+    goalToWei,
+    isChainEnabled,
+} from "./chain.js";
+import { config } from "./config.js";
 import { generateComment } from "./comments.js";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
 export interface AgentConfig {
     wallet: string;
+    privateKey?: string;  // For on-chain transactions
     persona: AgentPersona;
 }
 
@@ -155,8 +163,9 @@ function calculateBidAmount(
  * Run a single agent's decision cycle for all available matches.
  */
 export async function runAgent(agentConfig: AgentConfig): Promise<void> {
-    const { wallet, persona } = agentConfig;
+    const { wallet, privateKey, persona } = agentConfig;
     const tag = `[${persona.name}]`;
+    const onChainEnabled = isChainEnabled() && !!privateKey;
 
     try {
         // 1. Get agent status
@@ -190,20 +199,39 @@ export async function runAgent(agentConfig: AgentConfig): Promise<void> {
 
             if (decision.action === "challenge" && decision.bidAmount) {
                 try {
-                    const result = await placeBid(wallet, match.api_match_id, decision.bidAmount, comment);
-                    console.log(
-                        `${tag} ✅ CHALLENGE ${match.home_team} vs ${match.away_team} — ${decision.bidAmount} $GOAL | Pot: ${result.match.totalPot}`
-                    );
+                    if (onChainEnabled) {
+                        // On-chain transaction
+                        const amountWei = goalToWei(decision.bidAmount);
+                        const txHash = await placeBidOnChain(privateKey as `0x${string}`, BigInt(match.id), amountWei);
+                        console.log(
+                            `${tag} ✅ CHALLENGE (ON-CHAIN) ${match.home_team} vs ${match.away_team} — ${decision.bidAmount} $GOAL | TX: ${txHash.slice(0, 10)}...`
+                        );
+                    } else {
+                        // Fallback to API
+                        const result = await placeBid(wallet, match.api_match_id, decision.bidAmount, comment);
+                        console.log(
+                            `${tag} ✅ CHALLENGE (API) ${match.home_team} vs ${match.away_team} — ${decision.bidAmount} $GOAL | Pot: ${result.match.totalPot}`
+                        );
+                    }
                 } catch (err: any) {
                     const errMsg = err.response?.data?.error || err.message;
                     console.log(`${tag} ❌ CHALLENGE FAILED ${match.home_team} vs ${match.away_team} — ${errMsg}`);
                 }
             } else if (decision.action === "support") {
                 try {
-                    const result = await placeSupport(wallet, match.api_match_id, comment);
-                    console.log(
-                        `${tag} ✅ SUPPORT ${match.home_team} vs ${match.away_team} | Remaining quota: ${result.agent.supportQuota}`
-                    );
+                    if (onChainEnabled) {
+                        // On-chain transaction
+                        const txHash = await placeSupportOnChain(privateKey as `0x${string}`, BigInt(match.id));
+                        console.log(
+                            `${tag} ✅ SUPPORT (ON-CHAIN) ${match.home_team} vs ${match.away_team} | TX: ${txHash.slice(0, 10)}...`
+                        );
+                    } else {
+                        // Fallback to API
+                        const result = await placeSupport(wallet, match.api_match_id, comment);
+                        console.log(
+                            `${tag} ✅ SUPPORT (API) ${match.home_team} vs ${match.away_team} | Remaining quota: ${result.agent.supportQuota}`
+                        );
+                    }
                 } catch (err: any) {
                     const errMsg = err.response?.data?.error || err.message;
                     console.log(`${tag} ❌ SUPPORT FAILED ${match.home_team} vs ${match.away_team} — ${errMsg}`);

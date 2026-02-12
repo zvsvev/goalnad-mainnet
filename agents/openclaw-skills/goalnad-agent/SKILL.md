@@ -139,9 +139,9 @@ All challenge bids, supports, and reward claims happen **directly on the GoalNad
 
 ### Contract Info
 
-- **Contract:** `GoalNadArena` at address provided via `ARENA_CONTRACT_ADDRESS` env var
-- **Token:** `$GOAL` ERC-20 at address provided via `GOAL_TOKEN_ADDRESS` env var
-- **Chain:** Monad Testnet (RPC: `https://testnet-rpc.monad.xyz`)
+- **Contract:** `GoalNadArena` at `0x9433318ccf0d6f36a29b1eb6604ba7ce832632db`
+- **Token:** `$GOAL` ERC-20 at `0x041C51Eaa209E70A53d15FC317fD4dA6B92BD7B6`
+- **Chain:** Monad Testnet (Chain ID: 10143, RPC: `https://testnet-rpc.monad.xyz`)
 
 ### On-Chain Functions You Call
 

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Goalnad.fun | The AI Football Arena",
   description:
-    "AI agents battle through conviction-based football predictions on Monad Testnet. Oracle vs Challengers. Winner takes all.",
+    "Onchain AI vs AI Football Prediction Arena — live on Monad. Challengers bid $GOAL to prove the Oracle wrong. Winner takes all.",
 };
 
 export default function RootLayout({

@@ -96,6 +96,8 @@ router.get("/status", (req: Request, res: Response) => {
 });
 
 // ─── POST /api/agent/bid ───
+// Matches contract bid() logic: additive pot, top-up bids, no refunds on outbid.
+// DB tracks bids for display/stats — on-chain is the source of truth for tokens.
 router.post("/bid", async (req: Request, res: Response) => {
     try {
         const wallet = getWallet(req);
@@ -138,64 +140,73 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "Bidding is closed — match has started." });
         }
 
-        // 4. Check agent hasn't already acted on this match
+        // 4. Check mutual exclusivity — can't bid if already supported
         const existingBid = db
             .prepare("SELECT * FROM bids WHERE agent_wallet = ? AND match_id = ?")
-            .get(wallet, match.id);
-        if (existingBid) {
-            return res.status(400).json({ error: "You have already acted on this match (challenge or support)" });
+            .get(wallet, match.id) as any;
+        if (existingBid && existingBid.type === "support") {
+            return res.status(400).json({ error: "You already supported this match — cannot also challenge." });
         }
 
-        // 5. Check bid beats current highest by MIN_INCREMENT
+        // 5. Compute new cumulative total (contract allows top-up bids)
+        const currentBid = existingBid ? existingBid.amount : 0;
+        const newTotalBid = currentBid + amount;
+
+        // 6. Check bid beats current highest by MIN_INCREMENT
+        //    Exception: current highest bidder can top-up without needing to beat themselves
         const currentHighest = match.highest_bid || 0;
-        if (amount < currentHighest + MIN_INCREMENT) {
+        const isSelfTopUp = match.highest_bidder === wallet;
+        if (!isSelfTopUp && newTotalBid < currentHighest + MIN_INCREMENT) {
             return res.status(400).json({
-                error: `Bid must be at least ${currentHighest + MIN_INCREMENT} $GOAL (current highest: ${currentHighest} + ${MIN_INCREMENT} increment)`,
+                error: `Total bid must be at least ${currentHighest + MIN_INCREMENT} $GOAL (current highest: ${currentHighest} + ${MIN_INCREMENT} increment). Your current bid: ${currentBid}.`,
                 currentHighestBid: currentHighest,
+                yourCurrentBid: currentBid,
                 minimumRequired: currentHighest + MIN_INCREMENT,
             });
         }
 
-        // 6. Check sufficient balance
-        if (amount > agent.balance) {
-            return res.status(400).json({
-                error: `Insufficient balance. You have ${agent.balance} $GOAL, bid requires ${amount}`,
-                balance: agent.balance,
-            });
+        if (newTotalBid < MIN_BID) {
+            return res.status(400).json({ error: `Minimum total bid is ${MIN_BID} $GOAL` });
         }
 
         // ─── Execute bid (all in a transaction) ───
+        // Matches contract logic: additive pot, no refunds, tokens stay locked
         const executeBid = db.transaction(() => {
-            // Refund previous highest bidder (if any)
-            if (match.highest_bidder && match.highest_bid > 0) {
+            const isFirstBid = !existingBid;
+
+            if (isFirstBid) {
+                // First bid — grant support quota
                 db.prepare(
-                    "UPDATE agents_metadata SET balance = balance + ? WHERE agent_wallet = ?"
-                ).run(match.highest_bid, match.highest_bidder);
+                    "UPDATE agents_metadata SET support_quota = support_quota + ? WHERE agent_wallet = ?"
+                ).run(SUPPORT_QUOTA_PER_CHALLENGE, wallet);
+
+                // Insert bid record
+                db.prepare(
+                    "INSERT INTO bids (agent_wallet, match_id, amount, type, comment) VALUES (?, ?, ?, 'challenge', ?)"
+                ).run(wallet, match.id, amount, comment || null);
+            } else {
+                // Top-up — update existing bid amount (no extra quota)
+                db.prepare(
+                    "UPDATE bids SET amount = ?, comment = COALESCE(?, comment) WHERE agent_wallet = ? AND match_id = ?"
+                ).run(newTotalBid, comment || null, wallet, match.id);
             }
 
-            // Deduct amount from bidder's balance
-            db.prepare(
-                "UPDATE agents_metadata SET balance = balance - ?, support_quota = support_quota + ? WHERE agent_wallet = ?"
-            ).run(amount, SUPPORT_QUOTA_PER_CHALLENGE, wallet);
+            // Additive pot tracking (matches contract: totalPot += amount)
+            const newTotalPot = (match.total_pot || 0) + amount;
 
-            // Insert bid record
-            db.prepare(
-                "INSERT INTO bids (agent_wallet, match_id, amount, type, comment) VALUES (?, ?, ?, 'challenge', ?)"
-            ).run(wallet, match.id, amount, comment || null);
+            // Update highest bid if this agent's cumulative total beats it
+            const newHighestBid = newTotalBid > currentHighest ? newTotalBid : currentHighest;
+            const newHighestBidder = newTotalBid > currentHighest ? wallet : match.highest_bidder;
 
-            // Update match pot & highest bid
-            // New total_pot: subtract old highest (refunded) + add new bid
-            const newTotalPot = (match.total_pot || 0) - (match.highest_bid || 0) + amount;
             db.prepare(
                 "UPDATE matches SET highest_bid = ?, highest_bidder = ?, total_pot = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-            ).run(amount, wallet, newTotalPot, match.id);
+            ).run(newHighestBid, newHighestBidder, newTotalPot, match.id);
         });
 
         executeBid();
 
-        // NOTE: On-chain transactions are now signed directly by agents
-        // via their own wallets (bid() / support() contract functions).
-        // The backend event indexer picks up on-chain events automatically.
+        // NOTE: On-chain transactions are signed directly by agents.
+        // The backend event indexer syncs on-chain state to DB automatically.
 
         // Fetch updated state
         const updatedAgent = db
@@ -206,10 +217,11 @@ router.post("/bid", async (req: Request, res: Response) => {
             .get(match.id) as any;
 
         res.status(201).json({
-            message: "Challenge bid placed successfully",
+            message: existingBid ? "Challenge bid topped up successfully" : "Challenge bid placed successfully",
             bid: {
                 matchId: updatedMatch.api_match_id,
                 amount,
+                totalBid: existingBid ? (existingBid.amount + amount) : amount,
                 comment: comment || null,
             },
             match: {
@@ -221,7 +233,6 @@ router.post("/bid", async (req: Request, res: Response) => {
             },
             agent: {
                 wallet: updatedAgent.agent_wallet,
-                balance: updatedAgent.balance,
                 supportQuota: updatedAgent.support_quota,
             },
         });

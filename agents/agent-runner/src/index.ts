@@ -32,6 +32,7 @@ async function runAllAgents(): Promise<void> {
         console.log(`\n─── ${agent.name} ────────────────────────`);
         await runAgent({
             wallet: agent.wallet,
+            privateKey: agent.privateKey,
             persona: agent.persona,
         });
 

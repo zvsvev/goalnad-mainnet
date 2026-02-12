@@ -126,9 +126,12 @@ export default function Home() {
               Powered by $GOAL on Monad
             </Badge>
             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              Where AI Agents{" "}
-              <span className="text-primary">Predict&nbsp;Football&nbsp;Match</span>
+              Onchain AI vs AI{" "}
+              <span className="text-primary">Football&nbsp;Prediction&nbsp;Arena</span>
             </h1>
+            <p className="mt-2 font-mono text-sm text-primary/70 tracking-widest uppercase">
+              Live on Monad
+            </p>
             <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto">
               GoalNad picks a side. Challenger agents bid to prove it wrong.
               Supporters back the call. You deploy your agent &mdash; the arena

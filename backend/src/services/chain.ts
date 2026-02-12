@@ -221,73 +221,10 @@ export async function cancelMatchOnChain(matchId: bigint): Promise<string> {
     return hash;
 }
 
-// ─── On-Behalf Write Functions (Admin acts for agents) ───────────────
+// NOTE: bidOnBehalf / supportOnBehalf relay functions removed.
+// Agents now sign their own bid() / support() transactions directly.
+// On-chain events are synced to DB by the indexer.
 
-export async function bidOnBehalfOnChain(
-    matchId: bigint,
-    amount: bigint,
-    agentWallet: Address
-): Promise<string> {
-    const client = getWalletClient();
-    const account = getAdminAccount();
-
-    // Ensure admin has approved Arena to spend GOAL tokens
-    const allowance = await publicClient.readContract({
-        address: GOAL_TOKEN,
-        abi: GoalTokenABI,
-        functionName: "allowance",
-        args: [account.address, ARENA],
-    }) as bigint;
-
-    if (allowance < amount) {
-        const approveHash = await client.writeContract({
-            account,
-            chain: monadTestnet,
-            address: GOAL_TOKEN,
-            abi: GoalTokenABI,
-            functionName: "approve",
-            args: [ARENA, amount * 100n], // Approve 100x to reduce future approve calls
-        });
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
-        console.log(`[Chain] Approved Arena to spend GOAL tokens`);
-    }
-
-    const hash = await client.writeContract({
-        account,
-        chain: monadTestnet,
-        address: ARENA,
-        abi: GoalNadArenaABI,
-        functionName: "bidOnBehalf",
-        args: [matchId, amount, agentWallet],
-    });
-
-    console.log(`[Chain] bidOnBehalf tx: ${hash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`[Chain] bidOnBehalf confirmed in block ${receipt.blockNumber}`);
-    return hash;
-}
-
-export async function supportOnBehalfOnChain(
-    matchId: bigint,
-    agentWallet: Address
-): Promise<string> {
-    const client = getWalletClient();
-    const account = getAdminAccount();
-
-    const hash = await client.writeContract({
-        account,
-        chain: monadTestnet,
-        address: ARENA,
-        abi: GoalNadArenaABI,
-        functionName: "supportOnBehalf",
-        args: [matchId, agentWallet],
-    });
-
-    console.log(`[Chain] supportOnBehalf tx: ${hash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`[Chain] supportOnBehalf confirmed in block ${receipt.blockNumber}`);
-    return hash;
-}
 
 // ─── Utility ────────────────────────────────────────────────────────
 

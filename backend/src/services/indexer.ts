@@ -79,7 +79,7 @@ async function handleBidPlaced(log: any) {
             return;
         }
 
-        // Insert or update bid
+        // Insert or update bid — use totalBidGoal (cumulative) as the bid amount
         const bidStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
             VALUES (?, ?, ?, 'challenge', '', CURRENT_TIMESTAMP)
@@ -90,23 +90,25 @@ async function handleBidPlaced(log: any) {
         bidStmt.run(
             bidder.toLowerCase(),
             match.id,
-            amountGoal,
-            amountGoal
+            totalBidGoal,
+            totalBidGoal
         );
 
-        // Update match pot and highest bid
+        // Update match pot (additive: += increment amount) and highest bid
+        // Only update highest_bid if this bidder's cumulative total exceeds it
+        const currentHighest = (match as any).highest_bid || 0;
         const matchStmt = db.prepare(`
             UPDATE matches
-            SET total_pot = ?,
-                highest_bid = ?,
-                highest_bidder = ?
+            SET total_pot = total_pot + ?,
+                highest_bid = CASE WHEN ? > highest_bid THEN ? ELSE highest_bid END,
+                highest_bidder = CASE WHEN ? > highest_bid THEN ? ELSE highest_bidder END
             WHERE id = ?
         `);
 
         matchStmt.run(
-            totalBidGoal,
             amountGoal,
-            bidder.toLowerCase(),
+            totalBidGoal, totalBidGoal,
+            totalBidGoal, bidder.toLowerCase(),
             match.id
         );
 

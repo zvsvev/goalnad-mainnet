@@ -11,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export interface AgentWallet {
     name: string;         // e.g. "Marcus_GN"
     wallet: string;       // Monad wallet address
+    privateKey?: string;  // Private key for on-chain transactions (optional)
     persona: AgentPersona;
 }
 
@@ -38,24 +39,29 @@ export function loadAgentWallets(): AgentWallet[] {
     const agents: AgentWallet[] = [];
 
     for (const persona of personas) {
-        const envKey = personaToEnvKey(persona.name);
-        const wallet = process.env[envKey];
+        const walletEnvKey = personaToEnvKey(persona.name);
+        const privateKeyEnvKey = walletEnvKey.replace("_WALLET", "_PRIVATE_KEY");
+
+        const wallet = process.env[walletEnvKey];
+        const privateKey = process.env[privateKeyEnvKey];
 
         if (!wallet) {
-            console.warn(`⚠️  No wallet for ${persona.name} (env: ${envKey}) — skipping`);
+            console.warn(`⚠️  No wallet for ${persona.name} (env: ${walletEnvKey}) — skipping`);
             continue;
         }
 
         agents.push({
             name: persona.name,
             wallet: wallet.trim(),
+            privateKey: privateKey?.trim(),
             persona,
         });
     }
 
     console.log(`\n📋 Loaded ${agents.length} agents with wallets:`);
     for (const a of agents) {
-        console.log(`   ${a.name.padEnd(15)} → ${a.wallet.slice(0, 10)}...${a.wallet.slice(-6)}`);
+        const pkStatus = a.privateKey ? "🔑" : "❌";
+        console.log(`   ${a.name.padEnd(15)} → ${a.wallet.slice(0, 10)}...${a.wallet.slice(-6)} ${pkStatus}`);
     }
     console.log();
 
