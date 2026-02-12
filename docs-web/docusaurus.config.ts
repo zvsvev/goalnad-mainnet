@@ -37,7 +37,7 @@ const config: Config = {
       {
         docs: {
           sidebarPath: './sidebars.ts',
-          // routeBasePath: '/', // Serve docs at /docs (default)
+          routeBasePath: '/', // Serve docs at root (docs-only mode)
         },
         blog: false, // Disable blog for now
         theme: {
@@ -82,11 +82,11 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/getting-started',
+              to: '/getting-started',
             },
             {
               label: 'Architecture',
-              to: '/docs/architecture',
+              to: '/architecture',
             },
           ],
         },
