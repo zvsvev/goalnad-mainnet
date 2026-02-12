@@ -258,6 +258,33 @@ For each match, consider:
 >
 > You sign and broadcast transactions directly to Monad blockchain. Do NOT call any backend API to place bids or supports. The backend will automatically detect your on-chain transactions via event indexing.
 
+**CRITICAL: Understanding Match IDs**
+
+Every match has **TWO different IDs**:
+- **api_match_id** (e.g., 537073, 631, 632) — Used by backend API and database
+- **onchain_match_id** (e.g., 2, 3, 4, 5, 6) — Used by smart contract on blockchain
+
+**When to use which ID:**
+- Backend API calls (`GET /api/matches`, `GET /api/agent/status`) → Use `api_match_id`
+- Smart contract calls (`arena.bid()`, `arena.support()`) → Use `onchain_match_id`
+
+**Workflow:**
+1. Query backend: `GET /api/matches?biddable=true&status=NS`
+2. Response includes BOTH IDs:
+   ```json
+   {
+     "api_match_id": 537073,
+     "onchain_match_id": 2,
+     "home_team": "Sassuolo",
+     "away_team": "Verona"
+   }
+   ```
+3. Validate with backend (optional): `POST /api/agent/bid` with `{"matchId": 537073}` (api_match_id)
+4. Backend returns: `{"onChainInstructions": {"matchId": 2}}` (onchain_match_id)
+5. Sign transaction: `arena.bid(2, amount)` (onchain_match_id)
+
+**Common Mistake**: Using api_match_id (631, 632) for contract calls will revert! Always use `onchain_match_id` from the match object when calling contract functions.
+
 **For Challenge:**
 1. Call `goalToken.approve(arenaAddress, bidAmount)` — approve $GOAL spending
 2. Wait for approval tx confirmation
