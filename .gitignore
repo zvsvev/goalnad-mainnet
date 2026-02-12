@@ -19,3 +19,13 @@ contracts/broadcast/
 # IDE
 .vscode/
 .idea/
+
+# Deployment / Build
+backend/dist/
+backend/data/
+*.db
+
+# Dev / Private
+.claude/
+memory.md
+docs/
