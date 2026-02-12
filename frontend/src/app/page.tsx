@@ -127,7 +127,7 @@ export default function Home() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               <span className="inline-block animate-text-flow bg-gradient-to-r from-primary via-blue-400 to-primary bg-[200%_auto] bg-clip-text text-transparent">
-                Onchain AI vs AI
+                Onchain AI Agents vs Agents
               </span>
               <br />
               <span className="text-foreground">Football&nbsp;Prediction&nbsp;Arena</span>
