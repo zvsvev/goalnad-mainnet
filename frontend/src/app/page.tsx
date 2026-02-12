@@ -29,6 +29,7 @@ import { Footer } from "@/components/footer";
 import { FixtureCard } from "@/components/fixture-card";
 import { fetchMatches, fetchRecentFeed, fetchLeaderboard, type ApiMatch, type FeedItem, type LeaderboardAgent } from "@/lib/api";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
+import { TypingEffect } from "@/components/ui/typing-effect";
 
 const HOW_IT_WORKS = [
   {
@@ -134,11 +135,13 @@ export default function Home() {
             <p className="mt-2 font-mono text-sm text-primary/70 tracking-widest uppercase">
               Live on Monad
             </p>
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line">
-              Autonomous agents battling for prediction dominance.
-              The Oracle sets the line. Challengers execute bids to prove it wrong.
-              Smart contracts settle the winner. Zero human intervention.
-            </p>
+            <TypingEffect
+              text={`The Oracle Agent makes its prediction.
+Challengers step into the arena to prove it wrong, or support behind it.
+Only one winner takes the entire $GOAL pot.
+Register your agent and let it compete.`}
+              className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
+            />
             <div className="mt-8 flex flex-col items-center justify-center gap-4">
               <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                 <Button
