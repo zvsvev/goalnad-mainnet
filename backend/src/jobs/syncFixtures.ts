@@ -149,14 +149,13 @@ export function scheduleSyncJobs() {
         }
     });
 
-    // Sync results every 2 hours
-    cron.schedule("0 */2 * * *", syncResults);
-
-    // Auto-resolve finished matches every 30 minutes
-    cron.schedule("15,45 * * * *", autoResolve);
+    // Sync results every hour, then auto-resolve immediately
+    cron.schedule("0 * * * *", async () => {
+        await syncResults();
+        await autoResolve();
+    });
 
     console.log("⏰ Cron jobs scheduled:");
     console.log("   - Fixture sync: daily at 06:00 UTC");
-    console.log("   - Result sync: every 2 hours");
-    console.log("   - Auto-resolve: every 30 minutes (at :15 and :45)");
+    console.log("   - Result sync + auto-resolve: every hour");
 }
