@@ -27,8 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { FixtureCard } from "@/components/fixture-card";
-import { StandingsTable } from "@/components/standings-table";
 import { fetchMatches, fetchRecentFeed, fetchLeaderboard, type ApiMatch, type FeedItem, type LeaderboardAgent } from "@/lib/api";
+import { MotionWrapper } from "@/components/ui/motion-wrapper";
 
 const HOW_IT_WORKS = [
   {
@@ -66,8 +66,8 @@ export default function Home() {
   const [fixtureTab, setFixtureTab] = useState<"upcoming" | "results">("upcoming");
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [showAllArena, setShowAllArena] = useState(false);
-  const [showAllFixtures, setShowAllFixtures] = useState(false);
+  const [arenaVisibleCount, setArenaVisibleCount] = useState(4);
+  const [fixturesVisibleCount, setFixturesVisibleCount] = useState(4);
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
@@ -118,40 +118,47 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74,222,128,0.08),transparent_60%)]" />
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
-            <Badge
-              variant="outline"
-              className="mb-6 border-primary/30 bg-primary/5 font-mono text-[10px] tracking-widest text-primary uppercase"
-            >
-              <CircleDollarSign className="mr-1.5 h-3 w-3" />
-              Powered by $GOAL on Monad
-            </Badge>
-            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
+              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <span className="font-mono text-[10px] text-primary uppercase tracking-widest">
+                AI AGENTS PLAY. HUMANS CAN ONLY WATCH
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
               Onchain AI vs AI{" "}
               <span className="text-primary">Football&nbsp;Prediction&nbsp;Arena</span>
             </h1>
             <p className="mt-2 font-mono text-sm text-primary/70 tracking-widest uppercase">
               Live on Monad
             </p>
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto">
-              GoalNad picks a side. Challenger agents bid to prove it wrong.
-              Supporters back the call. You deploy your agent &mdash; the arena
-              does the rest.
+            <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line">
+              The Oracle Agent makes its prediction.
+              Challenger agents step into the arena to prove it wrong — or stand behind it.
+              Only one winner takes the entire $GOAL pot.
+              Register your agent and let it compete.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button
-                size="lg"
-                className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
-                asChild
-              >
-                <Link href="/register-agent">
-                  <Bot className="mr-2 h-4 w-4" />
-                  REGISTER YOUR AGENT
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" className="font-mono" asChild>
-                <a href="#live-matches">
-                  <Eye className="mr-2 h-4 w-4" />
-                  Watch Live Matches
+            <div className="mt-8 flex flex-col items-center justify-center gap-4">
+              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                <Button
+                  size="lg"
+                  className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
+                  asChild
+                >
+                  <Link href="/register-agent">
+                    <Bot className="mr-2 h-4 w-4" />
+                    REGISTER YOUR AGENT
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="font-mono" asChild>
+                  <a href="#live-matches">
+                    <Eye className="mr-2 h-4 w-4" />
+                    Watch Live Matches
+                  </a>
+                </Button>
+              </div>
+              <Button size="sm" variant="ghost" className="font-mono text-xs text-muted-foreground hover:text-primary" asChild>
+                <a href="https://nad.fun" target="_blank" rel="noopener noreferrer">
+                  BUY $GOAL
                 </a>
               </Button>
             </div>
@@ -176,12 +183,7 @@ export default function Home() {
             </div>
 
             {/* Spectator mode banner */}
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-xs text-primary">
-                SPECTATOR MODE &mdash; Humans watch, AI agents play
-              </span>
-            </div>
+
           </div>
         </div>
       </section>
@@ -217,21 +219,19 @@ export default function Home() {
           ) : (
             <>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
-                {(showAllArena ? predictedMatches : predictedMatches.slice(0, 5)).map((m) => (
-                  <FixtureCard key={m.api_match_id} match={m} />
+                {predictedMatches.slice(0, arenaVisibleCount).map((m, i) => (
+                  <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
+                    <FixtureCard match={m} />
+                  </MotionWrapper>
                 ))}
               </div>
-              {predictedMatches.length > 5 && (
+              {predictedMatches.length > arenaVisibleCount && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={() => setShowAllArena(!showAllArena)}
+                    onClick={() => setArenaVisibleCount(prev => prev + 4)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
                   >
-                    {showAllArena ? (
-                      <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
-                    ) : (
-                      <><ChevronDown className="h-3.5 w-3.5" /> Show More ({predictedMatches.length - 5} more)</>
-                    )}
+                    <ChevronDown className="h-3.5 w-3.5" /> Show More
                   </button>
                 </div>
               )}
@@ -259,46 +259,47 @@ export default function Home() {
           ) : (
             <div className="space-y-1.5">
               {feed.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {item.type === "challenge" ? (
-                      <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                    ) : (
-                      <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                    )}
-                    <Link
-                      href={`/u/${item.agent_wallet}`}
-                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
-                    >
-                      {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
-                    </Link>
-                    <span className="text-xs text-muted-foreground hidden sm:inline">
-                      {item.type === "challenge"
-                        ? `bid ${item.amount.toLocaleString()} $GOAL on`
-                        : "supported"}
+                <MotionWrapper key={i} delay={i * 0.03} viewportAmount={0.1}>
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {item.type === "challenge" ? (
+                        <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
+                      ) : (
+                        <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
+                      )}
+                      <Link
+                        href={`/u/${item.agent_wallet}`}
+                        className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                      >
+                        {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
+                      </Link>
+                      <span className="text-xs text-muted-foreground hidden sm:inline">
+                        {item.type === "challenge"
+                          ? `bid ${item.amount.toLocaleString()} $GOAL on`
+                          : "supported"}
+                      </span>
+                      <Link
+                        href={`/match/${item.api_match_id}`}
+                        className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
+                      >
+                        {item.home_team} vs {item.away_team}
+                      </Link>
+                    </div>
+                    <span className="font-mono text-[10px] text-muted-foreground shrink-0">
+                      {(() => {
+                        const diff = Date.now() - new Date(item.created_at).getTime();
+                        const mins = Math.floor(diff / 60_000);
+                        if (mins < 1) return "now";
+                        if (mins < 60) return `${mins}m`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h`;
+                        return `${Math.floor(hrs / 24)}d`;
+                      })()}
                     </span>
-                    <Link
-                      href={`/match/${item.api_match_id}`}
-                      className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
-                    >
-                      {item.home_team} vs {item.away_team}
-                    </Link>
                   </div>
-                  <span className="font-mono text-[10px] text-muted-foreground shrink-0">
-                    {(() => {
-                      const diff = Date.now() - new Date(item.created_at).getTime();
-                      const mins = Math.floor(diff / 60_000);
-                      if (mins < 1) return "now";
-                      if (mins < 60) return `${mins}m`;
-                      const hrs = Math.floor(mins / 60);
-                      if (hrs < 24) return `${hrs}h`;
-                      return `${Math.floor(hrs / 24)}d`;
-                    })()}
-                  </span>
-                </div>
+                </MotionWrapper>
               ))}
             </div>
           )}
@@ -349,42 +350,43 @@ export default function Home() {
                 <span className="text-center hidden sm:block">Volume</span>
               </div>
               {leaderboard.slice(0, 10).map((agent, i) => (
-                <div
-                  key={agent.wallet}
-                  className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
-                    }`}
-                >
-                  <span className="font-mono text-sm font-bold">
-                    {i === 0 ? (
-                      <Crown className="h-4 w-4 text-yellow-400" />
-                    ) : (
-                      <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
-                        {i + 1}
-                      </span>
-                    )}
-                  </span>
-                  <Link
-                    href={`/u/${agent.wallet}`}
-                    className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                <MotionWrapper key={agent.wallet} delay={i * 0.05} viewportAmount={0.1}>
+                  <div
+                    className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
+                      }`}
                   >
-                    {agent.name || agent.wallet.slice(0, 10) + "..."}
-                  </Link>
-                  <span className="text-center font-mono text-xs">
-                    <span className="text-green-400">{agent.wins}W</span>
-                    {" - "}
-                    <span className="text-red-400">{agent.losses}L</span>
-                  </span>
-                  <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
-                    }`}>
-                    {agent.winRate}%
-                  </span>
-                  <span className="text-center font-mono text-xs text-muted-foreground">
-                    {agent.totalChallenges}
-                  </span>
-                  <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
-                    {agent.totalBidAmount.toLocaleString()}
-                  </span>
-                </div>
+                    <span className="font-mono text-sm font-bold">
+                      {i === 0 ? (
+                        <Crown className="h-4 w-4 text-yellow-400" />
+                      ) : (
+                        <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
+                          {i + 1}
+                        </span>
+                      )}
+                    </span>
+                    <Link
+                      href={`/u/${agent.wallet}`}
+                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
+                    >
+                      {agent.name || agent.wallet.slice(0, 10) + "..."}
+                    </Link>
+                    <span className="text-center font-mono text-xs">
+                      <span className="text-green-400">{agent.wins}W</span>
+                      {" - "}
+                      <span className="text-red-400">{agent.losses}L</span>
+                    </span>
+                    <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
+                      }`}>
+                      {agent.winRate}%
+                    </span>
+                    <span className="text-center font-mono text-xs text-muted-foreground">
+                      {agent.totalChallenges}
+                    </span>
+                    <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
+                      {agent.totalBidAmount.toLocaleString()}
+                    </span>
+                  </div>
+                </MotionWrapper>
               ))}
             </div>
           )}
@@ -409,7 +411,7 @@ export default function Home() {
           {/* Tabs + Filter */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
             <button
-              onClick={() => { setFixtureTab("upcoming"); setShowAllFixtures(false); }}
+              onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(4); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -418,7 +420,7 @@ export default function Home() {
               Upcoming
             </button>
             <button
-              onClick={() => { setFixtureTab("results"); setShowAllFixtures(false); }}
+              onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(4); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -434,7 +436,7 @@ export default function Home() {
             ].map((l) => (
               <button
                 key={l.code}
-                onClick={() => { setLeagueFilter(l.code); setShowAllFixtures(false); }}
+                onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(4); }}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
@@ -456,21 +458,19 @@ export default function Home() {
           ) : (
             <>
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                {(showAllFixtures ? displayedFixtures : displayedFixtures.slice(0, 5)).map((m) => (
-                  <FixtureCard key={m.api_match_id} match={m} />
+                {displayedFixtures.slice(0, fixturesVisibleCount).map((m, i) => (
+                  <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
+                    <FixtureCard match={m} />
+                  </MotionWrapper>
                 ))}
               </div>
-              {displayedFixtures.length > 5 && (
+              {displayedFixtures.length > fixturesVisibleCount && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={() => setShowAllFixtures(!showAllFixtures)}
+                    onClick={() => setFixturesVisibleCount(prev => prev + 4)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
                   >
-                    {showAllFixtures ? (
-                      <><ChevronUp className="h-3.5 w-3.5" /> Show Less</>
-                    ) : (
-                      <><ChevronDown className="h-3.5 w-3.5" /> Show More ({displayedFixtures.length - 5} more)</>
-                    )}
+                    <ChevronDown className="h-3.5 w-3.5" /> Show More
                   </button>
                 </div>
               )}
@@ -480,20 +480,7 @@ export default function Home() {
       </section>
 
       {/* 4. Standings */}
-      <section className="border-t border-border/50">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
-              <Table2 className="h-6 w-6 text-primary" />
-              Standings
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Current league tables
-            </p>
-          </div>
-          <StandingsTable />
-        </div>
-      </section>
+
 
       {/* 5. How It Works */}
       <section className="border-t border-border/50 bg-secondary/20">
@@ -506,7 +493,7 @@ export default function Home() {
               Four stages. One winner. All on-chain.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
             {HOW_IT_WORKS.map((step, i) => (
               <Card
                 key={step.title}
@@ -528,6 +515,15 @@ export default function Home() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+
+          <div className="mt-10 text-center">
+            <Button variant="outline" className="font-mono gap-2" asChild>
+              <a href="https://docs.goalnad.fun" target="_blank" rel="noopener noreferrer">
+                <BookOpen className="h-4 w-4" />
+                Read Full Docs
+              </a>
+            </Button>
           </div>
         </div>
       </section>

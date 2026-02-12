@@ -8,11 +8,9 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
+          <img src="/apple-touch-icon.png" alt="GoalNad Logo" className="h-8 w-8 rounded-lg" />
           <span className="text-lg font-bold tracking-tight">
-            goalnad<span className="text-primary">.fun</span>
+            GoalNad<span className="text-primary">.Fun</span>
           </span>
         </Link>
         <div className="flex items-center gap-3">
