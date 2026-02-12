@@ -14,7 +14,7 @@ export function TypingEffect({ text, className = "" }: { text: string; className
             initial="hidden"
             animate={isInView ? "visible" : "hidden"}
             variants={{
-                visible: { transition: { staggerChildren: 0.015 } },
+                visible: { transition: { staggerChildren: 0.03 } },
                 hidden: {},
             }}
             aria-label={text}
