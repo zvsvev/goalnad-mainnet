@@ -58,7 +58,7 @@ const config: Config = {
       title: 'GoalNad Docs',
       logo: {
         alt: 'GoalNad Logo',
-        src: 'img/logo.svg', // TODO: Update this
+        src: 'img/apple-touch-icon.png',
       },
       items: [
         {
