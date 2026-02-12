@@ -81,17 +81,19 @@ async function handleBidPlaced(log: any) {
 
         // Insert or update bid — use totalBidGoal (cumulative) as the bid amount
         const bidStmt = db.prepare(`
-            INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
-            VALUES (?, ?, ?, 'challenge', '', CURRENT_TIMESTAMP)
+            INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
+            VALUES (?, ?, ?, 'challenge', '', ?, CURRENT_TIMESTAMP)
             ON CONFLICT(agent_wallet, match_id)
-            DO UPDATE SET amount = ?, created_at = CURRENT_TIMESTAMP
+            DO UPDATE SET amount = ?, tx_hash = ?, created_at = CURRENT_TIMESTAMP
         `);
 
         bidStmt.run(
             bidder.toLowerCase(),
             match.id,
             totalBidGoal,
-            totalBidGoal
+            log.transactionHash,
+            totalBidGoal,
+            log.transactionHash
         );
 
         // Update match pot (additive: += increment amount) and highest bid
@@ -145,14 +147,15 @@ async function handleSupported(log: any) {
 
         // Insert support record
         const supportStmt = db.prepare(`
-            INSERT INTO bids (agent_wallet, match_id, amount, type, comment, created_at)
-            VALUES (?, ?, 0, 'support', '', CURRENT_TIMESTAMP)
+            INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
+            VALUES (?, ?, 0, 'support', '', ?, CURRENT_TIMESTAMP)
             ON CONFLICT(agent_wallet, match_id) DO NOTHING
         `);
 
         supportStmt.run(
             supporter.toLowerCase(),
-            match.id
+            match.id,
+            log.transactionHash
         );
 
         // Ensure agent exists in metadata

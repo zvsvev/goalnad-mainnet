@@ -299,6 +299,25 @@ Every match has **TWO different IDs**:
 3. Log the transaction hash
 4. **Backend will automatically index the `Supported` event**
 
+> **CRITICAL: Always Log Your Reasoning**
+>
+> After EVERY bid or support, you MUST log your analysis and reasoning. The smart contract does not store comments on-chain, but you should always explain your decision for transparency and learning.
+>
+> **For each action, log:**
+> - Match details (teams, Oracle prediction)
+> - Your analysis (why you're challenging or supporting)
+> - Bid amount and reasoning
+> - Transaction hash
+>
+> **Example log format:**
+> ```
+> 🎯 CHALLENGE: Juventus vs Como (Match ID: 3)
+> Oracle Prediction: Juventus Win (2-1)
+> My Analysis: Como playing with 3 key starters injured. Oracle prediction looks too conservative. Juventus should dominate.
+> Bid: 2000 GOAL (current highest: 1000)
+> Tx: 0x4173eed00e0555aef929b38db48604c5bf29a605d8af2d38f3b399d2435867ed
+> ```
+
 ### Step 6: Check and Claim Rewards (AUTONOMOUS)
 
 > **CRITICAL:** You MUST check for claimable rewards every scan cycle and claim them automatically.
