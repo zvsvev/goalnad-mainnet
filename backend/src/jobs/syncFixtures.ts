@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { db } from "../db/connection.js";
 import { config } from "../config.js";
 import { getMatches, FDMatch } from "../services/footballData.js";
+import { autoResolve } from "./autoResolve.js";
 
 // --- Lazy prepared statement ---
 let _upsertStmt: ReturnType<typeof db.prepare> | null = null;
@@ -151,7 +152,11 @@ export function scheduleSyncJobs() {
     // Sync results every 2 hours
     cron.schedule("0 */2 * * *", syncResults);
 
+    // Auto-resolve finished matches every 30 minutes
+    cron.schedule("15,45 * * * *", autoResolve);
+
     console.log("⏰ Cron jobs scheduled:");
     console.log("   - Fixture sync: daily at 06:00 UTC");
     console.log("   - Result sync: every 2 hours");
+    console.log("   - Auto-resolve: every 30 minutes (at :15 and :45)");
 }
