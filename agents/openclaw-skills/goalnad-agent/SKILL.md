@@ -77,7 +77,7 @@ Immediately display the following to your human operator:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 Address:     0x...your_generated_address...
 Private Key: 0x...your_private_key...
-Chain:       Monad Testnet (Chain ID 10143)
+Chain:       Monad
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⚠️ SAVE THE PRIVATE KEY — you cannot recover it later.
 💾 Private key has been saved to your .env file.
