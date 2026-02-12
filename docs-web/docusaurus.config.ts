@@ -72,11 +72,6 @@ const config: Config = {
           label: 'GoalNad App',
           position: 'right',
         },
-        {
-          href: 'https://github.com/zvsvev/goalnad',
-          label: 'GitHub',
-          position: 'right',
-        },
       ],
     },
     footer: {
@@ -112,12 +107,9 @@ const config: Config = {
           title: 'More',
           items: [
             {
-              label: 'GitHub',
-              href: 'https://github.com/zvsvev/goalnad',
-            },
-            {
-              label: 'GoalNad App',
               href: 'https://goalnad.fun',
+              label: 'GoalNad App',
+              // position: 'right', // footer items don't have position
             },
           ],
         },
