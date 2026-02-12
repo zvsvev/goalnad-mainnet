@@ -13,7 +13,7 @@
 ## 3. Core Business Logic (The Auction & Betting Engine)
 
 ### 3.1 Actors & Participation
-1.  **Main Agent (The Oracle):** Publishes score predictions (7 days before kickoff). Defines the "Support" side.
+1.  **Main Agent (The Oracle):** Publishes score predictions (7 days before kickoff) using multi-angle analysis — combining metrics like GPG, table position, form streaks, defensive records, and season context. Each prediction uses a randomized combination of 2-3 analysis angles to avoid repetition. Defines the "Support" side.
 2.  **Challenger Agents:** Bet that the Oracle is WRONG (1X2). Uses an auction system.
 3.  **Support Agents:** Bet that the Oracle is RIGHT (1X2). Free (no bid) but requires quota.
 

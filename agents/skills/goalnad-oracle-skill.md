@@ -68,16 +68,20 @@ GET {BACKEND_URL}/api/standings/PL
 GET {BACKEND_URL}/api/standings/SA
 ```
 
-For each match, gather:
+For each match, gather ALL of these data points — you will use different combinations for each analysis:
 
-| Data Point | Source | Weight |
-|-----------|--------|--------|
-| League standings & points | `/standings/{code}` | High |
-| Recent form (last 5 results) | Match history | High |
-| Home/Away performance split | Derived stats | High |
-| Goals scored/conceded averages | Standings data | Medium |
-| Head-to-head record | Historical data | Medium |
-| Matchday context (early/mid/late season) | Calendar | Low |
+| Data Point | Source | Example Usage |
+|-----------|--------|---------------|
+| League position & points gap | `/standings/{code}` | "3rd vs 17th — 28 points apart" |
+| Recent form (last 5-6 results) | Match history | "WWDWL vs LLDLL" |
+| Home record vs Away record | Derived stats | "8W-2D-1L at home vs 1W-3D-7L away" |
+| Goals scored per game (home/away) | Standings data | "Averaging 2.4 GPG at home" |
+| Goals conceded per game | Standings data | "Leaking 1.9 goals per away game" |
+| Goal difference | Standings data | "+24 vs -15 GD" |
+| Clean sheets | Derived | "4 clean sheets in last 6 home games" |
+| Wins/draws/losses split | Standings | "12W-6D-4L overall" |
+| Points per game | Derived | "2.1 PPG vs 0.9 PPG" |
+| Season context | Calendar | "Relegation fight", "Title race", "Mid-table cruise" |
 
 ### Step 2: Scoring Model
 
@@ -110,6 +114,32 @@ conviction: 0-100 (how confident you are)
 **Exact Score Logic:**
 - Home Win: `ceil(homeAvgGF)` - `floor(awayAvgGF * 0.7)`
 - Away Win: `floor(homeAvgGF * 0.7)` - `ceil(awayAvgGF)`
+
+### Step 3.5: Analysis Angle Selection (CRITICAL — Prevents Repetition)
+
+> ⚠️ **NEVER write the same style of analysis for every match.** You MUST randomize which data points and narrative angles you lead with.
+
+For each prediction, **randomly select 2-3 angles** from the list below. **Never use the same lead angle for consecutive predictions.** Combine them into a unique, sharp analysis.
+
+| # | Angle | What to Highlight | Example Lead |
+|---|-------|-------------------|--------------|
+| 1 | **Goal Machine** | Goals scored/conceded, GPG averages | "Arsenal are scoring 2.4 per game at home — Palace concede 1.8 on the road. The math writes itself." |
+| 2 | **Table Gap** | League position delta, points gap | "3rd plays 17th. A 28-point chasm separates these two. The table doesn't lie." |
+| 3 | **Fortress/Graveyard** | Home or away record extremes | "The Emirates has been a fortress — 8W-1D-0L. Teams don't come here and leave with points." |
+| 4 | **Form Streak** | Recent run of results (WWWDW vs LLLLD) | "Five straight Ws for Liverpool. Everton? One win in eight. Momentum is a killer." |
+| 5 | **Defensive Steel** | Clean sheets, goals conceded | "4 clean sheets in 6 home games. Brighton's defense is suffocating visitors." |
+| 6 | **Season Stakes** | Relegation battle, title race, European push, mid-table drift | "Burnley are drowning — 19th, 4 points adrift of safety. Desperation doesn't win football matches." |
+| 7 | **Goal Difference** | Overall GD comparison | "+31 vs -14 goal difference. One team builds, the other bleeds." |
+| 8 | **PPG Disparity** | Points per game comparison | "2.3 PPG vs 0.7 PPG. One plays like champions, the other like tourists." |
+| 9 | **Tactical Mismatch** | Style clash, scoring vs leaking | "Inter average 2.1 GPG, Verona concede 2.0. When a sword meets no shield, goals happen." |
+| 10 | **Underdog Narrative** | When the away team surprisingly has data backing them | "Don't let the table fool you — Brentford's away form (5W-2D-4L) rivals top-6 sides." |
+
+**Combination Rules:**
+- Pick 2-3 angles per match. Lead with the most compelling one.
+- If both teams are close in quality, use angles 6, 8, or 10 to find a differentiator.
+- For mismatches, use angles 1, 2, or 3 for maximum impact.
+- **VARY your opener.** Don't start every analysis with the same word or structure.
+- Use specific numbers — not "good form" but "4W-1D-0L, 2.3 GPG."
 
 ### Step 4: Publish Prediction On-Chain (Direct Contract Call)
 

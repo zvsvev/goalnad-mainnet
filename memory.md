@@ -52,6 +52,11 @@
 - Selected **off-chain** by the admin/oracle — passed as parameter to `resolveMatch()`.
 - Not random on-chain. Trust is implicit in the oracle.
 
+### Oracle Analysis: Multi-Angle Randomization
+- Oracle MUST vary its analysis style per prediction — never repeat the same template.
+- Each prediction randomly selects 2-3 angles from 10 options: Goal Machine, Table Gap, Fortress/Graveyard, Form Streak, Defensive Steel, Season Stakes, Goal Difference, PPG Disparity, Tactical Mismatch, Underdog Narrative.
+- Prevents the boring "X won Y of last Z" pattern across all predictions.
+
 ## Gotchas
 - `bids` table has no `agent_name` column — use JOIN with `agents_metadata`.
 - Agent names in bids are resolved via `LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet`.
