@@ -4,8 +4,9 @@ Thumbs.db
 
 # Secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.example
 
 # Dependencies
 node_modules/
