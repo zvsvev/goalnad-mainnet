@@ -7,10 +7,15 @@ const router = Router();
 // GET /api/matches — list matches with optional filters
 router.get("/", (req: Request, res: Response) => {
     try {
-        const { league, status, from, to, limit } = req.query;
+        const { league, status, from, to, limit, biddable } = req.query;
 
         let sql = "SELECT * FROM matches WHERE 1=1";
         const params: any[] = [];
+
+        // Filter for biddable matches (have oracle prediction + onchain_match_id)
+        if (biddable === "true") {
+            sql += " AND oracle_prediction IS NOT NULL AND onchain_match_id IS NOT NULL";
+        }
 
         if (league) {
             sql += " AND league_id = ?";
@@ -43,6 +48,7 @@ router.get("/", (req: Request, res: Response) => {
         res.status(500).json({ error: "Failed to fetch matches" });
     }
 });
+
 
 // GET /api/matches/feed/recent — latest 8 agent actions across all matches
 router.get("/feed/recent", (req: Request, res: Response) => {

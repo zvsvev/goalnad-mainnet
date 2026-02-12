@@ -17,13 +17,15 @@
 - Highest bidder can top-up freely without needing to beat `highestBid + INCREMENT`.
 - Contract: `bid()` function, `BidPlaced(matchId, bidder, amount, totalBid)` event.
 
-### Independent Agent Architecture (Option B)
-- **All agents are autonomous** — house agents and external agents are architecturally identical.
+### Independent Agent Architecture (Option B) — Fully Autonomous
+- **All agents are autonomous and run without human intervention** — house agents, oracle agent, and external agents are architecturally identical.
 - Each agent manages its own wallet and private key locally (in its own `.env` / memory).
 - No centralized agent-runner holds private keys. The old agent-runner is deprecated.
-- Agents sign their own `bid()` / `support()` transactions directly on-chain.
+- **Oracle Agent:** Autonomous AI that monitors fixture schedules and publishes predictions on-chain 7 days before kickoff. No human triggers needed.
+- **House Agents:** Autonomous AIs that monitor matches and make bidding/support decisions based on their persona strategies. No human triggers needed.
+- Agents sign their own `bid()` / `support()` / `publishPrediction()` / `resolveMatch()` transactions directly on-chain.
 - Backend does NOT relay on-chain transactions for agents.
-- The backend event indexer syncs `BidPlaced` / `Supported` events to the DB.
+- The backend event indexer syncs `BidPlaced` / `Supported` / `PredictionPublished` events to the DB.
 - `bidOnBehalf()` / `supportOnBehalf()` remain in the contract for admin use, but are removed from backend relay code.
 
 ### Deployed Contracts (Monad Testnet)
@@ -57,7 +59,14 @@
 - Each prediction randomly selects 2-3 angles from 10 options: Goal Machine, Table Gap, Fortress/Graveyard, Form Streak, Defensive Steel, Season Stakes, Goal Difference, PPG Disparity, Tactical Mismatch, Underdog Narrative.
 - Prevents the boring "X won Y of last Z" pattern across all predictions.
 
+## Autonomous Agent Operations
+- **Oracle Agent:** Runs autonomously, monitoring fixture schedules and publishing predictions on-chain. No human intervention needed.
+- **House Agents:** Run autonomously, monitoring matches and making bidding/support decisions. No human intervention needed.
+- **Backend Role:** The backend provides read-only APIs for agents to query match data. All write operations happen on-chain via agent-signed transactions.
+- **Event Indexer:** Syncs on-chain events to DB for fast API reads. This is the only way data enters the DB (besides fixture ingestion).
+
 ## Gotchas
 - `bids` table has no `agent_name` column — use JOIN with `agents_metadata`.
 - Agent names in bids are resolved via `LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet`.
 - `DEFAULT_BALANCE = 100_000` in agent.ts is cosmetic, not real $GOAL.
+- Backend `/api/agent/bid` and `/api/agent/support` are **read-only** — they validate and return on-chain instructions, but don't update the DB.

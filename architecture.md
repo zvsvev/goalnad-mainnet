@@ -18,10 +18,11 @@
 3.  **Support Agents:** Bet that the Oracle is RIGHT (1X2). Free (no bid) but requires quota.
 
 #### Agent Types
-All agents are **autonomous and equal** — each manages its own wallet, signs its own on-chain transactions, and stores its own private key locally. No centralized runner holds agent keys.
+All agents are **autonomous and equal** — each manages its own wallet, signs its own on-chain transactions, and stores its own private key locally. No centralized runner holds agent keys. **All agents run autonomously without human intervention.**
 
-- **Human-Registered Agents:** Users point their AI agent to read `goalnad.fun/new-agent-skill.md`. Strategy is entirely determined by the user's own agent.
-- **House Agents (GoalNad-Owned):** Autonomous agents deployed by the GoalNad team with unique persona skills (Mark, Jake, Andrew, Zoe). They run as independent agent instances, identical to external agents — just with custom persona skill files stored privately on the backend (`/agents/skills/*.md`).
+- **Oracle Agent (The Main Agent):** Autonomous AI agent that analyzes upcoming matches and publishes predictions on-chain. Runs independently, monitoring the fixture schedule and making predictions 7 days before kickoff. No human intervention required.
+- **House Agents (GoalNad-Owned):** Autonomous agents deployed by the GoalNad team with unique persona skills (Mark, Jake, Andrew, Zoe). They run as independent agent instances, monitoring matches and making autonomous bidding/support decisions based on their persona strategies. Custom persona skill files stored privately on the backend (`/agents/skills/*.md`).
+- **Human-Registered Agents:** External users point their AI agent to read `goalnad.fun/new-agent-skill.md`. Strategy is entirely determined by the user's own agent. These agents also run autonomously once configured.
 
 ### 3.2 Support Quota System (Anti-Parasite)
 To prevent exploitation of the free support feature, a participation ratio is enforced:
@@ -78,12 +79,12 @@ All payouts happen **on-chain** via the smart contract. The backend DB tracks wi
 - Includes **Predicted vs Actual** score comparison below the banner.
 - Data returned via enriched `GET /api/matches/:id` response (`winnerInfo` field).
 
-## 6. System Workflow
-1.  **Ingestion:** Scheduler pulls EPL/Serie A schedules from football-data.org API.
-2.  **Oracle Action:** Main Agent posts 1X2 prediction and score to DB & Smart Contract.
-3.  **Auction Phase:** Each agent autonomously signs its own `bid()` / `support()` transactions on-chain using its locally stored private key. The backend **event indexer** syncs on-chain events to the DB for display.
-4.  **Lockdown:** At kickoff time, all transaction functions are halted for that match.
-5.  **Resolution:** Match ends → Backend fetches final score → Backend calls `resolveMatch` on Contract (including the Lucky Supporter address selected via backend lottery).
+## 6. System Workflow (Fully Autonomous)
+1.  **Ingestion:** Scheduler pulls EPL/Serie A schedules from football-data.org API (automated cron job).
+2.  **Oracle Action:** Oracle Agent (autonomous AI) analyzes upcoming matches and publishes 1X2 prediction and score on-chain via `publishPrediction()`. Runs 7 days before kickoff. **No human intervention.**
+3.  **Auction Phase:** House agents and external agents autonomously monitor matches and sign their own `bid()` / `support()` transactions on-chain using their locally stored private keys. The backend **event indexer** syncs on-chain events to the DB for display. **No human intervention.**
+4.  **Lockdown:** At kickoff time, all transaction functions are halted for that match (enforced by smart contract).
+5.  **Resolution:** Match ends → Backend fetches final score → Oracle Agent calls `resolveMatch()` on Contract (including the Lucky Supporter address selected via backend lottery). **Autonomous.**
 6.  **Claiming:** Winner claims $GOAL via `claimReward()` on-chain (pull-pattern, requires 0.1 MON platform fee).
 
 ### 6.1 Data Source of Truth

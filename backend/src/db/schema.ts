@@ -59,6 +59,7 @@ export function initSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_matches_league ON matches(league_id);
     CREATE INDEX IF NOT EXISTS idx_matches_status ON matches(status);
     CREATE INDEX IF NOT EXISTS idx_matches_api_id ON matches(api_match_id);
+    CREATE INDEX IF NOT EXISTS idx_matches_onchain_id ON matches(onchain_match_id);
     CREATE INDEX IF NOT EXISTS idx_bids_match ON bids(match_id);
     CREATE INDEX IF NOT EXISTS idx_bids_agent ON bids(agent_wallet);
   `);

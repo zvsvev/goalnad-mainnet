@@ -96,8 +96,9 @@ router.get("/status", (req: Request, res: Response) => {
 });
 
 // ─── POST /api/agent/bid ───
-// Matches contract bid() logic: additive pot, top-up bids, no refunds on outbid.
-// DB tracks bids for display/stats — on-chain is the source of truth for tokens.
+// READ-ONLY ENDPOINT: Returns match info and instructions for on-chain bidding.
+// Agents must sign their own bid() transaction on-chain.
+// The backend indexer syncs on-chain events to DB automatically.
 router.post("/bid", async (req: Request, res: Response) => {
     try {
         const wallet = getWallet(req);
@@ -105,7 +106,7 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "X-Agent-Wallet header is required" });
         }
 
-        const { matchId, amount, comment } = req.body;
+        const { matchId, amount } = req.body;
 
         if (!matchId || !amount) {
             return res.status(400).json({ error: "matchId and amount are required" });
@@ -123,21 +124,29 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Agent not found. Register first." });
         }
 
-        // 2. Check match exists and is biddable
+        // 2. Check match exists and has been published on-chain
         const match = db
             .prepare("SELECT * FROM matches WHERE api_match_id = ?")
             .get(matchId) as any;
         if (!match) {
             return res.status(404).json({ error: "Match not found" });
         }
+        if (!match.onchain_match_id && match.onchain_match_id !== 0) {
+            return res.status(400).json({
+                error: "Match not published on-chain yet. Oracle must publish prediction first.",
+                matchId: match.api_match_id,
+                homeTeam: match.home_team,
+                awayTeam: match.away_team,
+            });
+        }
         if (match.status !== "NS") {
             return res.status(400).json({ error: "Match is not open for bidding (status: " + match.status + ")" });
         }
 
-        // 3. Check if match has started (bids close at kickoff)
-        const kickoff = new Date(match.match_date).getTime();
-        if (Date.now() >= kickoff) {
-            return res.status(400).json({ error: "Bidding is closed — match has started." });
+        // 3. Check if match has started (bids close at lockdown time)
+        const lockdown = match.lockdown_time ? new Date(match.lockdown_time).getTime() : new Date(match.match_date).getTime();
+        if (Date.now() >= lockdown) {
+            return res.status(400).json({ error: "Bidding is closed — auction locked." });
         }
 
         // 4. Check mutual exclusivity — can't bid if already supported
@@ -153,7 +162,6 @@ router.post("/bid", async (req: Request, res: Response) => {
         const newTotalBid = currentBid + amount;
 
         // 6. Check bid beats current highest by MIN_INCREMENT
-        //    Exception: current highest bidder can top-up without needing to beat themselves
         const currentHighest = match.highest_bid || 0;
         const isSelfTopUp = match.highest_bidder === wallet;
         if (!isSelfTopUp && newTotalBid < currentHighest + MIN_INCREMENT) {
@@ -169,80 +177,46 @@ router.post("/bid", async (req: Request, res: Response) => {
             return res.status(400).json({ error: `Minimum total bid is ${MIN_BID} $GOAL` });
         }
 
-        // ─── Execute bid (all in a transaction) ───
-        // Matches contract logic: additive pot, no refunds, tokens stay locked
-        const executeBid = db.transaction(() => {
-            const isFirstBid = !existingBid;
-
-            if (isFirstBid) {
-                // First bid — grant support quota
-                db.prepare(
-                    "UPDATE agents_metadata SET support_quota = support_quota + ? WHERE agent_wallet = ?"
-                ).run(SUPPORT_QUOTA_PER_CHALLENGE, wallet);
-
-                // Insert bid record
-                db.prepare(
-                    "INSERT INTO bids (agent_wallet, match_id, amount, type, comment) VALUES (?, ?, ?, 'challenge', ?)"
-                ).run(wallet, match.id, amount, comment || null);
-            } else {
-                // Top-up — update existing bid amount (no extra quota)
-                db.prepare(
-                    "UPDATE bids SET amount = ?, comment = COALESCE(?, comment) WHERE agent_wallet = ? AND match_id = ?"
-                ).run(newTotalBid, comment || null, wallet, match.id);
-            }
-
-            // Additive pot tracking (matches contract: totalPot += amount)
-            const newTotalPot = (match.total_pot || 0) + amount;
-
-            // Update highest bid if this agent's cumulative total beats it
-            const newHighestBid = newTotalBid > currentHighest ? newTotalBid : currentHighest;
-            const newHighestBidder = newTotalBid > currentHighest ? wallet : match.highest_bidder;
-
-            db.prepare(
-                "UPDATE matches SET highest_bid = ?, highest_bidder = ?, total_pot = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-            ).run(newHighestBid, newHighestBidder, newTotalPot, match.id);
-        });
-
-        executeBid();
-
-        // NOTE: On-chain transactions are signed directly by agents.
-        // The backend event indexer syncs on-chain state to DB automatically.
-
-        // Fetch updated state
-        const updatedAgent = db
-            .prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?")
-            .get(wallet) as any;
-        const updatedMatch = db
-            .prepare("SELECT * FROM matches WHERE id = ?")
-            .get(match.id) as any;
-
-        res.status(201).json({
-            message: existingBid ? "Challenge bid topped up successfully" : "Challenge bid placed successfully",
-            bid: {
-                matchId: updatedMatch.api_match_id,
-                amount,
-                totalBid: existingBid ? (existingBid.amount + amount) : amount,
-                comment: comment || null,
+        // ─── Return on-chain transaction instructions ───
+        // Agent must sign bid() transaction on-chain with these parameters
+        res.status(200).json({
+            message: "Bid validation passed. Sign on-chain transaction to complete.",
+            onChainInstructions: {
+                contract: process.env.ARENA_CONTRACT_ADDRESS,
+                function: "bid",
+                args: {
+                    matchId: match.onchain_match_id,
+                    amount: amount,
+                },
+                note: "Call contract.bid(matchId, amount) with your wallet. Amount should be in wei (multiply by 1e18).",
             },
             match: {
-                homeTeam: updatedMatch.home_team,
-                awayTeam: updatedMatch.away_team,
-                totalPot: updatedMatch.total_pot,
-                highestBid: updatedMatch.highest_bid,
-                highestBidder: updatedMatch.highest_bidder,
+                onchainMatchId: match.onchain_match_id,
+                apiMatchId: match.api_match_id,
+                homeTeam: match.home_team,
+                awayTeam: match.away_team,
+                oraclePrediction: match.oracle_prediction,
+                totalPot: match.total_pot,
+                highestBid: match.highest_bid,
+                highestBidder: match.highest_bidder,
+                lockdownTime: match.lockdown_time,
             },
-            agent: {
-                wallet: updatedAgent.agent_wallet,
-                supportQuota: updatedAgent.support_quota,
+            yourBid: {
+                currentBid: currentBid,
+                incrementAmount: amount,
+                newTotalBid: newTotalBid,
             },
         });
     } catch (err: any) {
-        console.error("Error placing bid:", err.message);
-        res.status(500).json({ error: "Failed to place bid" });
+        console.error("Error validating bid:", err.message);
+        res.status(500).json({ error: "Failed to validate bid" });
     }
 });
 
 // ─── POST /api/agent/support ───
+// READ-ONLY ENDPOINT: Returns match info and instructions for on-chain support.
+// Agents must sign their own support() transaction on-chain.
+// The backend indexer syncs on-chain events to DB automatically.
 router.post("/support", async (req: Request, res: Response) => {
     try {
         const wallet = getWallet(req);
@@ -250,7 +224,7 @@ router.post("/support", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "X-Agent-Wallet header is required" });
         }
 
-        const { matchId, comment } = req.body;
+        const { matchId } = req.body;
 
         if (!matchId) {
             return res.status(400).json({ error: "matchId is required" });
@@ -264,32 +238,41 @@ router.post("/support", async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Agent not found. Register first." });
         }
 
-        // 2. Check support quota
+        // 2. Check support quota (DB value - will be validated on-chain too)
         if (agent.support_quota <= 0) {
             return res.status(400).json({
                 error: "No support quota available. Challenge a match first to earn +2 quota.",
                 supportQuota: agent.support_quota,
+                note: "On-chain quota is the source of truth. This is a DB estimate.",
             });
         }
 
-        // 3. Check match exists and is open
+        // 3. Check match exists and has been published on-chain
         const match = db
             .prepare("SELECT * FROM matches WHERE api_match_id = ?")
             .get(matchId) as any;
         if (!match) {
             return res.status(404).json({ error: "Match not found" });
         }
+        if (!match.onchain_match_id && match.onchain_match_id !== 0) {
+            return res.status(400).json({
+                error: "Match not published on-chain yet. Oracle must publish prediction first.",
+                matchId: match.api_match_id,
+                homeTeam: match.home_team,
+                awayTeam: match.away_team,
+            });
+        }
         if (match.status !== "NS") {
             return res.status(400).json({ error: "Match is not open for support (status: " + match.status + ")" });
         }
 
-        // 4. Check if match has started (bids close at kickoff)
-        const kickoff = new Date(match.match_date).getTime();
-        if (Date.now() >= kickoff) {
-            return res.status(400).json({ error: "Bidding is closed — match has started." });
+        // 4. Check if match has started (bids close at lockdown time)
+        const lockdown = match.lockdown_time ? new Date(match.lockdown_time).getTime() : new Date(match.match_date).getTime();
+        if (Date.now() >= lockdown) {
+            return res.status(400).json({ error: "Bidding is closed — auction locked." });
         }
 
-        // 5. Check agent hasn't already acted on this match
+        // 5. Check agent hasn't already acted on this match (DB check - will be validated on-chain too)
         const existingBid = db
             .prepare("SELECT * FROM bids WHERE agent_wallet = ? AND match_id = ?")
             .get(wallet, match.id);
@@ -297,55 +280,35 @@ router.post("/support", async (req: Request, res: Response) => {
             return res.status(400).json({ error: "You have already acted on this match (challenge or support)" });
         }
 
-        // ─── Execute support (transaction) ───
-        const executeSupport = db.transaction(() => {
-            // Deduct 1 support quota
-            db.prepare(
-                "UPDATE agents_metadata SET support_quota = support_quota - 1 WHERE agent_wallet = ?"
-            ).run(wallet);
-
-            // Insert support record
-            db.prepare(
-                "INSERT INTO bids (agent_wallet, match_id, amount, type, comment) VALUES (?, ?, 0, 'support', ?)"
-            ).run(wallet, match.id, comment || null);
-        });
-
-        executeSupport();
-
-        // NOTE: On-chain transactions are now signed directly by agents
-        // via their own wallets (support() contract function).
-        // The backend event indexer picks up on-chain events automatically.
-
-        // Fetch updated agent
-        const updatedAgent = db
-            .prepare("SELECT * FROM agents_metadata WHERE agent_wallet = ?")
-            .get(wallet) as any;
-
-        // Count supporters for this match
-        const supporterCount = db
-            .prepare("SELECT COUNT(*) as count FROM bids WHERE match_id = ? AND type = 'support'")
-            .get(match.id) as any;
-
-        res.status(201).json({
-            message: "Support placed successfully",
-            support: {
-                matchId: match.api_match_id,
-                comment: comment || null,
+        // ─── Return on-chain transaction instructions ───
+        // Agent must sign support() transaction on-chain
+        res.status(200).json({
+            message: "Support validation passed. Sign on-chain transaction to complete.",
+            onChainInstructions: {
+                contract: process.env.ARENA_CONTRACT_ADDRESS,
+                function: "support",
+                args: {
+                    matchId: match.onchain_match_id,
+                },
+                note: "Call contract.support(matchId) with your wallet. This will deduct 1 support quota on-chain.",
             },
             match: {
+                onchainMatchId: match.onchain_match_id,
+                apiMatchId: match.api_match_id,
                 homeTeam: match.home_team,
                 awayTeam: match.away_team,
-                supportersCount: supporterCount.count,
+                oraclePrediction: match.oracle_prediction,
+                lockdownTime: match.lockdown_time,
             },
             agent: {
-                wallet: updatedAgent.agent_wallet,
-                balance: updatedAgent.balance,
-                supportQuota: updatedAgent.support_quota,
+                wallet: agent.agent_wallet,
+                supportQuota: agent.support_quota,
+                note: "On-chain quota is the source of truth. This is a DB estimate.",
             },
         });
     } catch (err: any) {
-        console.error("Error placing support:", err.message);
-        res.status(500).json({ error: "Failed to place support" });
+        console.error("Error validating support:", err.message);
+        res.status(500).json({ error: "Failed to validate support" });
     }
 });
 
