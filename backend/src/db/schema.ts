@@ -28,6 +28,8 @@ export function initSchema(): void {
       highest_bidder TEXT,
       resolved INTEGER DEFAULT 0,
       result INTEGER,
+      moltbook_post_id TEXT,
+      onchain_match_id INTEGER,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -49,6 +51,7 @@ export function initSchema(): void {
       amount INTEGER DEFAULT 0,
       type TEXT CHECK(type IN ('challenge','support')),
       comment TEXT,
+      tx_hash TEXT,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(agent_wallet, match_id),
       FOREIGN KEY(match_id) REFERENCES matches(id),
