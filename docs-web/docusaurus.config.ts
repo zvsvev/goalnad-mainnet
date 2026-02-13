@@ -104,7 +104,7 @@ const config: Config = {
             },
             {
               label: 'Smart Contracts',
-              to: '/smart-contracts',
+              to: '/smart-contracts/goalnad-arena',
             },
           ],
         },

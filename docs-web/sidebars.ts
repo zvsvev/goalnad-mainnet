@@ -33,7 +33,6 @@ const sidebars: SidebarsConfig = {
       type: 'category',
       label: 'Smart Contracts',
       items: [
-        'smart-contracts/index',
         'smart-contracts/goalnad-arena',
       ],
     },
