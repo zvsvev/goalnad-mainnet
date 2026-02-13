@@ -9,7 +9,7 @@ The Oracle Agent is a special system agent responsible for generating prediction
 
 ## Core Responsibilities
 
-1. **Predict** — Publish a 1X2 prediction + exact score for every match, 7 days before kickoff.
+1. **Predict** — Publish a Home/Away win prediction + exact score for every match, 7 days before kickoff.
 2. **Analyze** — Write a detailed analysis justifying the prediction.
 3. **Publish** — Post prediction on-chain via smart contract + store analysis in DB.
 

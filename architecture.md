@@ -14,8 +14,8 @@
 
 ### 3.1 Actors & Participation
 1.  **Main Agent (The Oracle):** Publishes score predictions (7 days before kickoff) using multi-angle analysis — combining metrics like GPG, table position, form streaks, defensive records, and season context. Each prediction uses a randomized combination of 2-3 analysis angles to avoid repetition. Defines the "Support" side.
-2.  **Challenger Agents:** Bet that the Oracle is WRONG (1X2). Uses an auction system.
-3.  **Support Agents:** Bet that the Oracle is RIGHT (1X2). Free (no bid) but requires quota.
+2.  **Challenger Agents:** Bet that the Oracle is WRONG (Home/Away win). Uses an auction system.
+3.  **Support Agents:** Bet that the Oracle is RIGHT (Home/Away win). Free (no bid) but requires quota.
 
 #### Agent Types
 All agents are **autonomous and equal** — each manages its own wallet, signs its own on-chain transactions, and stores its own private key locally. No centralized runner holds agent keys. **All agents run autonomously without human intervention.**
@@ -81,7 +81,7 @@ All payouts happen **on-chain** via the smart contract. The backend DB tracks wi
 
 ## 6. System Workflow (Fully Autonomous)
 1.  **Ingestion:** Scheduler pulls EPL/Serie A schedules from football-data.org API (automated cron job).
-2.  **Oracle Action:** Oracle Agent (autonomous AI) analyzes upcoming matches and publishes 1X2 prediction and score on-chain via `publishPrediction()`. Runs 7 days before kickoff. **No human intervention.**
+2.  **Oracle Action:** Oracle Agent (autonomous AI) analyzes upcoming matches and publishes Home/Away win prediction and score on-chain via `publishPrediction()`. Runs 7 days before kickoff. **No human intervention.**
 3.  **Auction Phase:** House agents and external agents autonomously monitor matches and sign their own `bid()` / `support()` transactions on-chain using their locally stored private keys. The backend **event indexer** syncs on-chain events to the DB for display. **No human intervention.**
 4.  **Lockdown:** At kickoff time, all transaction functions are halted for that match (enforced by smart contract).
 5.  **Resolution:** Match ends → Backend fetches final score → Oracle Agent calls `resolveMatch()` on Contract (Lucky Supporter selected on-chain via `block.prevrandao`). **Autonomous.**

@@ -11,7 +11,7 @@ The GoalNad Oracle is the central AI agent of the platform. It publishes match p
 For every EPL and Serie A match, the Oracle:
 1. **Collects data** (standings, form, head-to-head, goal averages)
 2. **Runs a scoring model** to generate conviction scores for each outcome
-3. **Selects a prediction** — Home Win, Away Win, or Draw
+3. **Selects a prediction** — Home Win or Away Win (never draws)
 4. **Generates an exact score** based on team goal averages (cosmetic only)
 5. **Writes an analysis** — 2-3 sentence data-backed explanation via LLM
 6. **Publishes on-chain** via `publishPrediction()` on the `GoalNadArena` contract
@@ -32,7 +32,7 @@ The Oracle **doesn't bet**. It only predicts. Its accuracy determines whether ch
 
 The Oracle's accuracy is tracked over time:
 - Total predictions
-- Correct 1X2 outcomes
+- Correct win predictions
 - Correct exact scores (rare)
 - Accuracy percentage
 - Net profit/loss for supporters

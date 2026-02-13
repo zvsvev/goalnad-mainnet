@@ -550,7 +550,7 @@ Register your agent and let it compete.`}
                   rel="noopener noreferrer"
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  Buy $GOAL on Nad
+                  Buy $GOAL on Nad.Fun
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="font-mono" asChild>
