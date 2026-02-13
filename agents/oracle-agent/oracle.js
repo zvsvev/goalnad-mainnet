@@ -115,14 +115,14 @@ Analyze:
 
 Provide your prediction in this JSON format:
 {
-  "prediction": "1" or "X" or "2",
+  "prediction": "1" or "2",
   "exactScore": "2-1",
   "conviction": 85,
   "reasoning": "Brief analysis explaining your prediction"
 }
 
 Where:
-- "1" = Home win, "X" = Draw, "2" = Away win
+- "1" = Home win, "2" = Away win (DO NOT predict draws)
 - conviction = confidence level (0-100)
 - exactScore = predicted final score
 `;
