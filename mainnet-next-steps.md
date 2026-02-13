@@ -24,8 +24,8 @@
    - Watch Paths: `backend/**`
 
 3. **Get the Railway URL**
-   - Railway will generate a URL like: `https://goalnad-backend-production.up.railway.app`
-   - Save this URL for the next step
+   - Railway URL: `https://goalnad-mainnet-production.up.railway.app`
+   - ✅ Backend deployed
 
 ### 3.2 Update Frontend Environment Variables in Vercel
 
@@ -33,7 +33,7 @@
 
 2. **Add/Update:**
    ```
-   NEXT_PUBLIC_API_URL=https://goalnad-backend-production.up.railway.app/api
+   NEXT_PUBLIC_API_URL=https://goalnad-mainnet-production.up.railway.app/api
    ```
    *(Replace with your actual Railway backend URL)*
 
@@ -163,7 +163,7 @@ INDEXER_START_BLOCK=<DEPLOYMENT_BLOCK_NUMBER>
 
 2. **Test API endpoint:**
    ```bash
-   curl https://goalnad-backend-production.up.railway.app/api/matches
+   curl https://goalnad-mainnet-production.up.railway.app/api/matches
    ```
    Should return `[]` (empty array, no matches yet)
 
@@ -319,7 +319,7 @@ INDEXER_START_BLOCK=<DEPLOYMENT_BLOCK_NUMBER>
 
 ### Important URLs
 - **Frontend:** https://goalnad.fun
-- **Backend:** https://goalnad-backend-production.up.railway.app
+- **Backend:** https://goalnad-mainnet-production.up.railway.app
 - **Monadscan:** https://monadscan.com
 - **nad.fun:** https://nad.fun
 
@@ -340,7 +340,7 @@ forge create --rpc-url $RPC --private-key $PK src/GoalNadArena.sol:GoalNadArena 
 open https://monadscan.com/address/<CONTRACT_ADDRESS>
 
 # Test backend API
-curl https://goalnad-backend-production.up.railway.app/api/matches
+curl https://goalnad-mainnet-production.up.railway.app/api/matches
 
 # View Railway logs
 railway logs

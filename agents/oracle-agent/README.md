@@ -18,7 +18,7 @@ Create `.env.oracle` in this directory:
 
 ```bash
 MINIMAX_API_KEY=your_minimax_api_key
-GOALNAD_API_URL=https://exquisite-acceptance-production.up.railway.app/api
+GOALNAD_API_URL=https://goalnad-mainnet-production.up.railway.app/api
 ADMIN_API_KEY=your_admin_api_key
 ORACLE_WALLET=0x...
 ```
@@ -73,7 +73,7 @@ The agent logs all actions to stdout:
 
 ```
 🔮 GoalNad Oracle Agent Starting...
-📡 Backend: https://exquisite-acceptance-production.up.railway.app/api
+📡 Backend: https://goalnad-mainnet-production.up.railway.app/api
 👤 Oracle: 0x...
 
 📥 Fetching matches from /matches...

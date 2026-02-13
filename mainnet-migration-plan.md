@@ -40,7 +40,7 @@ Create a clean `goalnad-mainnet` repo from the current `goalnad` (testnet) repo,
 
 ### Frontend (`frontend/.env.local`)
 ```diff
-- NEXT_PUBLIC_API_URL=https://exquisite-acceptance-production.up.railway.app/api
+- NEXT_PUBLIC_API_URL=https://goalnad-mainnet-production.up.railway.app/api
 + NEXT_PUBLIC_API_URL=https://api.goalnad.fun/api   # or new Railway URL
 ```
 

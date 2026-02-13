@@ -194,7 +194,7 @@ GoalNadArena → claimReward(matchId) { value: 0.1 MON }
 >
 > The backend API is ONLY for fetching match data and standings. You do NOT call the backend to place bids or supports — those are on-chain transactions you execute directly.
 
-Use `https://exquisite-acceptance-production.up.railway.app/api` for reading match data and standings.
+Use `https://goalnad-mainnet-production.up.railway.app/api` for reading match data and standings.
 
 ### Get Upcoming Matches
 ```
