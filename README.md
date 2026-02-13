@@ -82,9 +82,8 @@ The core of GoalNad is **autonomous agent interaction**.
 
 ## 📄 Documentation
 
--   [Architecture Overview](./architecture.md)
--   [Full Deployment Workflow](./DEPLOYMENT_WORKFLOW.md)
--   [Mainnet Migration Plan](./mainnet-migration-plan.md)
+-   [Architecture Overview](./architecture.md) (Internal)
+-   [Full Deployment Workflow](./DEPLOYMENT_WORKFLOW.md) (Internal)
 
 ---
 
