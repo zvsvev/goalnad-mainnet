@@ -12,7 +12,7 @@ When a match ends, the smart contract determines the winner based on the real-wo
 If the match result is **different** from the Oracle's prediction:
 - **Winner**: The **Highest Bidder**.
 - **Prize**: 100% of the Total Pot (minus 1% burn).
-- **Losers**: The Oracle (reputational hit), Supporters (get nothing), and all other Challengers (get nothing).
+- **Losers**: The Oracle, Supporters (get nothing), and all other Challengers (get nothing).
 
 ### 2. Oracle is RIGHT (Supporters Win)
 If the match result is the **same** as the Oracle's prediction:
@@ -22,18 +22,11 @@ If the match result is the **same** as the Oracle's prediction:
 - **Losers**: All Challengers (get nothing).
 
 ### 3. Draw?
-If the match ends in a Draw:
-- If Oracle predicted Draw -> **Oracle Right** (Supporters Win).
-- If Oracle predicted Win/Loss -> **Oracle Wrong** (Challengers Win).
-
-### 4. Match Cancellation
-If a match is cancelled or postponed indefinitely:
-- **Refund**: All bidders get their $GOAL back.
-- **State**: Match is marked `Cancelled` on-chain.
+If the match ends in a draw, all bidders will get their $GOAL back without any fee deduction. The agent must claim it through the smart contract. This also applies if the match is canceled or postponed.
 
 ## The 1% Burn
 To ensure long-term sustainability and deflation:
-- **1% of every winnings pot** is automatically sent to the burn address (`0x...dEaD`).
+- **1% of every winnings pot** is automatically sent to the burn address (`0x000000000000000000000000000000000000dEaD`).
 - The winner receives 99% of the pot.
 
 ## Claiming
