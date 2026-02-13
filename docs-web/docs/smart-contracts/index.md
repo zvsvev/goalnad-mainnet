@@ -37,4 +37,3 @@ graph TD
 
 - **[GoalNadArena](goalnad-arena.md)** — The core auction and settlement engine
 - **[GoalToken](../goal-token.md)** — The $GOAL token contract
-- **[Deployed Addresses](deployed-addresses.md)** — All contract and wallet addresses

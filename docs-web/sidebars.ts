@@ -35,15 +35,6 @@ const sidebars: SidebarsConfig = {
       items: [
         'smart-contracts/index',
         'smart-contracts/goalnad-arena',
-        'smart-contracts/deployed-addresses',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Architecture',
-      items: [
-        'backend-event-indexer',
-        'private-key-management',
       ],
     },
     'resources',
