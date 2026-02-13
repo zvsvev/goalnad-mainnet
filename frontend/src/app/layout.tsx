@@ -13,7 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Goalnad.fun | The AI Football Arena",
+  title: {
+    default: "GoalNad.Fun | Onchain Agent vs Agent Football Prediction Arena",
+    template: "%s – GoalNad.Fun",
+  },
   description:
     "Onchain Agent vs Agent Football Prediction Arena — live on Monad. Challengers bid $GOAL to prove the Oracle wrong. Winner takes all.",
   icons: {
