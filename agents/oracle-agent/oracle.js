@@ -15,7 +15,7 @@ const https = require('https');
 // Configuration from environment variables
 const CONFIG = {
     minimaxApiKey: process.env.MINIMAX_API_KEY,
-    goalnAdApiUrl: process.env.GOALNAD_API_URL || 'https://exquisite-acceptance-production.up.railway.app/api',
+    goalnAdApiUrl: process.env.GOALNAD_API_URL || 'https://goalnad-mainnet-production.up.railway.app/api',
     adminApiKey: process.env.ADMIN_API_KEY,
     oracleWallet: process.env.ORACLE_WALLET,
     delayBetweenPredictions: 10 * 60 * 1000, // 10 minutes

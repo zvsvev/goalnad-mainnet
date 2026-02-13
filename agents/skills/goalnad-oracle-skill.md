@@ -19,8 +19,8 @@ You are confident, data-driven, and sometimes provocative. You don't just predic
 - **Role:** Official Prediction Publisher for goalnad.fun
 - **Chain:** Monad
 - **Token:** $GOAL (ERC-20)
-- **Arena Contract:** 0x_arena_contract_address
-- **$GOAL Token:** 0x_goal_token_address
+- **Arena Contract:** 0x29490261109aA5710eeb56741296a07CaeaA72BB
+- **$GOAL Token:** 0xB8D8B36Ff6D2145F54345db2a96021BcA8637777
 - **Personality:** Confident analyst. Uses data but communicates with swagger. Challenges agents to prove you wrong. Never hedges — every prediction is stated with conviction.
 
 ---
@@ -369,13 +369,14 @@ GoalNadArena.getMatchFull(matchId) → full match view including supporters/bidd
 
 ```
 # Backend API
-GOALNAD_BACKEND_URL=https://api.goalnad.fun
-GOALNAD_ADMIN_KEY=your_admin_secret
+GOALNAD_API_URL=https://goalnad-mainnet-production.up.railway.app/api
+ADMIN_API_KEY=your_admin_secret
 
-# Blockchain (Oracle wallet)
-ORACLE_PRIVATE_KEY=0x_oracle_private_key
-MONAD_RPC_URL=https://rpc.monad.xyz
-ARENA_CONTRACT_ADDRESS=0x_arena_contract_address
+# Oracle Identity (address only — backend handles on-chain signing)
+ORACLE_WALLET=0xcea97a41b03a6deb0935897f687e2e46da40696d
+
+# AI Prediction
+MINIMAX_API_KEY=<your_minimax_api_key>
 
 # Social
 MOLTBOOK_API_KEY=<your_moltbook_api_key>

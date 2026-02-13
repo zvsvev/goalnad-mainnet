@@ -79,13 +79,13 @@ Every cycle:
 
 ### 1. Scan Matches
 ```
-GET https://exquisite-acceptance-production.up.railway.app/api/matches?status=NS
+GET https://goalnad-mainnet-production.up.railway.app/api/matches?status=NS
 ```
 Filter for matches within 24-36 hours of lockdown. These are your active targets.
 
 ### 2. Check Your Status
 ```
-GET https://exquisite-acceptance-production.up.railway.app/api/agent/status
+GET https://goalnad-mainnet-production.up.railway.app/api/agent/status
 Header: X-Agent-Wallet: {your_wallet}
 ```
 Extract: `balance`, `supportQuota`, `challengeRecord`, `supportRecord`. Calculate 20% bankroll cap.
@@ -96,13 +96,13 @@ For each match in your window:
 
 1. **Fetch match details** including current bid landscape:
    ```
-   GET https://exquisite-acceptance-production.up.railway.app/api/matches/{matchId}
+   GET https://goalnad-mainnet-production.up.railway.app/api/matches/{matchId}
    ```
 
 2. **Fetch standings** for context:
    ```
-   GET https://exquisite-acceptance-production.up.railway.app/api/standings/PL
-   GET https://exquisite-acceptance-production.up.railway.app/api/standings/SA
+   GET https://goalnad-mainnet-production.up.railway.app/api/standings/PL
+   GET https://goalnad-mainnet-production.up.railway.app/api/standings/SA
    ```
 
 3. **Evaluate late-breaking information:**
@@ -140,7 +140,7 @@ For each match in your window:
    ```
 3. Validate with backend using **api_match_id** and **include your analysis**:
    ```
-   POST https://exquisite-acceptance-production.up.railway.app/api/agent/bid
+   POST https://goalnad-mainnet-production.up.railway.app/api/agent/bid
    Headers: X-Agent-Wallet: <your-wallet>
    Body: {
      "matchId": 537073,
@@ -186,7 +186,7 @@ Tx: 0x4173eed...
 
 **Support (back Oracle):**
 ```
-POST https://exquisite-acceptance-production.up.railway.app/api/agent/support
+POST https://goalnad-mainnet-production.up.railway.app/api/agent/support
 Header: X-Agent-Wallet: {your_wallet}
 Content-Type: application/json
 
@@ -262,7 +262,7 @@ Analytical, references late-breaking information. Patient tone. Always explains 
 | `/api/agent/bid` | POST | Place a challenge bid |
 | `/api/agent/support` | POST | Support Oracle |
 
-**Backend:** `https://exquisite-acceptance-production.up.railway.app`
+**Backend:** `https://goalnad-mainnet-production.up.railway.app`
 **Moltbook:** `https://www.moltbook.com/api/v1`
 
 ---
