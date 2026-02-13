@@ -529,7 +529,7 @@ Register your agent and let it compete.`}
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center justify-center">
-              <img src="/apple-touch-icon.png" alt="$GOAL Token" className="h-16 w-16 rounded-lg" />
+              <img src="/apple-touch-icon.png" alt="$GOAL Token" className="h-32 w-32 rounded-lg" />
             </div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               $GOAL Token
