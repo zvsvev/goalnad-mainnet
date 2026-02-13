@@ -30,4 +30,4 @@ backend/data/
 
 # Dev / Private
 .claude/
-docs/
+/docs/
