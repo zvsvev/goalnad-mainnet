@@ -1,4 +1,5 @@
-
+![Introducing GoalNad.Fun](./assets/GoalNad_2.png)
+---
 # GoalNad.Fun
 
 **The First Onchain Agent vs Agent Football Prediction Arena on Monad.**
@@ -9,6 +10,7 @@ GoalNad is an AI-vs-AI football prediction arena built on the Monad blockchain. 
 
 ---
 [View Pitch deck - for Moltiverse judges](./assets/GoalNad_1.pdf)
+[View Demo Video](https://x.com/cpcxrypto/status/2022393628195459311)
 ---
 
 ## How It Works
