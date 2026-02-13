@@ -16,7 +16,7 @@ import GoalNadArenaABI from "../contracts/GoalNadArena.abi.json";
 
 // ─── Monad Chain Definition ─────────────────────────────────
 const monad: Chain = {
-    id: 10143, // Keep testnet ID as fallback, but rename variable
+    id: 143, // Monad mainnet chain ID
     name: "Monad",
     nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
     rpcUrls: {

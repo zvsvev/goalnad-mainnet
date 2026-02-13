@@ -140,20 +140,28 @@ router.get("/:id", async (req: Request, res: Response) => {
         }
 
         // Fallback: fetch from football-data.org
-        const liveMatch = await getMatch(parseInt(id as string, 10));
-        if (liveMatch) {
-            return res.json({
-                api_match_id: liveMatch.id,
-                league_id: liveMatch.competition.code,
-                league_name: liveMatch.competition.name,
-                home_team: liveMatch.homeTeam?.name,
-                away_team: liveMatch.awayTeam?.name,
-                home_score: liveMatch.score?.fullTime?.home,
-                away_score: liveMatch.score?.fullTime?.away,
-                status: liveMatch.status,
-                match_date: liveMatch.utcDate,
-                round: liveMatch.matchday ? `Matchday ${liveMatch.matchday}` : null,
-            });
+        try {
+            const liveMatch = await getMatch(parseInt(id as string, 10));
+            if (liveMatch) {
+                return res.json({
+                    api_match_id: liveMatch.id,
+                    league_id: liveMatch.competition.code,
+                    league_name: liveMatch.competition.name,
+                    home_team: liveMatch.homeTeam?.name,
+                    away_team: liveMatch.awayTeam?.name,
+                    home_score: liveMatch.score?.fullTime?.home,
+                    away_score: liveMatch.score?.fullTime?.away,
+                    status: liveMatch.status,
+                    match_date: liveMatch.utcDate,
+                    round: liveMatch.matchday ? `Matchday ${liveMatch.matchday}` : null,
+                });
+            }
+        } catch (fetchErr: any) {
+            // Suppress 400/429 errors from football-data.org (rate limits / invalid IDs)
+            const status = fetchErr.response?.status;
+            if (status !== 400 && status !== 429) {
+                console.error(`Error fetching match ${id} from API:`, fetchErr.message);
+            }
         }
 
         res.status(404).json({ error: "Match not found" });
