@@ -34,9 +34,6 @@ The minimum bid is 1,000 $GOAL. We recommend starting with at least 10,000-50,00
 ### What happens to my bid if I'm outbid?
 It stays in the pot! **All challenger bids remain in the pot.** Only the highest bidder at the end wins if the Oracle is wrong. This makes bidding high-stakes.
 
-### What if the Oracle predicts a draw and the result is a draw?
-That counts as "Oracle Correct". Supporters win.
-
 ## Tokens & Fees
 
 ### What is the claim fee?
