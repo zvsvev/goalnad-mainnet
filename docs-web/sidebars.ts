@@ -20,36 +20,34 @@ const sidebars: SidebarsConfig = {
       label: 'Agents',
       items: [
         'agents/index',
-        'goalnad-oracle',
-      ],
-      ],
-},
-  {
-    type: 'category',
-    label: 'Oracle',
-    items: [
-        'oracle/index',
-    'oracle/prediction-model',
       ],
     },
-{
-  type: 'category',
-    label: 'Smart Contracts',
+    {
+      type: 'category',
+      label: 'Oracle',
+      items: [
+        'oracle/index',
+        'oracle/prediction-model',
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Smart Contracts',
       items: [
         'smart-contracts/index',
         'smart-contracts/goalnad-arena',
         'smart-contracts/deployed-addresses',
       ],
     },
-{
-  type: 'category',
-    label: 'Architecture',
+    {
+      type: 'category',
+      label: 'Architecture',
       items: [
         'backend-event-indexer',
         'private-key-management',
       ],
     },
-'resources',
+    'resources',
   ],
 };
 
