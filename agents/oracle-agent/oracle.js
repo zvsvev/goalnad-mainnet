@@ -16,7 +16,7 @@ const https = require('https');
 const CONFIG = {
     minimaxApiKey: process.env.MINIMAX_API_KEY,
     goalnAdApiUrl: process.env.GOALNAD_API_URL || 'https://goalnad-mainnet-production.up.railway.app/api',
-    adminApiKey: process.env.ADMIN_API_KEY,
+    adminApiKey: process.env.ADMIN_API_KEY || '4f62f1969226c9c072e3c04d1ff72e7dbbe20e0f4d9807847131e5f97af69a10',
     oracleWallet: process.env.ORACLE_WALLET,
     delayBetweenPredictions: 10 * 60 * 1000, // 10 minutes
     minDaysBeforeKickoff: 7
@@ -182,89 +182,92 @@ async function publishPrediction(match, prediction) {
         }
     };
 
-    const payload = {
-        matchId: match.id,
-        oracleAddress: CONFIG.oracleWallet,
-        prediction: prediction.prediction,
-        exactScore: prediction.exactScore,
-        conviction: prediction.conviction,
-        reasoning: prediction.reasoning
-    };
+    const req = https.request(options, (res) => {
 
-    const response = await httpsRequest(options, payload);
 
-    if (response.status !== 200 && response.status !== 201) {
-        throw new Error(`Failed to publish prediction: ${response.status}`);
+        const payload = {
+            matchId: match.id,
+            oracleAddress: CONFIG.oracleWallet,
+            prediction: prediction.prediction,
+            exactScore: prediction.exactScore,
+            conviction: prediction.conviction,
+            reasoning: prediction.reasoning
+        };
+
+        const response = await httpsRequest(options, payload);
+
+        if (response.status !== 200 && response.status !== 201) {
+            throw new Error(`Failed to publish prediction: ${response.status}`);
+        }
+
+        console.log(`  ✅ Prediction published successfully`);
+        return response.data;
     }
-
-    console.log(`  ✅ Prediction published successfully`);
-    return response.data;
-}
 
 /**
  * Sleep for specified milliseconds
  */
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
 
 /**
  * Main Oracle workflow
  */
 async function runOracle() {
-    try {
-        // Step 1: Fetch upcoming matches
-        const matches = await fetchUpcomingMatches();
-
-        // Step 2: Filter eligible matches
-        const eligible = filterEligibleMatches(matches);
-
-        if (eligible.length === 0) {
-            console.log('ℹ️  No matches need predictions at this time');
-            return;
-        }
-
-        // Step 3: Process each match
-        for (let i = 0; i < eligible.length; i++) {
-            const match = eligible[i];
-            console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-            console.log(`📊 Match ${i + 1}/${eligible.length}: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
-            console.log(`   Kickoff: ${new Date(match.utcDate).toLocaleString()}`);
-
             try {
-                // Get AI prediction
-                const prediction = await getAIPrediction(match);
-                console.log(`  🎯 Prediction: ${prediction.prediction} (${prediction.exactScore}) - ${prediction.conviction}% conviction`);
+                // Step 1: Fetch upcoming matches
+                const matches = await fetchUpcomingMatches();
 
-                // Publish to backend
-                await publishPrediction(match, prediction);
+                // Step 2: Filter eligible matches
+                const eligible = filterEligibleMatches(matches);
 
-                // Wait before next prediction (unless last match)
-                if (i < eligible.length - 1) {
-                    console.log(`  ⏳ Waiting 10 minutes before next prediction...`);
-                    await sleep(CONFIG.delayBetweenPredictions);
+                if (eligible.length === 0) {
+                    console.log('ℹ️  No matches need predictions at this time');
+                    return;
                 }
 
+                // Step 3: Process each match
+                for (let i = 0; i < eligible.length; i++) {
+                    const match = eligible[i];
+                    console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+                    console.log(`📊 Match ${i + 1}/${eligible.length}: ${match.homeTeam.name} vs ${match.awayTeam.name}`);
+                    console.log(`   Kickoff: ${new Date(match.utcDate).toLocaleString()}`);
+
+                    try {
+                        // Get AI prediction
+                        const prediction = await getAIPrediction(match);
+                        console.log(`  🎯 Prediction: ${prediction.prediction} (${prediction.exactScore}) - ${prediction.conviction}% conviction`);
+
+                        // Publish to backend
+                        await publishPrediction(match, prediction);
+
+                        // Wait before next prediction (unless last match)
+                        if (i < eligible.length - 1) {
+                            console.log(`  ⏳ Waiting 10 minutes before next prediction...`);
+                            await sleep(CONFIG.delayBetweenPredictions);
+                        }
+
+                    } catch (error) {
+                        console.error(`  ❌ Error processing match: ${error.message}`);
+                        // Continue with next match
+                    }
+                }
+
+                console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+                console.log(`✅ Oracle scan complete! Processed ${eligible.length} ${eligible.length === 1 ? 'match' : 'matches'}`);
+
             } catch (error) {
-                console.error(`  ❌ Error processing match: ${error.message}`);
-                // Continue with next match
+                console.error(`\n❌ Oracle error: ${error.message}`);
+                process.exit(1);
             }
         }
 
-        console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-        console.log(`✅ Oracle scan complete! Processed ${eligible.length} ${eligible.length === 1 ? 'match' : 'matches'}`);
-
-    } catch (error) {
-        console.error(`\n❌ Oracle error: ${error.message}`);
-        process.exit(1);
-    }
-}
-
 // Run the Oracle
 runOracle().then(() => {
-    console.log('\n🔮 Oracle agent finished successfully');
-    process.exit(0);
-}).catch(error => {
-    console.error(`\n💥 Fatal error: ${error.message}`);
-    process.exit(1);
-});
+            console.log('\n🔮 Oracle agent finished successfully');
+            process.exit(0);
+        }).catch(error => {
+            console.error(`\n💥 Fatal error: ${error.message}`);
+            process.exit(1);
+        });
