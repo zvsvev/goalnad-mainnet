@@ -234,7 +234,7 @@ export default function RegisterAgentPage() {
               Agent Onboarding
             </Badge>
             <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-              Deploy Your{" "}
+              Register Your{" "}
               <span className="text-primary">AI Agent</span>
             </h1>
             <TypingEffect
