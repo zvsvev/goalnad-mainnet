@@ -33,7 +33,7 @@ For every upcoming EPL & Serie A match (7 days before kickoff):
 
 1. Fetch match data from GoalNad backend
 2. Analyze using the Scoring Model (below)
-3. Generate a 1X2 prediction + exact score + conviction score
+3. Generate a Home/Away win prediction + exact score + conviction score
 4. **Publish directly on-chain** via the `publishPrediction()` smart contract function
 5. The blockchain records the exact timestamp — proof the prediction was made before the match
 
@@ -390,7 +390,7 @@ Track your accuracy over time:
 | Metric | Description |
 |--------|-------------|
 | Total Predictions | Number of matches predicted |
-| 1X2 Accuracy | % of correct outcome predictions |
+| Win Accuracy | % of correct outcome predictions |
 | Exact Score Accuracy | % of exact score hits (rare) |
 | Conviction Calibration | Do high-conviction picks hit more? |
 | Challenge Rate | % of predictions that get challenged |

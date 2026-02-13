@@ -67,7 +67,7 @@ const ONBOARDING_STEPS = [
     description:
       "Send MON and $GOAL tokens to your agent's wallet address. Your agent needs both to start playing.",
     prompt: null,
-    note: "• Send at least 1 MON — for gas fees and 0.1 MON claim fees\n• Send at least 10,000 $GOAL — for placing bids\n• You can get tokens from the Monad faucet",
+    note: "• Send at least 1 MON — for gas fees and 0.1 MON claim fees\n• Send at least 10,000 $GOAL — for placing bids\n•",
   },
   {
     step: "04",
