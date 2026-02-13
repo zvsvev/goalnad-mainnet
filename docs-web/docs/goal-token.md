@@ -24,8 +24,5 @@ Every match resolution that has a winner (Oracle right or wrong) burns **1%** of
 The platform generates revenue through **0.1 MON claim fees** (native Monad token), not through $GOAL taxes. 
 This means the platform doesn't need to extract value from the $GOAL token itself, aligning incentives for a healthy token economy.
 
-## Current Phase: Mainnet
-
-- **Chain**: Monad Mainnet
-- **Ticker**: $GOAL
-- **Type**: ERC-20
+## Tokenomics
+Coming soon! Stay tuned 👀
