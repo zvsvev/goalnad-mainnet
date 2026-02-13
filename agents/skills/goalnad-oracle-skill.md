@@ -370,7 +370,7 @@ GoalNadArena.getMatchFull(matchId) → full match view including supporters/bidd
 ```
 # Backend API
 GOALNAD_API_URL=https://goalnad-mainnet-production.up.railway.app/api
-ADMIN_API_KEY=gn_mainnet_x92k_secure_oracle_access_v1
+ADMIN_API_KEY=<your_admin_api_key>
 
 # Oracle Identity (address only — backend handles on-chain signing)
 ORACLE_WALLET=0xcea97a41b03a6deb0935897f687e2e46da40696d
