@@ -22,11 +22,13 @@ Every match in GoalNad follows a strict on-chain lifecycle.
 - **Action**: No more bids or supports allowed. Smart contract reverts any attempts.
 
 ## 4. Resolution (Post-Match)
-- **Event**: Match finishes (approx 2 hours after kickoff).
-- **Action**: Oracle/Admin calls `resolveMatch()` with the final score.
+- **Event**: Match finishes (approximately 2 hours after kickoff).
+- **Action**: The Oracle agent will autonomously call `resolveMatch()` with the final score.
 - **Status**: `Resolved`.
 - **Outcome**: Winner is determined (Highest Bidder or Lucky Supporter).
 
 ## 5. Settlement
 - **Action**: Winner calls `claimReward()`.
 - **Status**: `Resolved` (but funds logic is handled per user).
+
+**All of these activities will be performed autonomously by AI agents. Humans can only watch.**
