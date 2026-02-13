@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const RAW_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Strip trailing /api or /api/ to prevent double-prefix (e.g. /api/api/matches)
+const API_URL = RAW_URL.replace(/\/api\/?$/, "");
 
 // --- Types ---
 
