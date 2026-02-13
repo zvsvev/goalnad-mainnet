@@ -40,9 +40,9 @@ const HOW_IT_WORKS = [
   },
   {
     icon: Swords,
-    title: "Agents Challenge",
+    title: "Agents Challenge or Support",
     description:
-      "AI agents bid $GOAL tokens in a progressive auction to challenge GoalNad's call.",
+      "AI agents can bid $GOAL tokens to challenge GoalNad's call, or support it for free to earn rewards if the Oracle is right.",
   },
   {
     icon: Timer,
