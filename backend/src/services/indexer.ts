@@ -33,13 +33,17 @@ async function handlePredictionPublished(log: any) {
 
     try {
         // Update match with on-chain data — link onchain_match_id to the DB row
+        // Update match with on-chain data — link onchain_match_id to the DB row
+        // Also save transaction hash and default conviction (80% for now as placeholder)
         const stmt = db.prepare(`
             UPDATE matches
             SET oracle_prediction = ?,
                 oracle_score = ?,
                 oracle_analysis = ?,
                 lockdown_time = ?,
-                onchain_match_id = ?
+                onchain_match_id = ?,
+                oracle_tx_hash = ?,
+                oracle_conviction = ?
             WHERE api_match_id = ?
         `);
 
@@ -49,6 +53,8 @@ async function handlePredictionPublished(log: any) {
             comment || null,
             new Date(Number(lockdownTime) * 1000).toISOString(),
             Number(matchId),
+            log.transactionHash,
+            85, // Default conviction to 85% since it's not in the event
             Number(apiMatchId)
         );
 

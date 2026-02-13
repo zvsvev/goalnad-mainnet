@@ -6,6 +6,7 @@ import { Bot, ExternalLink, Clock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ApiMatch } from "@/lib/api";
+import { parseApiDate } from "@/lib/utils";
 
 const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
     NS: { label: "Upcoming", variant: "secondary" },
@@ -22,7 +23,7 @@ const PREDICTION_LABELS: Record<number, string> = {
 };
 
 function formatDate(iso: string) {
-    const d = new Date(iso);
+    const d = parseApiDate(iso);
     return d.toLocaleDateString("en-GB", {
         weekday: "short",
         day: "numeric",
@@ -34,7 +35,7 @@ function formatDate(iso: string) {
 }
 
 function getBidCountdown(matchDate: string): string | null {
-    const kickoff = new Date(matchDate).getTime();
+    const kickoff = parseApiDate(matchDate).getTime();
     const now = Date.now();
     const diff = kickoff - now;
     if (diff <= 0 || diff > 12 * 60 * 60 * 1000) return null;
@@ -113,7 +114,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                                 </span>
                             ) : (
                                 <span className="font-mono text-xs text-muted-foreground">
-                                    {new Date(match.match_date).toLocaleTimeString("en-GB", {
+                                    {parseApiDate(match.match_date).toLocaleTimeString("en-GB", {
                                         hour: "2-digit",
                                         minute: "2-digit",
                                         timeZone: "UTC",
