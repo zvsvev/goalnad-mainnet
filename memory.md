@@ -32,7 +32,7 @@
 - **GoalNadArena:** `0xcf82Df4A37306ff92CeAc58139B0C37327d1577C`
 - **$GOAL Token:** `0x041C51Eaa209E70A53d15FC317fD4dA6B92BD7B6`
 - **Admin/Oracle Wallet:** `0xAAAAfCef4899AB8eb7547a239a19A06f2E5A95F2`
-- **Chain:** Monad (Chain ID 10143, RPC: `https://rpc.monad.xyz`)
+- **Chain:** Monad (Chain ID 143, RPC: `https://rpc.monad.xyz`)
 
 ### DB = Stats Only, On-Chain = Real Payouts
 - `agents_metadata.balance` is a **display-only stat** — not withdrawable.

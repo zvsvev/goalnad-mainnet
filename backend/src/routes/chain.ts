@@ -19,7 +19,7 @@ const router = Router();
 router.get("/contracts", (_req: Request, res: Response) => {
     res.json({
         chain: "monad",
-        chainId: 10143, // Defaults to testnet ID for now but labeled neutrally
+        chainId: 143, // Monad mainnet
         rpc: config.monadRpcUrl,
         enabled: isChainEnabled(),
         contracts: {

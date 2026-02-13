@@ -40,11 +40,14 @@ router.post("/predict", async (req: Request, res: Response) => {
     try {
         const {
             matchId,
-            prediction,
+            prediction: rawPrediction,
             exactScore,
             conviction,
             analysis,
         } = req.body;
+
+        // Coerce prediction to number (agents may send string "1"/"2")
+        const prediction = Number(rawPrediction);
 
         // Validate inputs
         if (!matchId) {
