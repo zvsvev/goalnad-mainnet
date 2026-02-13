@@ -64,7 +64,6 @@ export default function Home() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardAgent[]>([]);
   const [lbPeriod, setLbPeriod] = useState<"all" | "week">("all");
-  const [fixtureTab, setFixtureTab] = useState<"upcoming" | "results">("upcoming");
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [arenaVisibleCount, setArenaVisibleCount] = useState(6);
@@ -106,19 +105,13 @@ export default function Home() {
     (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
   );
 
-  // Filter fixtures: upcoming shows only oracle-predicted, results shows only resolved
-  let displayedFixtures: ApiMatch[];
-  if (fixtureTab === "upcoming") {
-    displayedFixtures = upcoming.filter(
-      (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
-    );
-  } else {
-    // Results: show only resolved matches, newest first
-    displayedFixtures = results.filter((m) => m.resolved === 1);
-  }
+  // Results: show only resolved matches where oracle made predictions
+  let displayedResults = results.filter(
+    (m) => m.resolved === 1 && m.oracle_prediction !== null && m.oracle_prediction !== undefined
+  );
 
-  // Apply league filter
-  displayedFixtures = displayedFixtures.filter(
+  // Apply league filter to results
+  displayedResults = displayedResults.filter(
     (m) => leagueFilter === "all" || m.league_id === leagueFilter
   );
 
@@ -413,47 +406,28 @@ Register your agent and let it compete.`}
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
-                <Calendar className="h-6 w-6 text-primary" />
-                Fixtures & Results
+                <Trophy className="h-6 w-6 text-primary" />
+                Results
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Real match data from Premier League & Serie A
+                Resolved matches where GoalNad made predictions
               </p>
             </div>
           </div>
 
-          {/* Tabs + Filter */}
+          {/* League Filter */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
-            <button
-              onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(6); }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                }`}
-            >
-              Upcoming
-            </button>
-            <button
-              onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(6); }}
-              className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
-                }`}
-            >
-              Results
-            </button>
-            <div className="h-4 w-px bg-border/50 mx-1" />
             {[
-              { code: "all", label: "All" },
-              { code: "PL", label: "PL" },
+              { code: "all", label: "All Leagues" },
+              { code: "PL", label: "Premier League" },
               { code: "SA", label: "Serie A" },
             ].map((l) => (
               <button
                 key={l.code}
                 onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(6); }}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
+                className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${leagueFilter === l.code
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                   }`}
               >
                 {l.label}
@@ -465,26 +439,33 @@ Register your agent and let it compete.`}
             <div className="flex items-center justify-center py-16">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
-          ) : displayedFixtures.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-8 text-center">
-              No {fixtureTab === "upcoming" ? "upcoming fixtures" : "results"} found
-            </p>
+          ) : displayedResults.length === 0 ? (
+            <div className="py-16 text-center">
+              <Trophy className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-lg font-semibold text-muted-foreground mb-2">
+                No Results Yet
+              </p>
+              <p className="text-sm text-muted-foreground font-mono max-w-md mx-auto">
+                The arena awaits its first battle. Once GoalNad makes predictions and matches are resolved, the results will appear here.
+              </p>
+            </div>
           ) : (
             <>
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                {displayedFixtures.slice(0, fixturesVisibleCount).map((m, i) => (
+                {displayedResults.slice(0, fixturesVisibleCount).map((m, i) => (
                   <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
                     <FixtureCard match={m} />
                   </MotionWrapper>
                 ))}
               </div>
-              {displayedFixtures.length > fixturesVisibleCount && (
+              {displayedResults.length > fixturesVisibleCount && (
                 <div className="mt-4 flex justify-center">
                   <button
                     onClick={() => setFixturesVisibleCount(prev => prev + 4)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
                   >
-                    <ChevronDown className="h-3.5 w-3.5" /> Show More
+                    <ChevronDown className="h-3 w-3" />
+                    View More Results
                   </button>
                 </div>
               )}
