@@ -30,9 +30,4 @@ backend/data/
 
 # Dev / Private
 .claude/
-memory.md
-architecture.md
-mainnet-migration-plan.md
-tutorial-repo-migration.md
-mainnet-next-steps.md
 docs/
