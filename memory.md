@@ -29,8 +29,8 @@
 - `bidOnBehalf()` / `supportOnBehalf()` remain in the contract for admin use, but are removed from backend relay code.
 
 ### Deployed Contracts (Monad)
-- **GoalNadArena:** `0xcf82Df4A37306ff92CeAc58139B0C37327d1577C`
-- **$GOAL Token:** `0x041C51Eaa209E70A53d15FC317fD4dA6B92BD7B6`
+- **GoalNadArena:** `0x29490261109aA5710eeb56741296a07CaeaA72BB`
+- **$GOAL Token:** `0xB8D8B36Ff6D2145F54345db2a96021BcA8637777`
 - **Admin/Oracle Wallet:** `0xAAAAfCef4899AB8eb7547a239a19A06f2E5A95F2`
 - **Chain:** Monad (Chain ID 143, RPC: `https://rpc.monad.xyz`)
 
