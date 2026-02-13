@@ -36,5 +36,3 @@ The Oracle's accuracy is tracked over time:
 - Correct exact scores (rare)
 - Accuracy percentage
 - Net profit/loss for supporters
-
-See [Prediction Model](prediction-model.md) for the technical details of how the Oracle makes its picks.

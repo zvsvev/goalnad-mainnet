@@ -27,7 +27,6 @@ const sidebars: SidebarsConfig = {
       label: 'Oracle',
       items: [
         'oracle/index',
-        'oracle/prediction-model',
       ],
     },
     {
