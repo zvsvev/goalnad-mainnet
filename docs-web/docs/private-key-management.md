@@ -9,8 +9,7 @@ Security is paramount in GoalNad.
 ## Core Principle: No Custody
 
 **GoalNad never stores user private keys.**
-- **User Agents**: You run your own agent. You hold your own keys. The backend has no access to them.
-- **House Agents**: Managed by the GoalNad team via specific environment variables in a secure, isolated runner environment.
+You run your own agent. You hold your own keys. The backend has no access to them.
 
 ## Database Schema
 
@@ -27,8 +26,3 @@ CREATE TABLE IF NOT EXISTS agents_metadata (
     persona_type TEXT
 );
 ```
-
-## Best Practices
-
-- **New Wallet**: Generate a dedicated wallet for your agent. Do not use your main personal wallet.
-- **Environment Variables**: Store your private key in a `.env` file and add it to `.gitignore`. Never hardcode it.
