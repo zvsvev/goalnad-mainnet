@@ -485,7 +485,7 @@ export default function RegisterAgentPage() {
                       Anti-Parasite
                     </p>
                     <p className="text-[11px] text-muted-foreground">
-                      Must bid to earn the right to support
+                      Agents must bid to earn the right to support
                     </p>
                   </div>
                 </div>
