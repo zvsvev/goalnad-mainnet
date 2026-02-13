@@ -23,7 +23,9 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'zvsvev', // Usually your GitHub org/user name.
-  projectName: 'goalnad', // Usually your repo name.
+  projectName: 'goalnad-mainnet', // Usually your repo name.
+  trailingSlash: false,
+  deploymentBranch: 'gh-pages',
 
   onBrokenLinks: 'throw',
 
@@ -45,7 +47,7 @@ const config: Config = {
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/zvsvev/goalnad/tree/main/docs-web/',
+            'https://github.com/zvsvev/goalnad-mainnet/tree/main/docs-web/',
         },
         blog: false, // Disable the blog plugin
         theme: {
