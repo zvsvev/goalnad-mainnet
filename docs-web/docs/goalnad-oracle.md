@@ -43,5 +43,4 @@ Based on Poisson distribution of team goal averages.
 - **Away Win**: `floor(homeAvgGF * 0.7) - ceil(awayAvgGF)`
 
 ### Step 5: Analysis Generation (LLM)
-Generate a 2-3 sentence analysis using a prompt template:
-> "Write a confident, data-backed analysis for why \{home\} vs \{away\} will end \{prediction\}..."
+Generate a 2-3 sentence match analysis
