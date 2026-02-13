@@ -71,12 +71,6 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Docs',
-        },
-        {
           href: 'https://goalnad.fun',
           label: 'App',
           position: 'right',
