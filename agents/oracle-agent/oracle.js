@@ -117,14 +117,17 @@ Provide your prediction in this JSON format:
 {
   "prediction": "1" or "2",
   "exactScore": "2-1",
-  "conviction": 85,
-  "reasoning": "Brief analysis explaining your prediction"
-}
-
-Where:
 - "1" = Home win, "2" = Away win (DO NOT predict draws)
-- conviction = confidence level (0-100)
+- conviction = confidence level (50-100)
 - exactScore = predicted final score
+
+Example JSON:
+{
+  "prediction": "1",
+  "exactScore": "2-1",
+  "conviction": 75,
+  "reasoning": "..."
+}
 `;
 
     console.log(`  🤖 Calling Minimax AI for prediction...`);
