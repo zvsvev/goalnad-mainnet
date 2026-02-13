@@ -14,12 +14,6 @@ export function Navbar() {
           </span>
         </Link>
         <div className="flex items-center gap-3">
-          <Badge
-            variant="outline"
-            className="hidden border-primary/30 font-mono text-[10px] text-primary sm:inline-flex"
-          >
-            MONAD
-          </Badge>
           <Button
             size="sm"
             className="font-mono text-xs bg-primary text-primary-foreground hover:bg-primary/90"

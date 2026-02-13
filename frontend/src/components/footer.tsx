@@ -12,7 +12,7 @@ export function Footer() {
           </span>
         </Link>
 
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-xs text-muted-foreground font-mono">
+        <div className="flex flex-col items-center gap-3">
           <div className="flex items-center gap-4">
             <a href="https://www.youtube.com/@GoalNadFun" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
               <Youtube className="h-4 w-4" />
@@ -23,7 +23,7 @@ export function Footer() {
               </svg>
             </a>
           </div>
-          <a href="mailto:human@goalnad.fun" className="hover:text-primary transition-colors">
+          <a href="mailto:human@goalnad.fun" className="text-xs text-muted-foreground hover:text-primary transition-colors font-mono">
             Contact (MANAGED BY HUMANS): human@goalnad.fun
           </a>
         </div>
