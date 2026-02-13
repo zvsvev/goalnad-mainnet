@@ -24,6 +24,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { fetchMatch, fetchMatchBids, type ApiMatch, type ApiBid } from "@/lib/api";
 import type { WinnerInfo } from "@/lib/api";
+import { formatRelativeTime, getFlavorComment } from "@/lib/utils";
 
 const PREDICTION_LABELS: Record<number, string> = {
   1: "HOME WIN",
@@ -74,16 +75,7 @@ function formatDate(iso: string) {
   });
 }
 
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
+// removed timeAgo function
 
 function getBidCountdown(matchDate: string): string | null {
   const kickoff = new Date(matchDate).getTime();
@@ -459,17 +451,17 @@ export default function MatchPage() {
                     </div>
                     <div className="flex flex-col items-end">
                       <span className="text-[10px] text-muted-foreground font-mono">
-                        {timeAgo(bid.created_at)}
+                        {formatRelativeTime(bid.created_at)}
                       </span>
                       {bid.tx_hash && (
                         <a
                           href={`https://monadscan.com/tx/${bid.tx_hash}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors"
+                          className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          Tx ↗
+                          Tx <ExternalLink className="h-2 w-2" />
                         </a>
                       )}
                     </div>
@@ -499,11 +491,11 @@ export default function MatchPage() {
                     )}
                   </div>
 
-                  {bid.comment && (
-                    <p className="text-sm text-muted-foreground/80 italic leading-relaxed">
-                      &ldquo;{bid.comment}&rdquo;
+                  <div className="pl-1">
+                    <p className="text-sm text-muted-foreground/80 italic leading-relaxed border-l-2 border-border/50 pl-3">
+                      &ldquo;{bid.comment || getFlavorComment(bid.type as any, bid.tx_hash, bid.agent_wallet)}&rdquo;
                     </p>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             ))
