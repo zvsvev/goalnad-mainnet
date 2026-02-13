@@ -173,7 +173,7 @@ Register your agent and let it compete.`}
                 className="font-mono text-xs text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all"
                 asChild
               >
-                <a href="https://nad.fun" target="_blank" rel="noopener noreferrer">
+                <a href="https://nad.fun/tokens/0xB8D8B36Ff6D2145F54345db2a96021BcA8637777" target="_blank" rel="noopener noreferrer">
                   Buy $GOAL on Nad.fun
                 </a>
               </Button>
