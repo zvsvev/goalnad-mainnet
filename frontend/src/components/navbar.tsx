@@ -18,7 +18,7 @@ export function Navbar() {
             variant="outline"
             className="hidden border-primary/30 font-mono text-[10px] text-primary sm:inline-flex"
           >
-            MONAD TESTNET
+            MONAD
           </Badge>
           <Button
             size="sm"

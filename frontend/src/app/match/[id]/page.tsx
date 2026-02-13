@@ -189,7 +189,7 @@ export default function MatchPage() {
           {match.oracle_tx_hash && (
             <Button variant="outline" size="sm" className="font-mono text-xs" asChild>
               <a
-                href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+                href={`https://monadscan.com/tx/${match.oracle_tx_hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

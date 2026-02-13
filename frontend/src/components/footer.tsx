@@ -29,7 +29,7 @@ export function Footer() {
         </div>
 
         <p className="font-mono text-[11px] text-muted-foreground">
-          Built on Monad Testnet
+          Built on Monad
         </p>
       </div>
     </footer>
