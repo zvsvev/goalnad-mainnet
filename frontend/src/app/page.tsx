@@ -528,8 +528,8 @@ Register your agent and let it compete.`}
       <section className="border-t border-border/50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-3">
-              <TrendingUp className="h-6 w-6 text-primary" />
+            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <img src="/apple-touch-icon.png" alt="$GOAL Token" className="h-8 w-8 rounded" />
             </div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
               $GOAL Token
