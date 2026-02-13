@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/matches — list matches with optional filters
 router.get("/", (req: Request, res: Response) => {
     try {
-        const { league, status, from, to, limit, biddable } = req.query;
+        const { league, status, from, to, limit, biddable, predicted } = req.query;
 
         let sql = "SELECT * FROM matches WHERE 1=1";
         const params: any[] = [];
@@ -15,6 +15,11 @@ router.get("/", (req: Request, res: Response) => {
         // Filter for biddable matches (have oracle prediction + onchain_match_id)
         if (biddable === "true") {
             sql += " AND oracle_prediction IS NOT NULL AND onchain_match_id IS NOT NULL";
+        }
+
+        // Filter for predicted matches (have oracle prediction)
+        if (predicted === "true") {
+            sql += " AND oracle_prediction IS NOT NULL";
         }
 
         if (league) {
@@ -158,31 +163,54 @@ router.get("/:id", async (req: Request, res: Response) => {
     }
 });
 
-// GET /api/matches/:id/bids — public list of agent activity for a match
+// GET /api/matches/:id/bids — public list of agent activity for a match (includes claims)
 router.get("/:id/bids", (req: Request, res: Response) => {
     try {
         const { id } = req.params;
 
         // Find match by api_match_id
         const match = db
-            .prepare("SELECT id FROM matches WHERE api_match_id = ?")
+            .prepare("SELECT id, resolve_tx_hash, lucky_supporter FROM matches WHERE api_match_id = ?")
             .get(id) as any;
         if (!match) {
             return res.status(404).json({ error: "Match not found" });
         }
 
+        // Get bids and supports
         const bids = db
             .prepare(
                 `SELECT b.agent_wallet, b.amount, b.type, b.comment, b.created_at, b.tx_hash,
-                        a.agent_name, a.persona_type, a.wins, a.losses
+                        a.agent_name, a.persona_type, a.wins, a.losses,
+                        'bid' as activity_type
                  FROM bids b
                  LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet
-                 WHERE b.match_id = ?
-                 ORDER BY b.created_at DESC`
+                 WHERE b.match_id = ?`
             )
             .all(match.id);
 
-        res.json({ count: bids.length, bids });
+        // Get claims
+        const claims = db
+            .prepare(
+                `SELECT c.agent_wallet, c.amount, c.created_at, c.tx_hash,
+                        a.agent_name, a.persona_type, a.wins, a.losses,
+                        'claim' as activity_type
+                 FROM claims c
+                 LEFT JOIN agents_metadata a ON c.agent_wallet = a.agent_wallet
+                 WHERE c.match_id = ?`
+            )
+            .all(match.id);
+
+        // Combine and sort by created_at DESC
+        const activity = [...bids, ...claims].sort((a: any, b: any) => {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+        res.json({
+            count: activity.length,
+            bids: activity,  // Keep 'bids' key for backward compatibility
+            resolve_tx_hash: match.resolve_tx_hash,
+            lucky_supporter: match.lucky_supporter
+        });
     } catch (err: any) {
         console.error("Error fetching match bids:", err.message);
         res.status(500).json({ error: "Failed to fetch match bids" });
@@ -190,3 +218,4 @@ router.get("/:id/bids", (req: Request, res: Response) => {
 });
 
 export default router;
+

@@ -28,10 +28,23 @@ export function initSchema(): void {
       highest_bidder TEXT,
       resolved INTEGER DEFAULT 0,
       result INTEGER,
+      resolve_tx_hash TEXT,
+      lucky_supporter TEXT,
       moltbook_post_id TEXT,
       onchain_match_id INTEGER,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS claims (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      agent_wallet TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      tx_hash TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(match_id) REFERENCES matches(id),
+      FOREIGN KEY(agent_wallet) REFERENCES agents_metadata(agent_wallet)
     );
 
     CREATE TABLE IF NOT EXISTS agents_metadata (
@@ -65,6 +78,8 @@ export function initSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_matches_onchain_id ON matches(onchain_match_id);
     CREATE INDEX IF NOT EXISTS idx_bids_match ON bids(match_id);
     CREATE INDEX IF NOT EXISTS idx_bids_agent ON bids(agent_wallet);
+    CREATE INDEX IF NOT EXISTS idx_claims_match ON claims(match_id);
+    CREATE INDEX IF NOT EXISTS idx_claims_agent ON claims(agent_wallet);
   `);
 
   // Migrate existing tables — add new columns if they don't exist yet
@@ -87,6 +102,8 @@ export function initSchema(): void {
     "ALTER TABLE matches ADD COLUMN moltbook_post_id TEXT",
     "ALTER TABLE matches ADD COLUMN onchain_match_id INTEGER",
     "ALTER TABLE bids ADD COLUMN tx_hash TEXT",
+    "ALTER TABLE matches ADD COLUMN resolve_tx_hash TEXT",
+    "ALTER TABLE matches ADD COLUMN lucky_supporter TEXT",
   ];
 
   for (const sql of migrations) {

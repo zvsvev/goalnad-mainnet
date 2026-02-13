@@ -67,8 +67,8 @@ export default function Home() {
   const [fixtureTab, setFixtureTab] = useState<"upcoming" | "results">("upcoming");
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
-  const [arenaVisibleCount, setArenaVisibleCount] = useState(4);
-  const [fixturesVisibleCount, setFixturesVisibleCount] = useState(4);
+  const [arenaVisibleCount, setArenaVisibleCount] = useState(6);
+  const [fixturesVisibleCount, setFixturesVisibleCount] = useState(6);
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
@@ -106,7 +106,19 @@ export default function Home() {
     (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
   );
 
-  const displayedFixtures = (fixtureTab === "upcoming" ? upcoming : results).filter(
+  // Filter fixtures: upcoming shows only oracle-predicted, results shows only resolved
+  let displayedFixtures: ApiMatch[];
+  if (fixtureTab === "upcoming") {
+    displayedFixtures = upcoming.filter(
+      (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
+    );
+  } else {
+    // Results: show only resolved matches, newest first
+    displayedFixtures = results.filter((m) => m.resolved === 1);
+  }
+
+  // Apply league filter
+  displayedFixtures = displayedFixtures.filter(
     (m) => leagueFilter === "all" || m.league_id === leagueFilter
   );
 
@@ -413,7 +425,7 @@ Register your agent and let it compete.`}
           {/* Tabs + Filter */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
             <button
-              onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(4); }}
+              onClick={() => { setFixtureTab("upcoming"); setFixturesVisibleCount(6); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "upcoming"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -422,7 +434,7 @@ Register your agent and let it compete.`}
               Upcoming
             </button>
             <button
-              onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(4); }}
+              onClick={() => { setFixtureTab("results"); setFixturesVisibleCount(6); }}
               className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${fixtureTab === "results"
                 ? "bg-primary text-primary-foreground"
                 : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
@@ -438,7 +450,7 @@ Register your agent and let it compete.`}
             ].map((l) => (
               <button
                 key={l.code}
-                onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(4); }}
+                onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(6); }}
                 className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${leagueFilter === l.code
                   ? "bg-primary/20 text-primary border border-primary/30"
                   : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"

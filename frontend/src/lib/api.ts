@@ -29,6 +29,8 @@ export interface ApiMatch {
     highest_bidder: string | null;
     resolved: number | null;
     result: number | null;
+    resolve_tx_hash: string | null;
+    lucky_supporter: string | null;
 }
 
 export interface StandingEntry {
@@ -106,14 +108,23 @@ export interface ApiBid {
     created_at: string;
     wins: number;
     losses: number;
+    activity_type?: "bid" | "claim";
 }
 
-export async function fetchMatchBids(matchId: number): Promise<ApiBid[]> {
+export async function fetchMatchBids(matchId: number): Promise<{
+    bids: ApiBid[];
+    resolve_tx_hash: string | null;
+    lucky_supporter: string | null;
+}> {
     const res = await fetch(`${API_URL}/api/matches/${matchId}/bids`, { cache: "no-store" });
-    if (res.status === 404) return [];
+    if (res.status === 404) return { bids: [], resolve_tx_hash: null, lucky_supporter: null };
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     const data = await res.json();
-    return data.bids;
+    return {
+        bids: data.bids,
+        resolve_tx_hash: data.resolve_tx_hash || null,
+        lucky_supporter: data.lucky_supporter || null
+    };
 }
 
 // --- Agent Profile ---

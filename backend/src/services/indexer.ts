@@ -178,25 +178,29 @@ async function handleSupported(log: any) {
  * Emitted when a match is resolved
  */
 async function handleMatchResolved(log: any) {
-    const { matchId, result } = log.args;
+    const { matchId, result, luckySupporter } = log.args;
 
-    console.log(`[Indexer] MatchResolved: matchId=${matchId}, result=${result}`);
+    console.log(`[Indexer] MatchResolved: matchId=${matchId}, result=${result}, luckySupporter=${luckySupporter || 'none'}`);
 
     try {
         // Update match as resolved using onchain_match_id
         const stmt = db.prepare(`
             UPDATE matches
             SET resolved = 1,
-                result = ?
+                result = ?,
+                resolve_tx_hash = ?,
+                lucky_supporter = ?
             WHERE onchain_match_id = ?
         `);
 
         stmt.run(
             Number(result),
+            log.transactionHash,
+            luckySupporter ? luckySupporter.toLowerCase() : null,
             Number(matchId)
         );
 
-        console.log(`[Indexer] ✅ Synced resolution for match ${matchId}`);
+        console.log(`[Indexer] ✅ Synced resolution for match ${matchId} (tx: ${log.transactionHash.slice(0, 10)}...)`);
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error handling MatchResolved:`, err.message);
     }
@@ -225,6 +229,45 @@ async function handleMatchCancelled(log: any) {
         console.log(`[Indexer] ✅ Synced cancellation for match ${matchId}`);
     } catch (err: any) {
         console.error(`[Indexer] ❌ Error handling MatchCancelled:`, err.message);
+    }
+}
+
+/**
+ * Handle RewardClaimed event
+ * Emitted when an agent claims their reward
+ */
+async function handleRewardClaimed(log: any) {
+    const { matchId, winner, amount } = log.args;
+
+    // Convert from wei (18 decimals) to GOAL integer
+    const amountGoal = Math.floor(Number(formatEther(amount)));
+
+    console.log(`[Indexer] RewardClaimed: matchId=${matchId}, winner=${winner}, amount=${amountGoal} GOAL`);
+
+    try {
+        // Find the DB match by on-chain match ID
+        const match = getMatchByOnchainId(Number(matchId));
+        if (!match) {
+            console.warn(`[Indexer] ⚠️  No DB match found for onchain_match_id=${matchId}, skipping RewardClaimed`);
+            return;
+        }
+
+        // Insert claim record
+        const claimStmt = db.prepare(`
+            INSERT INTO claims (match_id, agent_wallet, amount, tx_hash, created_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        `);
+
+        claimStmt.run(
+            match.id,
+            winner.toLowerCase(),
+            amountGoal,
+            log.transactionHash
+        );
+
+        console.log(`[Indexer] ✅ Synced claim for match ${matchId} (DB id=${match.id}) by ${winner.slice(0, 10)}...`);
+    } catch (err: any) {
+        console.error(`[Indexer] ❌ Error handling RewardClaimed:`, err.message);
     }
 }
 
@@ -278,6 +321,9 @@ async function pollEvents() {
                         break;
                     case "MatchCancelled":
                         await handleMatchCancelled(log);
+                        break;
+                    case "RewardClaimed":
+                        await handleRewardClaimed(log);
                         break;
                     default:
                         break;

@@ -102,6 +102,8 @@ export default function MatchPage() {
 
   const [match, setMatch] = useState<ApiMatch | null>(null);
   const [bids, setBids] = useState<ApiBid[]>([]);
+  const [resolveTxHash, setResolveTxHash] = useState<string | null>(null);
+  const [luckySupporter, setLuckySupporter] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -124,7 +126,9 @@ export default function MatchPage() {
           setError("Match not found");
         } else {
           setMatch(matchData);
-          setBids(bidsData);
+          setBids(bidsData.bids);
+          setResolveTxHash(bidsData.resolve_tx_hash);
+          setLuckySupporter(bidsData.lucky_supporter);
         }
       } catch (e) {
         console.error("Failed to load match:", e);
@@ -373,13 +377,28 @@ export default function MatchPage() {
         {match.oracle_tx_hash && (
           <div className="text-center mb-8">
             <a
-              href={`https://testnet.monadscan.com/tx/${match.oracle_tx_hash}`}
+              href={`https://monadscan.com/tx/${match.oracle_tx_hash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-xs font-mono text-primary/70 hover:text-primary transition-colors"
             >
               <ExternalLink className="h-3 w-3" />
               Prediction on-chain: {match.oracle_tx_hash.slice(0, 10)}...{match.oracle_tx_hash.slice(-8)}
+            </a>
+          </div>
+        )}
+
+        {/* Resolve tx hash */}
+        {resolveTxHash && (
+          <div className="text-center mb-8">
+            <a
+              href={`https://monadscan.com/tx/${resolveTxHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-green-400/70 hover:text-green-400 transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Match resolved on-chain: {resolveTxHash.slice(0, 10)}...{resolveTxHash.slice(-8)}
             </a>
           </div>
         )}
@@ -457,7 +476,12 @@ export default function MatchPage() {
                   </div>
 
                   <div className="flex items-center gap-1.5">
-                    {bid.type === "challenge" ? (
+                    {bid.activity_type === "claim" ? (
+                      <Badge className="bg-green-500/10 text-green-400 border-green-500/30 font-mono text-[10px]">
+                        <Trophy className="mr-1 h-2.5 w-2.5" />
+                        CLAIMED {bid.amount.toLocaleString()} $GOAL
+                      </Badge>
+                    ) : bid.type === "challenge" ? (
                       <Badge className="bg-red-500/10 text-red-400 border-red-500/30 font-mono text-[10px]">
                         <Swords className="mr-1 h-2.5 w-2.5" />
                         BID {bid.amount.toLocaleString()} $GOAL
