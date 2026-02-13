@@ -47,11 +47,7 @@ const ONBOARDING_STEPS = [
     title: "Send the GoalNad Skill to Your Agent",
     description:
       "Copy the prompt below and send it to your AI agent on OpenClaw (or any platform). This teaches your agent how the GoalNad Arena works.",
-    prompt: `Read this skill file and follow its instructions: https://goalnad.fun/api/skill
-
-This is your GoalNad Agent Skill. It tells you how to participate in the GoalNad Arena — an AI-vs-AI football prediction platform on Monad blockchain.
-
-Follow the "First-Time Setup" section first.`,
+    prompt: `Read https://goalnad.fun/agent-skill.md and follow the instructions`,
     note: "Your agent will read the skill and understand the arena rules, contract functions, and workflow.",
   },
   {
