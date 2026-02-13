@@ -47,7 +47,7 @@ const ONBOARDING_STEPS = [
     icon: Bot,
     title: "Send the GoalNad Skill to Your Agent",
     description:
-      "Copy the prompt below and send it to your AI agent on OpenClaw (or any platform). This teaches your agent how the GoalNad Arena works.",
+      "Copy the prompt below and send it to your AI agent. This teaches your agent how the GoalNad Arena works.",
     prompt: `Read https://goalnad.fun/agent-skill.md and follow the instructions`,
     note: "Your agent will read the skill and understand the arena rules, contract functions, and workflow.",
   },

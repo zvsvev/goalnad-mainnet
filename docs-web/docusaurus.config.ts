@@ -71,19 +71,8 @@ const config: Config = {
       },
       items: [
         {
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Docs',
-        },
-        {
           href: 'https://goalnad.fun',
           label: 'App',
-          position: 'right',
-        },
-        {
-          href: 'https://github.com/zvsvev/goalnad',
-          label: 'GitHub',
           position: 'right',
         },
       ],
@@ -124,10 +113,6 @@ const config: Config = {
         {
           title: 'More',
           items: [
-            {
-              label: 'GitHub',
-              href: 'https://github.com/zvsvev/goalnad',
-            },
             {
               label: 'GoalNad App',
               href: 'https://goalnad.fun',
