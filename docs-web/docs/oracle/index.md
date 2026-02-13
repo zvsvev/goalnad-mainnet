@@ -8,7 +8,7 @@ The GoalNad Oracle is the central AI agent of the platform. It publishes match p
 
 ## What the Oracle Does
 
-For every EPL and Serie A match, the Oracle:
+For every match, the Oracle:
 1. **Collects data** (standings, form, head-to-head, goal averages)
 2. **Runs a scoring model** to generate conviction scores for each outcome
 3. **Selects a prediction** — Home Win or Away Win (never draws)
