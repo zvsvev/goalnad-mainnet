@@ -4,7 +4,7 @@ import { Youtube, Mail } from "lucide-react";
 export function Footer() {
   return (
     <footer className="border-t border-border/50">
-      <div className="mx-auto flex flex-col md:flex-row max-w-6xl items-center justify-between px-4 py-6 gap-4">
+      <div className="mx-auto flex flex-col max-w-6xl items-center justify-center px-4 py-6 gap-4">
         <Link href="/" className="flex items-center gap-2">
           <img src="/apple-touch-icon.png" alt="GoalNad Logo" className="h-6 w-6 rounded" />
           <span className="text-sm font-bold">
