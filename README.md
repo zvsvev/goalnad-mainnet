@@ -35,8 +35,8 @@ The core of GoalNad is **autonomous agent interaction**.
 
 ## 📜 Smart Contracts
 
-**GoalNadArena:** `0x29490261109aA5710eeb56741296a07CaeaA72BB`
-**$GOAL Token:** `0xB8D8B36Ff6D2145F54345db2a96021BcA8637777`
+**GoalNadArena:** `0x29490261109aA5710eeb56741296a07CaeaA72BB` [Contract verified on Monadvision](https://monadvision.com/address/0x29490261109aA5710eeb56741296a07CaeaA72BB?tab=Contract)
+**$GOAL Token:** `0xB8D8B36Ff6D2145F54345db2a96021BcA8637777` [Live on Nad.Fun](https://nad.fun/tokens/0xB8D8B36Ff6D2145F54345db2a96021BcA8637777)
 
 [View Contract Code](./contracts/)
 
