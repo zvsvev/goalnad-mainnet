@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TypingEffect } from "@/components/ui/typing-effect";
 import {
   Bot,
@@ -58,7 +58,7 @@ const ONBOARDING_STEPS = [
     description:
       "Your agent will automatically generate a new EVM wallet on Monad blockchain and show you the address and private key.",
     prompt: null,
-    note: 'Your agent will display something like:\n\n🔑 YOUR GOALNAD AGENT WALLET\n━━━━━━━━━━━━━━━━━━━━━━━\nAddress:     0xABC...123\nPrivate Key: 0xDEF...789\nChain:       Monad Testnet\n━━━━━━━━━━━━━━━━━━━━━━━\n\n⚠️ Save the private key! You cannot recover it later.',
+    note: 'Your agent will display something like:\n\n🔑 YOUR GOALNAD AGENT WALLET\n━━━━━━━━━━━━━━━━━━━━━━━\nAddress:     0xABC...123\nPrivate Key: 0xDEF...789\nChain:       Monad\n━━━━━━━━━━━━━━━━━━━━━━━\n\n⚠️ Save the private key! You cannot recover it later.',
   },
   {
     step: "03",
@@ -67,18 +67,27 @@ const ONBOARDING_STEPS = [
     description:
       "Send MON and $GOAL tokens to your agent's wallet address. Your agent needs both to start playing.",
     prompt: null,
-    note: "• Send at least 1 MON — for gas fees and 0.1 MON claim fees\n• Send at least 10,000 $GOAL — for placing bids\n• You can get testnet tokens from the Monad faucet",
+    note: "• Send at least 1 MON — for gas fees and 0.1 MON claim fees\n• Send at least 10,000 $GOAL — for placing bids\n• You can get tokens from the Monad faucet",
   },
   {
     step: "04",
     icon: Play,
-    title: "Tell Your Agent to Start",
+    title: "Tell Your Agent to Start (Optional)",
     description:
-      "Once the wallet is funded, send this prompt to your agent. It will begin scanning matches and making predictions.",
+      "Once the wallet is funded, your agent will run autonomously. If it doesn't start automatically, send this prompt to your agent. It will begin scanning matches and making predictions.",
     prompt: `My wallet is funded. Start playing GoalNad now.
 
 Scan for upcoming matches and make your first challenge or support decision.`,
     note: "Your agent will check balances, scan matches, and start placing bids or supports on-chain. It runs autonomously from here.",
+  },
+  {
+    step: "05",
+    icon: Target,
+    title: "Refine Your Agent Strategy (Optional)",
+    description:
+      "You can refine your agent strategy by using the prompt templates we have made. Feel free to use or edit them, be creative!",
+    prompt: null,
+    note: "Strategy prompts help your agent develop a unique personality and decision-making style.",
   },
 ];
 
@@ -105,8 +114,8 @@ const CAPABILITIES = [
     icon: Trophy,
     title: "Claim Rewards",
     description:
-      "Winners claim $GOAL on-chain. 0.1 MON platform fee per claim.",
-    detail: "99% of pot (1% burned) | 0.1 MON claim fee",
+      "Winners claim $GOAL onchain. 0.1 MON platform fee per claim.",
+    detail: "99% of pot (1% $GOAL burned) | 0.1 MON claim fee",
   },
   {
     icon: MessageSquare,
@@ -165,11 +174,48 @@ function CopyButton({ text }: { text: string }) {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Strategy Prompts                                                   */
+/* ------------------------------------------------------------------ */
+
+const STRATEGY_PROMPTS = [
+  "Focus on underdog teams with strong defensive records. Challenge when Oracle picks favorites.",
+  "Analyze recent form over season stats. Support Oracle when momentum aligns with their prediction.",
+  "Prioritize matches with high pot values. Only bid when potential returns justify the risk.",
+  "Challenge Oracle predictions for teams playing away in hostile environments.",
+  "Support Oracle when they predict home wins for teams with 70%+ home win rate.",
+  "Focus on derby matches and rivalries. Emotions often override statistics in these games.",
+  "Challenge predictions for teams with key players injured or suspended.",
+  "Support Oracle when weather conditions favor their predicted outcome (rain helps defensive teams).",
+  "Analyze head-to-head records. Challenge when Oracle ignores historical dominance.",
+  "Focus on matches where Oracle's prediction contradicts betting market odds by 20%+.",
+  "Support Oracle early in the week to maximize quota. Challenge high-value pots near kickoff.",
+  "Prioritize leagues you know best. Avoid bidding on unfamiliar competitions.",
+  "Challenge Oracle when they pick teams on 3+ game losing streaks.",
+  "Support Oracle predictions that align with xG (expected goals) data from recent matches.",
+  "Focus on matches with clear tactical mismatches. Challenge when Oracle misses this.",
+  "Analyze referee tendencies. Some refs favor home teams, others are card-happy.",
+  "Challenge Oracle during congested fixture periods when top teams rotate heavily.",
+  "Support Oracle when they predict wins for teams fighting relegation at home.",
+  "Focus on Champions League and Europa League. European form often differs from domestic.",
+  "Challenge Oracle when they ignore managerial changes or new tactical systems.",
+];
+
+/* ------------------------------------------------------------------ */
 /*  Page Component                                                     */
 /* ------------------------------------------------------------------ */
 
 export default function RegisterAgentPage() {
   const [expandedNote, setExpandedNote] = useState<string | null>(null);
+  const [showMorePrompts, setShowMorePrompts] = useState(false);
+  const [randomizedPrompts, setRandomizedPrompts] = useState<string[]>([]);
+
+  // Randomize prompts on mount
+  useEffect(() => {
+    const shuffled = [...STRATEGY_PROMPTS].sort(() => Math.random() - 0.5);
+    setRandomizedPrompts(shuffled.slice(0, 8));
+  }, []);
+
+  const visiblePrompts = showMorePrompts ? randomizedPrompts : randomizedPrompts.slice(0, 3);
 
   return (
     <div className="min-h-screen">
@@ -192,7 +238,7 @@ export default function RegisterAgentPage() {
               <span className="text-primary">AI Agent</span>
             </h1>
             <TypingEffect
-              text="4 simple steps. Just copy the prompts below and send them to your AI agent. It handles everything from wallet creation to playing."
+              text="As a human, register your agent and let it play GoalNad autonomously. We've created simple steps to guide you through the process."
               className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto"
             />
           </div>
@@ -265,6 +311,40 @@ export default function RegisterAgentPage() {
                           )}
                         </div>
                       )}
+
+                      {/* Strategy Prompts (Step 05 only) */}
+                      {step.step === "05" && randomizedPrompts.length > 0 && (
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+                              Strategy Templates
+                            </span>
+                          </div>
+                          <div className="space-y-2">
+                            {visiblePrompts.map((prompt, idx) => (
+                              <div
+                                key={idx}
+                                className="rounded-lg bg-background/80 border border-border/50 p-3"
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-xs text-muted-foreground leading-relaxed flex-1">
+                                    {prompt}
+                                  </p>
+                                  <CopyButton text={prompt} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {!showMorePrompts && randomizedPrompts.length > 3 && (
+                            <button
+                              onClick={() => setShowMorePrompts(true)}
+                              className="w-full text-xs text-primary hover:text-primary/80 transition-colors font-mono py-2"
+                            >
+                              View More Prompts ({randomizedPrompts.length - 3} more)
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -279,7 +359,7 @@ export default function RegisterAgentPage() {
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Agent Developer Portal
+              Arena Mechanics
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Everything you need to know about the arena mechanics.
