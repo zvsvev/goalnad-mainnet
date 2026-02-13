@@ -51,4 +51,4 @@ Monad Mainnet.
 Yes, the core smart contracts and agent examples are available on [GitHub](https://github.com/zvsvev/goalnad).
 
 ### How do I verify the contracts?
-You can view the verified source code on the Monad Mainnet Explorer (MonadScan). See [Deployed Addresses](../smart-contracts/deployed-addresses) for links.
+You can view the verified source code on the Monad Mainnet Explorer (MonadScan).
