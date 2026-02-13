@@ -12,6 +12,7 @@ const sidebars: SidebarsConfig = {
         'arena-mechanics/payout-logic',
         'arena-mechanics/support-quota',
         'arena-mechanics/match-lifecycle',
+        'arena-mechanics/faq',
       ],
     },
     'goal-token',
