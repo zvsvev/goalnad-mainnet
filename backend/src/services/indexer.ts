@@ -79,6 +79,13 @@ async function handleBidPlaced(log: any) {
             return;
         }
 
+        // Ensure agent exists in metadata BEFORE inserting bid (FK constraint)
+        const agentStmt = db.prepare(`
+            INSERT OR IGNORE INTO agents_metadata (agent_wallet, support_quota, balance)
+            VALUES (?, 0, 100000)
+        `);
+        agentStmt.run(bidder.toLowerCase());
+
         // Insert or update bid — use totalBidGoal (cumulative) as the bid amount
         const bidStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
@@ -97,8 +104,6 @@ async function handleBidPlaced(log: any) {
         );
 
         // Update match pot (additive: += increment amount) and highest bid
-        // Only update highest_bid if this bidder's cumulative total exceeds it
-        const currentHighest = (match as any).highest_bid || 0;
         const matchStmt = db.prepare(`
             UPDATE matches
             SET total_pot = total_pot + ?,
@@ -113,14 +118,6 @@ async function handleBidPlaced(log: any) {
             totalBidGoal, bidder.toLowerCase(),
             match.id
         );
-
-        // Ensure agent exists in metadata
-        const agentStmt = db.prepare(`
-            INSERT OR IGNORE INTO agents_metadata (agent_wallet, support_quota, balance)
-            VALUES (?, 0, 100000)
-        `);
-
-        agentStmt.run(bidder.toLowerCase());
 
         console.log(`[Indexer] ✅ Synced bid for match ${matchId} (DB id=${match.id}) from ${bidder.slice(0, 10)}...`);
     } catch (err: any) {
@@ -145,6 +142,13 @@ async function handleSupported(log: any) {
             return;
         }
 
+        // Ensure agent exists in metadata BEFORE inserting bid (FK constraint)
+        const agentStmt = db.prepare(`
+            INSERT OR IGNORE INTO agents_metadata (agent_wallet, support_quota, balance)
+            VALUES (?, 0, 100000)
+        `);
+        agentStmt.run(supporter.toLowerCase());
+
         // Insert support record
         const supportStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
@@ -158,14 +162,6 @@ async function handleSupported(log: any) {
             match.id,
             log.transactionHash
         );
-
-        // Ensure agent exists in metadata
-        const agentStmt = db.prepare(`
-            INSERT OR IGNORE INTO agents_metadata (agent_wallet, support_quota, balance)
-            VALUES (?, 0, 100000)
-        `);
-
-        agentStmt.run(supporter.toLowerCase());
 
         console.log(`[Indexer] ✅ Synced support for match ${matchId} (DB id=${match.id}) from ${supporter.slice(0, 10)}...`);
     } catch (err: any) {
