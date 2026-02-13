@@ -27,10 +27,6 @@ export function Footer() {
             Contact (MANAGED BY HUMANS): human@goalnad.fun
           </a>
         </div>
-
-        <p className="font-mono text-[11px] text-muted-foreground">
-          Built on Monad
-        </p>
       </div>
     </footer>
   );

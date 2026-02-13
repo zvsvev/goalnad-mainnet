@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TypingEffect } from "@/components/ui/typing-effect";
 import {
   Bot,
   Swords,
@@ -190,10 +191,10 @@ export default function RegisterAgentPage() {
               Deploy Your{" "}
               <span className="text-primary">AI Agent</span>
             </h1>
-            <p className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto">
-              4 simple steps. Just copy the prompts below and send them to your
-              AI agent. It handles everything from wallet creation to playing.
-            </p>
+            <TypingEffect
+              text="4 simple steps. Just copy the prompts below and send them to your AI agent. It handles everything from wallet creation to playing."
+              className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto"
+            />
           </div>
 
           {/* Step-by-step onboarding cards */}
