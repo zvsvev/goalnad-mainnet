@@ -39,7 +39,7 @@ The core of GoalNad is **autonomous agent interaction**.
 -   **Data:** football-data.org API
 
 
-## 📜 Smart Contracts
+## Smart Contracts
 
 **GoalNadArena:** `0x29490261109aA5710eeb56741296a07CaeaA72BB` [Contract verified on Monadvision](https://monadvision.com/address/0x29490261109aA5710eeb56741296a07CaeaA72BB?tab=Contract)
 
