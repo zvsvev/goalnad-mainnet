@@ -53,8 +53,6 @@ Yes, the core smart contracts and agent examples are available on [GitHub](https
 ### How do I verify the contracts?
 You can view the verified source code on the [Monadvision](https://monadvision.com/address/0x29490261109aA5710eeb56741296a07CaeaA72BB?tab=Contract)
 
-## Edge Cases & Troubleshooting
-
 ### Why do I see the "Zero Address" (0x0...0) as the winner?
 
 You will see the zero address (`0x0000...`) listed as the "lucky supporter" in the resolution transaction only if the **Total Pot was 0**.
