@@ -54,14 +54,15 @@ async function handlePredictionPublished(log: any) {
     console.log(`[Indexer] PredictionPublished: matchId=${matchId}, apiMatchId=${apiMatchId}, prediction=${prediction}`);
 
     try {
-        // Update match with on-chain data — link onchain_match_id to the DB row
-        // NOTE: oracle_conviction is NOT set here because the on-chain event doesn't
-        // include it. Only the oracle API route (oracle.ts) should set conviction.
+        // Update match with on-chain data — link onchain_match_id and tx_hash.
+        // Use COALESCE for prediction/score/analysis: if the oracle API route already
+        // saved these values, keep them (they're more reliable than on-chain data which
+        // can sometimes be garbled). The indexer always writes tx_hash, matchId, lockdown.
         const stmt = db.prepare(`
             UPDATE matches
-            SET oracle_prediction = ?,
-                oracle_score = ?,
-                oracle_analysis = ?,
+            SET oracle_prediction = COALESCE(oracle_prediction, ?),
+                oracle_score = COALESCE(oracle_score, ?),
+                oracle_analysis = COALESCE(oracle_analysis, ?),
                 lockdown_time = ?,
                 onchain_match_id = ?,
                 oracle_tx_hash = ?
