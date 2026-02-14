@@ -44,6 +44,7 @@ router.post("/predict", async (req: Request, res: Response) => {
             exactScore,
             conviction,
             analysis,
+            skipOnChain,
         } = req.body;
 
         // Coerce prediction to number (agents may send string "1"/"2")
@@ -81,9 +82,12 @@ router.post("/predict", async (req: Request, res: Response) => {
         const lockdownTimestamp = Math.floor(kickoff / 1000);
 
         // ── Step 1: Publish on-chain ──
-        let txHash: string | null = null;
-        let onchainMatchId: number | null = null;
-        if (isChainEnabled()) {
+        // Skip if match already has an on-chain prediction (re-prediction scenario)
+        // or if explicitly requested via skipOnChain param
+        const alreadyOnChain = match.onchain_match_id !== null && match.onchain_match_id !== undefined;
+        let txHash: string | null = match.oracle_tx_hash || null;
+        let onchainMatchId: number | null = match.onchain_match_id || null;
+        if (isChainEnabled() && !alreadyOnChain && !skipOnChain) {
             try {
                 const chainResult = await publishPredictionOnChain(
                     matchId,
