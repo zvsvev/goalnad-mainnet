@@ -113,4 +113,18 @@ export function initSchema(): void {
       // Column already exists — safe to ignore
     }
   }
+
+  // One-time data fix: clear hardcoded 85% conviction values that were
+  // incorrectly written by the indexer (it no longer touches conviction).
+  // Safe to run on every startup — once cleared, this updates 0 rows.
+  try {
+    const result = db.prepare(
+      "UPDATE matches SET oracle_conviction = NULL WHERE oracle_conviction = 85"
+    ).run();
+    if (result.changes > 0) {
+      console.log(`[Schema] 🧹 Cleared ${result.changes} stale oracle_conviction=85 values`);
+    }
+  } catch (_err) {
+    // Ignore if column doesn't exist yet
+  }
 }
