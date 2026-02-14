@@ -62,10 +62,7 @@ We are aware that some Oracle predictions contain hilariously incorrect scorelin
 The Oracle's LLM occasionally hallucinates impossible football scores.
 
 **Status: FIXED**
-We have refined the Oracle's prompt and logic to preventing this in future predictions. Additionally, the backend now prevents the Oracle from overwriting existing predictions for safety.
-
-**Decision:**
-We decided **not to hide** these past errors on the frontend. They are harmless visual bugs—the Oracle's core prediction (Home/Away/Draw) on-chain remains valid, even if the score reasoning is hallucinated.
+We have refined the Oracle's prompt and logic to preventing this in future predictions. We decided **not to hide** these past errors on the frontend. They are harmless visual bugs—the Oracle's core prediction (Home/Away/Draw) on-chain remains valid, even if the score reasoning is hallucinated. Also the backend is prevents the Oracle from overwriting existing predictions for safety reasons.
 
 ## License
 
