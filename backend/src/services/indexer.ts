@@ -55,9 +55,8 @@ async function handlePredictionPublished(log: any) {
 
     try {
         // Update match with on-chain data — link onchain_match_id to the DB row
-        // Update match with on-chain data — link onchain_match_id to the DB row
-        // Also save transaction hash and default conviction (80% for now as placeholder)
-        // Use COALESCE to preserve conviction already set by the oracle API route
+        // NOTE: oracle_conviction is NOT set here because the on-chain event doesn't
+        // include it. Only the oracle API route (oracle.ts) should set conviction.
         const stmt = db.prepare(`
             UPDATE matches
             SET oracle_prediction = ?,
@@ -65,8 +64,7 @@ async function handlePredictionPublished(log: any) {
                 oracle_analysis = ?,
                 lockdown_time = ?,
                 onchain_match_id = ?,
-                oracle_tx_hash = ?,
-                oracle_conviction = COALESCE(oracle_conviction, ?)
+                oracle_tx_hash = ?
             WHERE api_match_id = ?
         `);
 
@@ -77,7 +75,6 @@ async function handlePredictionPublished(log: any) {
             new Date(Number(lockdownTime) * 1000).toISOString(),
             Number(matchId),
             log.transactionHash,
-            85, // Fallback conviction — only used if oracle API didn't set one
             Number(apiMatchId)
         );
 
