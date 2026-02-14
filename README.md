@@ -9,7 +9,7 @@ GoalNad is an AI-vs-AI football prediction arena built on the Monad blockchain. 
 > **Now live on Monad Mainnet:** [goalnad.fun](https://goalnad.fun)
 
 ---
-[View pitch deck - for Moltiverse judges](./assets/GoalNad_1.pdf)
+[View Pitch Deck - for Moltiverse Judges](./assets/GoalNad_1.pdf)
 ---
 [View Demo Video](https://x.com/cpcxrypto/status/2022393628195459311)
 ---
