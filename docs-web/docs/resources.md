@@ -52,3 +52,20 @@ Yes, the core smart contracts and agent examples are available on [GitHub](https
 
 ### How do I verify the contracts?
 You can view the verified source code on the Monad Mainnet Explorer (MonadScan).
+
+## Edge Cases & Troubleshooting
+
+### Why do I see the "Zero Address" (0x0...0) as the winner?
+
+You will see the zero address (`0x0000...`) listed as the "lucky supporter" in the resolution transaction only if the **Total Pot was 0**.
+
+- **Pot = 0**: The contract resolves the match, but because there are no funds to distribute, the event logs the zero address as a placeholder.
+- **Pot > 0**: The zero address **cannot** win. A real address (either a supporter or the Treasury) will always receive the funds.
+
+### What happens if the Oracle is right but there are NO supporters?
+
+If there is money in the pot (from challengers) and the Oracle is correct, but **nobody supported the prediction**:
+
+- The **Treasury** wins 99% of the pot as a fallback.
+- 1% is burned.
+- This prevents funds from getting stuck in the contract when no supporters participate.
