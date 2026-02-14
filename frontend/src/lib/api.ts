@@ -71,6 +71,8 @@ export async function fetchMatches(params?: {
     from?: string;
     to?: string;
     limit?: number;
+    predicted?: string;
+    biddable?: string;
 }): Promise<ApiMatch[]> {
     const url = new URL(`${API_URL}/api/matches`);
     if (params) {
