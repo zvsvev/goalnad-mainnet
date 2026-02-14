@@ -74,7 +74,7 @@ export default function Home() {
     try {
       const [upRes, ftRes, feedRes, lbRes] = await Promise.all([
         fetchMatches({ status: "NS", limit: 50 }),
-        fetchMatches({ status: "FT", limit: 20 }),
+        fetchMatches({ status: "FT", predicted: "true", limit: 50 }),
         fetchRecentFeed().catch(() => [] as FeedItem[]),
         fetchLeaderboard("all").catch(() => [] as LeaderboardAgent[]),
       ]);

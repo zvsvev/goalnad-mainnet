@@ -4,6 +4,28 @@ import { db } from "../db/connection.js";
 import GoalNadArenaABI from "../contracts/GoalNadArena.abi.json";
 import type { Address } from "viem";
 
+// Cache block timestamps to avoid redundant RPC calls within the same poll cycle
+const blockTimestampCache = new Map<bigint, Date>();
+
+/**
+ * Get the timestamp of a block, with caching.
+ * Falls back to current time if the RPC call fails.
+ */
+async function getBlockTimestamp(blockNumber: bigint): Promise<Date> {
+    const cached = blockTimestampCache.get(blockNumber);
+    if (cached) return cached;
+
+    try {
+        const block = await publicClient.getBlock({ blockNumber });
+        const ts = new Date(Number(block.timestamp) * 1000);
+        blockTimestampCache.set(blockNumber, ts);
+        return ts;
+    } catch (err: any) {
+        console.warn(`[Indexer] ⚠️  Could not fetch block ${blockNumber} timestamp: ${err.message}`);
+        return new Date(); // fallback to server time
+    }
+}
+
 // ─── Configuration ──────────────────────────────────────────────────
 
 const ARENA_ADDRESS = config.arenaAddress as Address;
@@ -35,6 +57,7 @@ async function handlePredictionPublished(log: any) {
         // Update match with on-chain data — link onchain_match_id to the DB row
         // Update match with on-chain data — link onchain_match_id to the DB row
         // Also save transaction hash and default conviction (80% for now as placeholder)
+        // Use COALESCE to preserve conviction already set by the oracle API route
         const stmt = db.prepare(`
             UPDATE matches
             SET oracle_prediction = ?,
@@ -43,7 +66,7 @@ async function handlePredictionPublished(log: any) {
                 lockdown_time = ?,
                 onchain_match_id = ?,
                 oracle_tx_hash = ?,
-                oracle_conviction = ?
+                oracle_conviction = COALESCE(oracle_conviction, ?)
             WHERE api_match_id = ?
         `);
 
@@ -54,7 +77,7 @@ async function handlePredictionPublished(log: any) {
             new Date(Number(lockdownTime) * 1000).toISOString(),
             Number(matchId),
             log.transactionHash,
-            85, // Default conviction to 85% since it's not in the event
+            85, // Fallback conviction — only used if oracle API didn't set one
             Number(apiMatchId)
         );
 
@@ -68,7 +91,7 @@ async function handlePredictionPublished(log: any) {
  * Handle BidPlaced event
  * Emitted when an agent places a challenge bid
  */
-async function handleBidPlaced(log: any) {
+async function handleBidPlaced(log: any, blockTimestamp: Date) {
     const { matchId, bidder, amount, totalBid } = log.args;
 
     // Convert from wei (18 decimals) to GOAL integer
@@ -93,11 +116,13 @@ async function handleBidPlaced(log: any) {
         agentStmt.run(bidder.toLowerCase());
 
         // Insert or update bid — use totalBidGoal (cumulative) as the bid amount
+        // Use on-chain block timestamp for accurate timing
+        const onchainTime = blockTimestamp.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
         const bidStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
-            VALUES (?, ?, ?, 'challenge', '', ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, 'challenge', '', ?, ?)
             ON CONFLICT(agent_wallet, match_id)
-            DO UPDATE SET amount = ?, tx_hash = ?, created_at = CURRENT_TIMESTAMP
+            DO UPDATE SET amount = ?, tx_hash = ?, created_at = ?
         `);
 
         bidStmt.run(
@@ -105,8 +130,10 @@ async function handleBidPlaced(log: any) {
             match.id,
             totalBidGoal,
             log.transactionHash,
+            onchainTime,
             totalBidGoal,
-            log.transactionHash
+            log.transactionHash,
+            onchainTime
         );
 
         // Update match pot (additive: += increment amount) and highest bid
@@ -135,7 +162,7 @@ async function handleBidPlaced(log: any) {
  * Handle Supported event
  * Emitted when an agent supports the Oracle
  */
-async function handleSupported(log: any) {
+async function handleSupported(log: any, blockTimestamp: Date) {
     const { matchId, supporter } = log.args;
 
     console.log(`[Indexer] Supported: matchId=${matchId}, supporter=${supporter}`);
@@ -155,10 +182,11 @@ async function handleSupported(log: any) {
         `);
         agentStmt.run(supporter.toLowerCase());
 
-        // Insert support record
+        // Insert support record — use on-chain block timestamp
+        const onchainTime = blockTimestamp.toISOString().replace('T', ' ').replace('Z', '').slice(0, 19);
         const supportStmt = db.prepare(`
             INSERT INTO bids (agent_wallet, match_id, amount, type, comment, tx_hash, created_at)
-            VALUES (?, ?, 0, 'support', '', ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, 0, 'support', '', ?, ?)
             ON CONFLICT(agent_wallet, match_id)
             DO UPDATE SET tx_hash = excluded.tx_hash
         `);
@@ -166,7 +194,8 @@ async function handleSupported(log: any) {
         supportStmt.run(
             supporter.toLowerCase(),
             match.id,
-            log.transactionHash
+            log.transactionHash,
+            onchainTime
         );
 
         console.log(`[Indexer] ✅ Synced support for match ${matchId} (DB id=${match.id}) from ${supporter.slice(0, 10)}...`);
@@ -308,15 +337,21 @@ async function pollEvents() {
                 // @ts-ignore - eventName exists on parsed logs
                 const eventName = log.eventName;
 
+                // Fetch block timestamp for events that need accurate timing
+                let blockTs: Date | undefined;
+                if (["BidPlaced", "Supported"].includes(eventName) && log.blockNumber) {
+                    blockTs = await getBlockTimestamp(log.blockNumber);
+                }
+
                 switch (eventName) {
                     case "PredictionPublished":
                         await handlePredictionPublished(log);
                         break;
                     case "BidPlaced":
-                        await handleBidPlaced(log);
+                        await handleBidPlaced(log, blockTs!);
                         break;
                     case "Supported":
-                        await handleSupported(log);
+                        await handleSupported(log, blockTs!);
                         break;
                     case "MatchResolved":
                         await handleMatchResolved(log);
@@ -335,6 +370,9 @@ async function pollEvents() {
             totalEvents += logs.length;
             cursor = chunkEnd + 1n;
         }
+
+        // Clear block timestamp cache after each poll cycle
+        blockTimestampCache.clear();
 
         if (totalEvents > 0) {
             console.log(`[Indexer] ✅ Processed ${totalEvents} events from blocks ${startFrom}-${latestBlock}`);
