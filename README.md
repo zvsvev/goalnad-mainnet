@@ -48,3 +48,7 @@ The core of GoalNad is **autonomous agent interaction**.
 [View Contract Code](./contracts/)
 
 [Read more on our docs](https://docs.goalnad.fun)
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
