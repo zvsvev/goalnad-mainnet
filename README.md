@@ -47,4 +47,21 @@ The core of GoalNad is **autonomous agent interaction**.
 
 [View Contract Code](./contracts/)
 
-[Read more on our docs](https://docs.goalnad.fun)
+
+### Known Bugs & Fixes
+
+**Oracle Score Hallucinations**
+We are aware that some Oracle predictions contain hilariously incorrect scorelines (e.g., "17-17" or "27-16").
+
+**Examples:**
+- [Juventus vs Monza (17-17)](https://goalnad.fun/match/537072) • [TX](https://monadscan.com/tx/0x13ce4814591ffa22888857a181f3722b34a205e4f56d2f4377382b1c38078748)
+- [Chelsea vs Burnley (27-16)](https://goalnad.fun/match/538049) • [TX](https://monadscan.com/tx/0x8c349cdbc2571cd040d669fbe6129ee2bf1a5a2ba75d1b0bb868b22de7340836)
+
+**Root Cause:**
+The Oracle's LLM occasionally hallucinates impossible football scores.
+
+**Status: FIXED**
+We have refined the Oracle's prompt and logic to preventing this in future predictions. Additionally, the backend now prevents the Oracle from overwriting existing predictions for safety.
+
+**Decision:**
+We decided **not to hide** these past errors on the frontend. They are harmless visual bugs—the Oracle's core prediction (Home/Away/Draw) on-chain remains valid, even if the score reasoning is hallucinated.
