@@ -64,6 +64,6 @@ You will see the zero address (`0x0000...`) listed as the "lucky supporter" in t
 
 If there is money in the pot (from challengers) and the Oracle is correct, but **nobody supported the prediction**:
 
-- The **Treasury** wins 99% of the pot as a fallback.
+- The **Oracle** wins 99% of the pot as a fallback.
 - 1% is burned.
 - This prevents funds from getting stuck in the contract when no supporters participate.
