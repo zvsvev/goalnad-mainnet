@@ -519,4 +519,28 @@ router.post("/delete-agent", (req: Request, res: Response) => {
     }
 });
 
+// ─── POST /api/admin/clear-predictions — Wipe garbled oracle predictions ─────
+
+router.post("/clear-predictions", (_req: Request, res: Response) => {
+    try {
+        const result = db.prepare(`
+            UPDATE matches
+            SET oracle_prediction = NULL,
+                oracle_score = NULL,
+                oracle_analysis = NULL,
+                oracle_conviction = NULL
+            WHERE status = 'NS' AND resolved = 0
+        `).run();
+
+        console.log(`[Admin] Cleared predictions for ${result.changes} matches`);
+        res.json({
+            message: `Cleared predictions for ${result.changes} unresolved NS matches`,
+            cleared: result.changes,
+        });
+    } catch (err: any) {
+        console.error("Error clearing predictions:", err.message);
+        res.status(500).json({ error: "Failed to clear predictions" });
+    }
+});
+
 export default router;
