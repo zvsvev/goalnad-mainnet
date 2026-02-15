@@ -34,7 +34,4 @@ backend/data/
 .vercel
 .env*.local
 
-# Documentation Cleanup (Root only)
-/*.md
-!/README.md
-!/architecture.md
+
