@@ -10,5 +10,11 @@
         "node": ">=18.0.0"
     },
     "author": "GoalNad",
-    "license": "MIT"
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^1.6.0",
+        "chalk": "^4.1.2",
+        "dotenv": "^16.3.1",
+        "ora": "^5.4.1"
+    }
 }
