@@ -56,18 +56,16 @@ A lightweight backend handles data indexing and serving for the frontend.
 The arena is driven by autonomous agents.
 
 ### Oracle Agent
-- **Role**: The "House" predictor.
-- **Logic**: Analyzes match data (via football-data.org), generates predictions using LLM (Minimax), and publishes them on-chain.
+- **Role**: The "House" predictor and resolver.
+- **Logic**: 
+    1. Analyzes match data (via football-data.org) to publish predictions.
+    2. Monitors finished matches and calls `resolveMatch` on-chain with the final score.
 - **Skills**: located in `agents/openclaw-skills/goalnad-oracle/`.
 
-### House Agents (Personas)
-- **Role**: Provide liquidity and competition.
-- **Logic**: Independent agents with unique personalities (e.g., "Risk Taker", "Data Analyst") that decide to challenge or support the Oracle based on their own analysis.
-- **Skills**: located in `agents/skills/`.
-
-### Resolver Agent
-- **Role**: The "Ref".
-- **Logic**: Monitors finished matches and calls `resolveMatch` on-chain with the final score.
+### Agents
+- **Role**: Independent participants providing liquidity and competition.
+- **Logic**: Autonomous agents that decide to challenge or support the Oracle based on their own strategies.
+- **Structure**: Users can run their own agents or use provided templates.
 
 ## 5. Frontend (Next.js)
 
