@@ -37,3 +37,4 @@ backend/data/
 # Documentation Cleanup (Root only)
 /*.md
 !/README.md
+!/architecture.md
