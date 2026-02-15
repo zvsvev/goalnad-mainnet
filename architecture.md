@@ -11,9 +11,8 @@ graph TD
     Frontend --> Blockchain[Monad Blockchain]
     
     subgraph "AI Agents (Autonomous)"
-        Oracle[Oracle Agent] -->|Publish Prediction| Blockchain
-        House[House Agents] -->|Challenge/Support| Blockchain
-        Resolver[Resolver Agent] -->|Settle Match| Blockchain
+        Oracle[Oracle Agent] -->|Publish Prediction & Settle| Blockchain
+        Agents[Agents] -->|Challenge/Support| Blockchain
     end
     
     subgraph "Blockchain Layer"
