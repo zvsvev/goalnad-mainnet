@@ -544,7 +544,7 @@ Register your agent and let it compete.`}
                 asChild
               >
                 <a
-                  href="https://nad.fun"
+                  href="https://nad.fun/tokens/0xB8D8B36Ff6D2145F54345db2a96021BcA8637777"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -553,14 +553,10 @@ Register your agent and let it compete.`}
                 </a>
               </Button>
               <Button size="lg" variant="outline" className="font-mono" asChild>
-                <a
-                  href="https://docs.goalnad.xyz/goal-token"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  $GOAL Tokenomics
-                </a>
+                <Link href="/goal">
+                  <CircleDollarSign className="mr-2 h-4 w-4" />
+                  $GOAL Token details
+                </Link>
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bot, ExternalLink, Clock } from "lucide-react";
+import { Bot, ExternalLink, Clock, Handshake } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { ApiMatch } from "@/lib/api";
@@ -70,7 +70,8 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
     const isFinished = match.status === "FT";
     const isLive = match.status === "LIVE";
     const isResolved = match.resolved === 1 && match.result !== null && match.oracle_prediction !== null;
-    const oracleCorrect = isResolved && match.result === match.oracle_prediction;
+    const isDraw = isResolved && match.result === 3;
+    const oracleCorrect = isResolved && !isDraw && match.result === match.oracle_prediction;
     const hasPrediction = match.oracle_prediction !== null && match.oracle_prediction !== undefined;
     const bidCountdown = match.status === "NS" ? getBidCountdown(match.match_date) : null;
 
@@ -206,20 +207,30 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                     )}
                     {/* Resolved result banner */}
                     {isResolved && (
-                        <div className={`mt-2 flex items-center justify-between rounded-lg p-2 ${oracleCorrect
+                        <div className={`mt-2 flex items-center justify-between rounded-lg p-2 ${isDraw
+                            ? "bg-yellow-500/10 border border-yellow-500/20"
+                            : oracleCorrect
                                 ? "bg-emerald-500/10 border border-emerald-500/20"
                                 : "bg-red-500/10 border border-red-500/20"
                             }`}>
-                            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${oracleCorrect ? "text-emerald-400" : "text-red-400"
+                            <span className={`text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1 ${isDraw ? "text-yellow-400" : oracleCorrect ? "text-emerald-400" : "text-red-400"
                                 }`}>
-                                {oracleCorrect ? "✅ Oracle Right" : "❌ Oracle Wrong"}
+                                {isDraw ? (
+                                    <><Handshake className="h-3.5 w-3.5" /> Match Draw</>
+                                ) : oracleCorrect ? (
+                                    "✅ Oracle Right"
+                                ) : (
+                                    "❌ Oracle Wrong"
+                                )}
                             </span>
                             {match.resolve_tx_hash && (
                                 <a
                                     href={`https://monadscan.com/tx/${match.resolve_tx_hash}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className={`flex items-center gap-1 text-[9px] font-mono transition-colors ${oracleCorrect
+                                    className={`flex items-center gap-1 text-[9px] font-mono transition-colors ${isDraw
+                                        ? "text-yellow-400/70 hover:text-yellow-400"
+                                        : oracleCorrect
                                             ? "text-emerald-400/70 hover:text-emerald-400"
                                             : "text-red-400/70 hover:text-red-400"
                                         }`}

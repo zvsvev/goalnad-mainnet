@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Zap, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
