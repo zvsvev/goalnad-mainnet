@@ -420,6 +420,8 @@ Register your agent and let it compete.`}
               { code: "all", label: "All Leagues" },
               { code: "PL", label: "Premier League" },
               { code: "SA", label: "Serie A" },
+              { code: "PD", label: "La Liga" },
+              { code: "BL1", label: "Bundesliga" },
             ].map((l) => (
               <button
                 key={l.code}

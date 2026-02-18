@@ -11,6 +11,8 @@ export const config = {
     leagues: {
         EPL: { code: "PL", name: "Premier League", shortName: "EPL" },
         SERIE_A: { code: "SA", name: "Serie A", shortName: "Serie A" },
+        LA_LIGA: { code: "PD", name: "La Liga", shortName: "La Liga" },
+        BUNDESLIGA: { code: "BL1", name: "Bundesliga", shortName: "Bundesliga" },
     },
 
     // ─── Monad (On-Chain) ───

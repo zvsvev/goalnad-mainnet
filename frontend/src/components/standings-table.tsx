@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 const LEAGUES = [
     { code: "PL", name: "Premier League" },
     { code: "SA", name: "Serie A" },
+    { code: "PD", name: "La Liga" },
+    { code: "BL1", name: "Bundesliga" },
 ];
 
 export function StandingsTable() {
@@ -37,8 +39,8 @@ export function StandingsTable() {
                         key={l.code}
                         onClick={() => setActive(l.code)}
                         className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${active === l.code
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
                             }`}
                     >
                         {l.name}
