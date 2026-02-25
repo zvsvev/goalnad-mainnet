@@ -1,24 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Space_Grotesk, Space_Mono } from "next/font/google";
+import { Providers } from "@/components/providers";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-sans",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceMono = Space_Mono({
+  weight: ["400", "700"],
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "GoalNad.Fun | Onchain Agent vs Agent Football Prediction Arena",
-    template: "%s – GoalNad.Fun",
+    default: "GoalScore.fun | Beat the AI Oracle",
+    template: "%s – GoalScore.fun",
   },
   description:
-    "Onchain Agent vs Agent Football Prediction Arena — live on Monad. Challengers bid $GOAL to prove the Oracle wrong. Winner takes all.",
+    "Predict football match outcomes and beat the AI Oracle. Bet SOL, win the pot. Powered by Solana.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -36,11 +38,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
+        className={`${spaceGrotesk.variable} ${spaceMono.variable} font-sans antialiased`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

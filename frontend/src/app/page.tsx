@@ -2,229 +2,355 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { formatRelativeTime, getFlavorComment } from "@/lib/utils";
+import { usePrivy } from "@privy-io/react-auth";
 import {
-  Swords,
   Trophy,
-  Shield,
   Timer,
+  Coins,
   TrendingUp,
   Bot,
-  CircleDollarSign,
-  Eye,
-  ExternalLink,
-  BookOpen,
-  Calendar,
-  Table2,
-  Activity,
-  Medal,
-  Crown,
   ChevronDown,
-  ChevronUp,
+  Zap,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { FixtureCard } from "@/components/fixture-card";
-import { fetchMatches, fetchRecentFeed, fetchLeaderboard, type ApiMatch, type FeedItem, type LeaderboardAgent } from "@/lib/api";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
 import { TypingEffect } from "@/components/ui/typing-effect";
+import {
+  fetchMatches,
+  fetchLeaderboard,
+  outcomeName,
+  outcomeColor,
+  formatSol,
+  type ApiMatch,
+  type LeaderboardEntry,
+} from "@/lib/api";
 
 const HOW_IT_WORKS = [
   {
     icon: Bot,
-    title: "GoalNad Predicts",
+    title: "Oracle Predicts",
     description:
-      "GoalNad picks a side — Home or Away — and publishes its prediction with an exact score 7 days before kickoff.",
+      "Every day the GoalScore AI Oracle picks an outcome — Home, Draw, or Away — for today's matches and publishes it on-chain.",
   },
   {
-    icon: Swords,
-    title: "Agents Challenge or Support",
+    icon: Coins,
+    title: "You Bet SOL",
     description:
-      "AI agents can bid $GOAL tokens to challenge GoalNad's call, or support it for free to earn rewards if the Oracle is right.",
+      "Place your SOL on any of the three outcomes. Each side builds its own pool. Betting closes at kickoff.",
   },
   {
     icon: Timer,
-    title: "Lockdown",
+    title: "Match Plays Out",
     description:
-      "Bidding closes at kickoff time. The stage is set. No more moves.",
+      "The match happens. The Oracle resolves the result on-chain — trustless, transparent, immutable.",
   },
   {
     icon: Trophy,
-    title: "Winner Takes All",
+    title: "Winners Share the Pot",
     description:
-      "GoalNad wrong? Highest bidder takes the pot. GoalNad right? A lucky supporter wins 100%. Draw? All bids refunded.",
+      "All SOL wagered on the correct outcome splits proportionally to bet size. Draw? Everyone gets a full refund.",
   },
 ];
+
+function MatchCard({ match }: { match: ApiMatch }) {
+  const hasOracle = match.oracle_prediction !== null;
+  const isResolved = match.resolved === 1;
+  const pot = match.total_pot ?? 0;
+
+  const homeTotal = match.total_home ?? 0;
+  const drawTotal = match.total_draw ?? 0;
+  const awayTotal = match.total_away ?? 0;
+
+  const homePercent = pot > 0 ? Math.round((homeTotal / pot) * 100) : 33;
+  const drawPercent = pot > 0 ? Math.round((drawTotal / pot) * 100) : 34;
+  const awayPercent = pot > 0 ? Math.round((awayTotal / pot) * 100) : 33;
+
+  const oraclePredName = outcomeName(match.oracle_prediction);
+  const oraclePredColor = outcomeColor(match.oracle_prediction);
+
+  return (
+    <Link href={`/match/${match.api_match_id}`}>
+      <div className="group rounded-none border border-border bg-background p-4 hover:border-primary hover:bg-foreground/5 transition-all cursor-pointer">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-1.5">
+            <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+              {match.league_id}
+            </span>
+            {isResolved ? (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border rounded-none text-muted-foreground">
+                FT
+              </Badge>
+            ) : hasOracle ? (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-primary rounded-none text-primary">
+                OPEN
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-border rounded-none text-muted-foreground/50">
+                PENDING
+              </Badge>
+            )}
+          </div>
+          {pot > 0 && (
+            <span className="font-mono text-xs text-primary font-bold">
+              {formatSol(pot)} pot
+            </span>
+          )}
+        </div>
+
+        {/* Teams */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div className="flex items-center gap-2 min-w-0">
+            {match.home_logo && (
+              <img src={match.home_logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+            )}
+            <span className="text-sm font-semibold truncate">{match.home_team}</span>
+          </div>
+          <div className="shrink-0 text-center">
+            {isResolved && match.home_score !== null ? (
+              <span className="font-mono text-sm font-bold text-foreground">
+                {match.home_score} – {match.away_score}
+              </span>
+            ) : (
+              <span className="font-mono text-xs text-muted-foreground">vs</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 justify-end min-w-0">
+            <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
+            {match.away_logo && (
+              <img src={match.away_logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+            )}
+          </div>
+        </div>
+
+        {/* Oracle prediction */}
+        {hasOracle && (
+          <div className="flex items-center gap-1.5 mb-3">
+            <Bot className="h-3 w-3 text-primary shrink-0" />
+            <span className="font-mono text-[10px] text-muted-foreground">Oracle:</span>
+            <span className={`font-mono text-[10px] font-bold ${oraclePredColor}`}>
+              {oraclePredName}
+            </span>
+            {match.oracle_score && (
+              <span className="font-mono text-[10px] text-muted-foreground">
+                · {match.oracle_score}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Outcome distribution bar */}
+        {pot > 0 && (
+          <div className="space-y-1">
+            <div className="flex h-1.5 rounded-none overflow-hidden gap-0.5">
+              <div className="bg-blue-400 rounded-none" style={{ width: `${homePercent}%` }} />
+              <div className="bg-yellow-400 rounded-none" style={{ width: `${drawPercent}%` }} />
+              <div className="bg-red-400 rounded-none" style={{ width: `${awayPercent}%` }} />
+            </div>
+            <div className="flex justify-between font-mono text-[9px] text-muted-foreground">
+              <span className="text-blue-400">{homePercent}% H</span>
+              <span className="text-yellow-400">{drawPercent}% D</span>
+              <span className="text-red-400">{awayPercent}% A</span>
+            </div>
+          </div>
+        )}
+
+        {/* Result badge */}
+        {isResolved && match.result !== null && (
+          <div className="mt-2 flex items-center gap-1.5">
+            <Trophy className="h-3 w-3 text-primary shrink-0" />
+            <span className="font-mono text-[10px] text-primary">
+              Result: {outcomeName(match.result)}
+            </span>
+            {match.oracle_prediction === match.result ? (
+              <span className="font-mono text-[9px] text-green-400">✓ Oracle correct</span>
+            ) : (
+              <span className="font-mono text-[9px] text-red-400">✗ Oracle wrong</span>
+            )}
+          </div>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+function OracleGate({ children }: { children: React.ReactNode }) {
+  const { authenticated } = usePrivy();
+  if (!authenticated) {
+    return (
+      <div className="relative">
+        <div className="pointer-events-none select-none blur-sm opacity-60 grayscale">
+          {children}
+        </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 border border-border rounded-none">
+          <Lock className="h-8 w-8 text-primary" />
+          <p className="font-mono text-sm text-center text-foreground">
+            Hold <span className="text-primary font-bold">100K $GOAL</span> to see Oracle predictions
+          </p>
+          <p className="font-mono text-[10px] text-muted-foreground text-center max-w-48">
+            Connect your wallet and hold $GOAL to unlock Oracle insights
+          </p>
+        </div>
+      </div>
+    );
+  }
+  return <>{children}</>;
+}
 
 export default function Home() {
   const [upcoming, setUpcoming] = useState<ApiMatch[]>([]);
   const [results, setResults] = useState<ApiMatch[]>([]);
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardAgent[]>([]);
-  const [lbPeriod, setLbPeriod] = useState<"all" | "week">("all");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leagueFilter, setLeagueFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [arenaVisibleCount, setArenaVisibleCount] = useState(6);
-  const [fixturesVisibleCount, setFixturesVisibleCount] = useState(6);
+  const [resultsVisibleCount, setResultsVisibleCount] = useState(6);
+
+  const { login } = usePrivy();
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
-      const [upRes, ftRes, feedRes, lbRes] = await Promise.all([
+      const [upRes, ftRes, lbRes] = await Promise.all([
         fetchMatches({ status: "NS", limit: 50 }),
         fetchMatches({ status: "FT", predicted: "true", limit: 50 }),
-        fetchRecentFeed().catch(() => [] as FeedItem[]),
-        fetchLeaderboard("all").catch(() => [] as LeaderboardAgent[]),
+        fetchLeaderboard().catch(() => [] as LeaderboardEntry[]),
       ]);
       setUpcoming(upRes);
-      setResults(ftRes.reverse().slice(0, 20));
-      setFeed(feedRes);
+      setResults(ftRes.reverse().slice(0, 30));
       setLeaderboard(lbRes);
     } catch (e) {
-      console.error("Failed to load fixtures:", e);
+      console.error("Failed to load matches:", e);
     } finally {
       if (isInitial) setLoading(false);
     }
   }, []);
 
-  // Reload leaderboard when period changes
-  useEffect(() => {
-    fetchLeaderboard(lbPeriod).then(setLeaderboard).catch(console.error);
-  }, [lbPeriod]);
-
   useEffect(() => {
     loadData(true);
-    // Auto-refresh every 30 seconds
     const interval = setInterval(() => loadData(false), 30_000);
     return () => clearInterval(interval);
   }, [loadData]);
 
-  // Matches with Oracle predictions — unconditional display
   const predictedMatches = upcoming.filter(
     (m) => m.oracle_prediction !== null && m.oracle_prediction !== undefined
   );
 
-  // Results: show only resolved matches where oracle made predictions
-  let displayedResults = results.filter(
-    (m) => m.resolved === 1 && m.oracle_prediction !== null && m.oracle_prediction !== undefined
-  );
-
-  // Apply league filter to results
-  displayedResults = displayedResults.filter(
-    (m) => leagueFilter === "all" || m.league_id === leagueFilter
-  );
+  let displayedResults = results.filter((m) => m.resolved === 1);
+  if (leagueFilter !== "all") {
+    displayedResults = displayedResults.filter((m) => m.league_id === leagueFilter);
+  }
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
-      {/* 1. Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(74,222,128,0.08),transparent_60%)]" />
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden bg-background">
         <div className="relative mx-auto max-w-6xl px-4 py-20 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
-              <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+            <div className="mb-6 inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-1.5">
+              <div className="h-2 w-2 rounded-none bg-primary animate-pulse" />
               <span className="font-mono text-[10px] text-primary uppercase tracking-widest">
-                AI AGENTS PLAY. HUMANS CAN ONLY WATCH
+                Bet SOL · Beat the Oracle · On-chain
               </span>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
-              <span className="inline-block animate-text-flow bg-gradient-to-r from-primary via-blue-400 to-primary bg-[200%_auto] bg-clip-text text-transparent">
-                Onchain Agent vs Agent
+            <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
+              <span className="inline-block text-primary">
+                Beat the AI Oracle
               </span>
               <br />
-              <span className="text-foreground">Football&nbsp;Prediction&nbsp;Arena</span>
+              <span>Win the SOL pot.</span>
             </h1>
-            <p className="mt-2 font-mono text-sm text-primary/70 tracking-widest uppercase">
-              Live on Monad
-            </p>
             <TypingEffect
-              text={`The Oracle Agent makes its prediction.
-Challengers step into the arena to prove it wrong, or support behind it.
-Only one winner takes the entire $GOAL pot.
-Register your agent and let it compete.`}
-              className="mt-4 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
+              text={`The GoalScore Oracle predicts every football match.
+Bet SOL on Home, Draw, or Away.
+If your side wins — you share the pot proportionally.
+No house edge. 1% fee. Pure on-chain.`}
+              className="mt-5 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
             />
-            <div className="mt-8 flex flex-col items-center justify-center gap-4">
-              <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                <Button
-                  size="lg"
-                  className="font-mono bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(74,222,128,0.2)] hover:shadow-[0_0_30px_rgba(74,222,128,0.4)] transition-all"
-                  asChild
-                >
-                  <Link href="/register-agent">
-                    <Bot className="mr-2 h-4 w-4" />
-                    REGISTER YOUR AGENT
-                  </Link>
-                </Button>
-                <Button size="lg" variant="outline" className="font-mono hover:bg-secondary/50" asChild>
-                  <a href="#live-matches">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Watch Live Matches
-                  </a>
-                </Button>
-              </div>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
-                size="sm"
-                variant="outline"
-                className="font-mono text-xs text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/40 transition-all"
+                size="lg"
+                className="font-mono bg-primary text-background hover:bg-foreground hover:text-background rounded-none transition-colors border-none"
                 asChild
               >
-                <a href="https://nad.fun/tokens/0xB8D8B36Ff6D2145F54345db2a96021BcA8637777" target="_blank" rel="noopener noreferrer">
-                  Buy $GOAL on Nad.fun
+                <a href="#live-matches">
+                  <Zap className="mr-2 h-4 w-4" />
+                  See Live Matches
                 </a>
+              </Button>
+              <Button size="lg" variant="outline" className="font-mono rounded-none border-border bg-background hover:bg-foreground hover:text-background transition-all" asChild>
+                <Link href="/goal">
+                  <Coins className="mr-2 h-4 w-4" />
+                  Get $GOAL Access
+                </Link>
               </Button>
             </div>
 
-            {/* Spectator mode banner - placeholders removed */}
+            {/* Stats bar */}
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-6">
+              {[
+                { label: "Chain", value: "Solana" },
+                { label: "Bet Currency", value: "SOL" },
+                { label: "Fee", value: "1%" },
+                { label: "Outcomes", value: "H / D / A" },
+              ].map((s) => (
+                <div key={s.label} className="text-center">
+                  <div className="font-mono text-lg font-bold text-primary">{s.value}</div>
+                  <div className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
-      {/* 2. Live Arena — Oracle Predictions */}
-      <section id="live-matches" className="border-t border-border/50 bg-gradient-to-b from-primary/5 to-transparent">
+
+      {/* ── Live Arena ── */}
+      <section id="live-matches" className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mb-8 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
                 <Bot className="h-6 w-6 text-primary" />
-                Live Arena
+                Live Betting Markets
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                GoalNad Oracle predictions — published on-chain, visible immediately
+                Oracle predictions are live — bet SOL before kickoff
               </p>
             </div>
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-              <span className="font-mono text-xs text-primary">
-                Auto-refreshing
-              </span>
+              <span className="font-mono text-xs text-primary">Live</span>
             </div>
           </div>
+
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : predictedMatches.length === 0 ? (
             <p className="text-sm text-muted-foreground font-mono py-8 text-center">
-              No predictions yet — GoalNad Oracle is scanning matches
+              No markets open yet — Oracle is scanning today&apos;s matches
             </p>
           ) : (
             <>
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2">
                 {predictedMatches.slice(0, arenaVisibleCount).map((m, i) => (
                   <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
-                    <FixtureCard match={m} />
+                    <MatchCard match={m} />
                   </MotionWrapper>
                 ))}
               </div>
               {predictedMatches.length > arenaVisibleCount && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={() => setArenaVisibleCount(prev => prev + 4)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                    onClick={() => setArenaVisibleCount((p) => p + 4)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-none font-mono text-xs text-primary bg-background border border-border hover:bg-foreground hover:text-background transition-all"
                   >
                     <ChevronDown className="h-3.5 w-3.5" /> Show More
                   </button>
@@ -233,188 +359,63 @@ Register your agent and let it compete.`}
             </>
           )}
         </div>
-      </section >
+      </section>
 
-      {/* 3. Live Feed */}
-      < section className="border-t border-border/50" >
+      {/* ── Oracle Insights (gated) ── */}
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Live Feed
+              <Bot className="h-5 w-5 text-primary" />
+              Oracle Analysis
+              <Lock className="h-4 w-4 text-muted-foreground" />
             </h2>
-            <span className="font-mono text-xs text-muted-foreground">
-              Latest agent actions
-            </span>
-          </div>
-          {feed.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
-              No agent activity yet
+            <p className="mt-1 text-sm text-muted-foreground">
+              Deep AI analysis — unlocked for{" "}
+              <span className="text-primary font-mono">100K+ $GOAL</span> holders
             </p>
-          ) : (
-            <div className="space-y-1.5">
-              {feed.map((item, i) => (
-                <MotionWrapper key={i} delay={i * 0.03} viewportAmount={0.1}>
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-lg bg-card/60 border border-border/40 px-4 py-2.5 hover:bg-card/80 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {item.type === "challenge" ? (
-                        <Swords className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                      ) : (
-                        <Shield className="h-3.5 w-3.5 text-blue-400 shrink-0" />
-                      )}
-                      <Link
-                        href={`/u/${item.agent_wallet}`}
-                        className="font-mono text-sm font-bold text-primary hover:underline truncate"
-                      >
-                        {item.agent_name || item.agent_wallet.slice(0, 10) + "..."}
-                      </Link>
-                      <span className="text-xs text-muted-foreground hidden sm:inline">
-                        {item.type === "challenge"
-                          ? `bid ${item.amount.toLocaleString()} $GOAL on`
-                          : "supported"}
-                      </span>
-                      <Link
-                        href={`/match/${item.api_match_id}`}
-                        className="text-xs text-muted-foreground hover:text-primary transition-colors truncate"
-                      >
-                        {item.home_team} vs {item.away_team}
-                      </Link>
-                    </div>
-                    <div className="flex flex-col items-end shrink-0">
-                      <span className="font-mono text-[10px] text-muted-foreground">
-                        {formatRelativeTime(item.created_at)}
-                      </span>
-                      {item.tx_hash && (
-                        <a
-                          href={`https://monadscan.com/tx/${item.tx_hash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-mono text-[9px] text-primary/50 hover:text-primary transition-colors flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Tx <ExternalLink className="h-2 w-2" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  {/* Flavor comment fallback */}
-                  <div className="px-4 pb-2.5 -mt-1">
-                    <p className="text-xs text-muted-foreground/80 italic leading-tight pl-7 border-l-2 border-border/50">
-                      &ldquo;{item.comment || getFlavorComment(item.type, item.tx_hash, item.agent_wallet)}&rdquo;
-                    </p>
-                  </div>
-                </MotionWrapper>
-              ))}
-            </div>
-          )}
-        </div>
-      </section >
+          </div>
 
-      {/* 4. Leaderboard */}
-      < section className="border-t border-border/50 bg-gradient-to-b from-primary/3 to-transparent" >
-        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
-              <Medal className="h-5 w-5 text-primary" />
-              Leaderboard
-            </h2>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setLbPeriod("all")}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "all"
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                  }`}
-              >
-                All Time
-              </button>
-              <button
-                onClick={() => setLbPeriod("week")}
-                className={`px-2.5 py-1 rounded-md font-mono text-[10px] transition-all ${lbPeriod === "week"
-                  ? "bg-primary/20 text-primary border border-primary/30"
-                  : "bg-secondary/30 text-muted-foreground hover:bg-secondary/50"
-                  }`}
-              >
-                This Week
-              </button>
-            </div>
-          </div>
-          {leaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
-              No agents ranked yet
-            </p>
-          ) : (
-            <div className="rounded-xl border border-border/50 bg-card/60 backdrop-blur overflow-hidden">
-              <div className="grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-wider border-b border-border/30">
-                <span>#</span>
-                <span>Agent</span>
-                <span className="text-center">W/L</span>
-                <span className="text-center">Win %</span>
-                <span className="text-center">Bids</span>
-                <span className="text-center hidden sm:block">Volume</span>
+          <OracleGate>
+            {predictedMatches.length === 0 ? (
+              <p className="text-sm text-muted-foreground font-mono py-6 text-center">No analysis available yet</p>
+            ) : (
+              <div className="space-y-3">
+                {predictedMatches.slice(0, 3).map((m) => (
+                  <div key={m.api_match_id} className="rounded-none border border-border bg-background p-4">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className="font-mono text-xs font-bold">{m.home_team} vs {m.away_team}</span>
+                      <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-primary rounded-none text-primary">
+                        {outcomeName(m.oracle_prediction)} · {m.oracle_conviction ?? 0}% conviction
+                      </Badge>
+                    </div>
+                    {m.oracle_analysis && (
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {m.oracle_analysis}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
-              {leaderboard.slice(0, 10).map((agent, i) => (
-                <MotionWrapper key={agent.wallet} delay={i * 0.05} viewportAmount={0.1}>
-                  <div
-                    className={`grid grid-cols-[40px_1fr_80px_80px_80px] sm:grid-cols-[50px_1fr_90px_90px_90px_100px] items-center px-4 py-3 border-b border-border/20 last:border-0 hover:bg-secondary/20 transition-colors ${i === 0 ? "bg-primary/5" : ""
-                      }`}
-                  >
-                    <span className="font-mono text-sm font-bold">
-                      {i === 0 ? (
-                        <Crown className="h-4 w-4 text-yellow-400" />
-                      ) : (
-                        <span className={i < 3 ? "text-primary" : "text-muted-foreground"}>
-                          {i + 1}
-                        </span>
-                      )}
-                    </span>
-                    <Link
-                      href={`/u/${agent.wallet}`}
-                      className="font-mono text-sm font-bold text-primary hover:underline truncate"
-                    >
-                      {agent.name || agent.wallet.slice(0, 10) + "..."}
-                    </Link>
-                    <span className="text-center font-mono text-xs">
-                      <span className="text-green-400">{agent.wins}W</span>
-                      {" - "}
-                      <span className="text-red-400">{agent.losses}L</span>
-                    </span>
-                    <span className={`text-center font-mono text-xs font-bold ${agent.winRate >= 60 ? "text-green-400" : agent.winRate >= 40 ? "text-yellow-400" : "text-muted-foreground"
-                      }`}>
-                      {agent.winRate}%
-                    </span>
-                    <span className="text-center font-mono text-xs text-muted-foreground">
-                      {agent.totalChallenges}
-                    </span>
-                    <span className="text-center font-mono text-xs text-muted-foreground hidden sm:block">
-                      {agent.totalBidAmount.toLocaleString()}
-                    </span>
-                  </div>
-                </MotionWrapper>
-              ))}
-            </div>
-          )}
+            )}
+          </OracleGate>
         </div>
-      </section >
+      </section>
 
-      {/* 5. Real Fixtures */}
-      < section className="border-t border-border/50 bg-secondary/10" >
+      {/* ── Results ── */}
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
-                <Trophy className="h-6 w-6 text-primary" />
-                Results
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Resolved matches where GoalNad made predictions
-              </p>
-            </div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl flex items-center gap-2">
+              <Trophy className="h-6 w-6 text-primary" />
+              Results
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Resolved markets with Oracle track record
+            </p>
           </div>
 
-          {/* League Filter */}
+          {/* League filter */}
           <div className="flex flex-wrap items-center gap-2 mb-6">
             {[
               { code: "all", label: "All Leagues" },
@@ -425,10 +426,10 @@ Register your agent and let it compete.`}
             ].map((l) => (
               <button
                 key={l.code}
-                onClick={() => { setLeagueFilter(l.code); setFixturesVisibleCount(6); }}
-                className={`px-3 py-1.5 rounded-lg font-mono text-xs transition-all ${leagueFilter === l.code
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                onClick={() => { setLeagueFilter(l.code); setResultsVisibleCount(6); }}
+                className={`px-3 py-1.5 rounded-none font-mono text-xs transition-all border border-border ${leagueFilter === l.code
+                  ? "bg-foreground text-background"
+                  : "bg-background text-muted-foreground hover:bg-foreground hover:text-background"
                   }`}
               >
                 {l.label}
@@ -443,67 +444,103 @@ Register your agent and let it compete.`}
           ) : displayedResults.length === 0 ? (
             <div className="py-16 text-center">
               <Trophy className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <p className="text-lg font-semibold text-muted-foreground mb-2">
-                No Results Yet
-              </p>
+              <p className="text-lg font-semibold text-muted-foreground mb-2">No Results Yet</p>
               <p className="text-sm text-muted-foreground font-mono max-w-md mx-auto">
-                The arena awaits its first battle. Once GoalNad makes predictions and matches are resolved, the results will appear here.
+                Once matches finish, resolved markets will appear here.
               </p>
             </div>
           ) : (
             <>
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
-                {displayedResults.slice(0, fixturesVisibleCount).map((m, i) => (
+                {displayedResults.slice(0, resultsVisibleCount).map((m, i) => (
                   <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
-                    <FixtureCard match={m} />
+                    <MatchCard match={m} />
                   </MotionWrapper>
                 ))}
               </div>
-              {displayedResults.length > fixturesVisibleCount && (
+              {displayedResults.length > resultsVisibleCount && (
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={() => setFixturesVisibleCount(prev => prev + 4)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg font-mono text-xs text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all"
+                    onClick={() => setResultsVisibleCount((p) => p + 4)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-none font-mono text-xs text-primary bg-background border border-border hover:bg-foreground hover:text-background transition-all"
                   >
-                    <ChevronDown className="h-3 w-3" />
-                    View More Results
+                    <ChevronDown className="h-3 w-3" /> View More
                   </button>
                 </div>
               )}
             </>
           )}
         </div>
-      </section >
+      </section>
 
-      {/* 4. Standings */}
+      {/* ── Leaderboard ── */}
+      <section className="border-t border-border bg-background">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Top Players
+            </h2>
+          </div>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground font-mono py-6 text-center">
+              No players ranked yet — be the first to beat the Oracle
+            </p>
+          ) : (
+            <div className="rounded-none border border-border bg-background overflow-hidden">
+              <div className="grid grid-cols-[32px_1fr_72px_72px_100px] items-center px-4 py-2 text-[10px] text-muted-foreground font-mono uppercase tracking-wider border-b border-border">
+                <span>#</span>
+                <span>Player</span>
+                <span className="text-center">W/L</span>
+                <span className="text-center">Win%</span>
+                <span className="text-center">Wagered</span>
+              </div>
+              {leaderboard.slice(0, 10).map((player, i) => (
+                <MotionWrapper key={player.wallet} delay={i * 0.04} viewportAmount={0.1}>
+                  <Link href={`/u/${player.wallet}`}>
+                    <div className={`grid grid-cols-[32px_1fr_72px_72px_100px] items-center px-4 py-3 border-b border-border last:border-0 hover:bg-foreground/5 transition-colors ${i === 0 ? "bg-primary/5" : "bg-background"}`}>
+                      <span className="font-mono text-sm font-bold text-muted-foreground">{i + 1}</span>
+                      <span className="font-mono text-sm font-bold text-primary truncate">
+                        {player.wallet.slice(0, 6)}…{player.wallet.slice(-4)}
+                      </span>
+                      <span className="text-center font-mono text-xs">
+                        <span className="text-green-400">{player.wins}W</span>
+                        {" – "}
+                        <span className="text-red-400">{player.losses}L</span>
+                      </span>
+                      <span className={`text-center font-mono text-xs font-bold ${player.win_rate >= 60 ? "text-green-400" : player.win_rate >= 40 ? "text-yellow-400" : "text-muted-foreground"}`}>
+                        {player.win_rate}%
+                      </span>
+                      <span className="text-center font-mono text-xs text-muted-foreground">
+                        {(player.total_wagered / 1e9).toFixed(2)} SOL
+                      </span>
+                    </div>
+                  </Link>
+                </MotionWrapper>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
-
-      {/* 5. How It Works */}
-      <section className="border-t border-border/50 bg-secondary/20">
+      {/* ── How It Works ── */}
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mb-10 text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              How the Arena Works
-            </h2>
-            <TypingEffect
-              text="This isn't your typical sportsbook. GoalNad is an on-chain AI arena powered by Monad L1. Autonomous agents don't just bet, they can choose to challenge the Oracle's predictions with $GOAL tokens or support them for rewards, all recorded transparently on-chain."
-              className="mt-2 text-sm text-muted-foreground max-w-3xl mx-auto"
-            />
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
+            <p className="mt-2 text-sm text-muted-foreground max-w-2xl mx-auto">
+              No house always wins. No opaque bookmaker odds. Just you, the AI Oracle, and pure on-chain football betting on Solana.
+            </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
+          <div className="grid gap-4 sm:grid-cols-2 max-w-4xl mx-auto">
             {HOW_IT_WORKS.map((step, i) => (
-              <Card
-                key={step.title}
-                className="border-border/50 bg-card/60 backdrop-blur"
-              >
+              <Card key={step.title} className="border-border rounded-none shadow-none bg-background">
                 <CardContent className="pt-6">
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-none border border-primary/20 bg-primary/5 text-primary">
                       <step.icon className="h-4 w-4" />
                     </div>
-                    <span className="font-mono text-xs text-muted-foreground">
-                      0{i + 1}
-                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">0{i + 1}</span>
                   </div>
                   <h3 className="font-bold">{step.title}</h3>
                   <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed">
@@ -513,51 +550,38 @@ Register your agent and let it compete.`}
               </Card>
             ))}
           </div>
-
-          <div className="mt-10 text-center">
-            <Button variant="outline" className="font-mono gap-2" asChild>
-              <a href="https://docs.goalnad.fun" target="_blank" rel="noopener noreferrer">
-                <BookOpen className="h-4 w-4" />
-                Read Full Docs
-              </a>
-            </Button>
-          </div>
         </div>
       </section>
 
-      {/* 6. $GOAL Token */}
-      <section className="border-t border-border/50">
+      {/* ── $GOAL CTA ── */}
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center justify-center">
-              <img src="/apple-touch-icon.png" alt="$GOAL Token" className="h-32 w-32 rounded-lg" />
+              <img
+                src="/apple-touch-icon.png"
+                alt="$GOAL Token"
+                className="h-24 w-24 rounded-none border border-border"
+              />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              $GOAL Token
-            </h2>
+            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">$GOAL Token</h2>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              The native token of GoalNad.Fun on Monad. Bid, challenge,
-              support, and earn.
+              The utility token of GoalScore.fun. Hold 100K $GOAL to unlock Oracle predictions and analysis.
+              Deployed on Solana via pump.fun.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-6 inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
+              <Lock className="h-3.5 w-3.5 text-primary" />
+              <span className="font-mono text-xs text-primary">100,000 $GOAL = Oracle Access</span>
+            </div>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
                 size="lg"
-                className="font-mono bg-primary text-primary-foreground hover:bg-primary/90"
+                className="font-mono bg-primary text-background hover:bg-foreground hover:text-background rounded-none transition-colors border-none"
                 asChild
               >
-                <a
-                  href="https://nad.fun/tokens/0xB8D8B36Ff6D2145F54345db2a96021BcA8637777"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Buy $GOAL on Nad.Fun
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" className="font-mono" asChild>
                 <Link href="/goal">
-                  <CircleDollarSign className="mr-2 h-4 w-4" />
-                  $GOAL Token details
+                  <Coins className="mr-2 h-4 w-4" />
+                  $GOAL Token Details
                 </Link>
               </Button>
             </div>
@@ -566,6 +590,6 @@ Register your agent and let it compete.`}
       </section>
 
       <Footer />
-    </div >
+    </div>
   );
 }

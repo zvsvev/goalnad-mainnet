@@ -1,239 +1,220 @@
+/**
+ * chain.ts — Solana / Anchor integration for GoalScore
+ * Replaces the old viem/Monad chain.ts
+ *
+ * Program: GoalScoreArena (Anchor 0.32.0)
+ * Program ID: EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL
+ * Network: Solana devnet (Helius RPC) → mainnet after testing
+ */
+
 import {
-    createPublicClient,
-    createWalletClient,
-    http,
-    parseEther,
-    formatEther,
-    type PublicClient,
-    type WalletClient,
-    type Address,
-    type Chain,
-} from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+    Connection,
+    Keypair,
+    PublicKey,
+    LAMPORTS_PER_SOL,
+    Transaction,
+    SystemProgram,
+} from "@solana/web3.js";
+import { AnchorProvider, Program, BN, setProvider, web3, Wallet } from "@coral-xyz/anchor";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { config } from "../config.js";
-import GoalTokenABI from "../contracts/GoalToken.abi.json";
-import GoalNadArenaABI from "../contracts/GoalNadArena.abi.json";
 
-// ─── Monad Chain Definition ─────────────────────────────────
-const monad: Chain = {
-    id: 143, // Monad mainnet chain ID
-    name: "Monad",
-    nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 },
-    rpcUrls: {
-        default: { http: [config.monadRpcUrl] },
-    },
-    blockExplorers: {
-        default: { name: "MonadExplorer", url: "https://monadscan.com" },
-    },
-};
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// ─── Clients ────────────────────────────────────────────────────────
-const transport = http(config.monadRpcUrl);
+// ─── Constants ───────────────────────────────────────────────────────────────
+export const PROGRAM_ID = new PublicKey("EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL");
 
-export const publicClient: PublicClient = createPublicClient({
-    chain: monad,
-    transport,
-}) as PublicClient;
+// Outcomes (must match contract)
+export const OUTCOME_HOME = 0;
+export const OUTCOME_DRAW = 1;
+export const OUTCOME_AWAY = 2;
 
-let walletClient: WalletClient | null = null;
-let adminAccount: ReturnType<typeof privateKeyToAccount> | null = null;
+// ─── Connection ───────────────────────────────────────────────────────────────
+const RPC_URL = config.solanaRpcUrl || "https://api.devnet.solana.com";
 
-function getAdminAccount() {
-    if (!adminAccount) {
-        if (!config.adminPrivateKey) {
-            throw new Error("ADMIN_PRIVATE_KEY not configured — on-chain writes disabled");
-        }
-        adminAccount = privateKeyToAccount(config.adminPrivateKey as `0x${string}`);
+export const connection = new Connection(RPC_URL, "confirmed");
+
+// ─── Oracle Keypair (deployer / oracle authority) ─────────────────────────────
+function loadOracleKeypair(): Keypair {
+    const keypairPath = config.oracleKeypairPath;
+    if (!keypairPath) {
+        throw new Error("ORACLE_KEYPAIR_PATH not set in config");
     }
-    return adminAccount;
+    const raw = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
+    return Keypair.fromSecretKey(Uint8Array.from(raw));
 }
 
-function getWalletClient(): WalletClient {
-    if (!walletClient) {
-        walletClient = createWalletClient({
-            account: getAdminAccount(),
-            chain: monad,
-            transport,
-        });
-    }
-    return walletClient;
+// ─── Treasury PublicKey ───────────────────────────────────────────────────────
+function getTreasuryKey(): PublicKey {
+    const addr = config.treasuryAddress;
+    if (!addr) throw new Error("TREASURY_ADDRESS not set in config");
+    return new PublicKey(addr);
 }
 
-// ─── Contract Addresses ─────────────────────────────────────────────
-const GOAL_TOKEN = config.goalTokenAddress as Address;
-const ARENA = config.arenaAddress as Address;
+// ─── Anchor Program ───────────────────────────────────────────────────────────
+let _program: Program | null = null;
 
-// ─── Read Functions (Public Client) ─────────────────────────────────
+function getProgram(): Program {
+    if (_program) return _program;
 
-export async function getMatchOnChain(matchId: bigint) {
+    const oracleKeypair = loadOracleKeypair();
+    const wallet = new Wallet(oracleKeypair);
+    const provider = new AnchorProvider(connection, wallet, {
+        commitment: "confirmed",
+    });
+    setProvider(provider);
+
+    // Load IDL from build artifacts
+    const idlPath = path.resolve(
+        __dirname,
+        "../../../goalscore-arena/target/idl/goalscore_arena.json"
+    );
+    const idl = JSON.parse(fs.readFileSync(idlPath, "utf-8"));
+
+    _program = new Program(idl, provider);
+    return _program;
+}
+
+// ─── PDA Helpers ──────────────────────────────────────────────────────────────
+
+export function getMarketPDA(matchId: number): [PublicKey, number] {
+    const matchIdBuf = Buffer.alloc(8);
+    matchIdBuf.writeBigUInt64LE(BigInt(matchId));
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("market"), matchIdBuf],
+        PROGRAM_ID
+    );
+}
+
+export function getBetPDA(matchId: number, userPubkey: PublicKey): [PublicKey, number] {
+    const matchIdBuf = Buffer.alloc(8);
+    matchIdBuf.writeBigUInt64LE(BigInt(matchId));
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("bet"), matchIdBuf, userPubkey.toBuffer()],
+        PROGRAM_ID
+    );
+}
+
+// ─── Read Functions ───────────────────────────────────────────────────────────
+
+export async function getMarketOnChain(matchId: number) {
     try {
-        const result = await publicClient.readContract({
-            address: ARENA,
-            abi: GoalNadArenaABI,
-            functionName: "getMatchFull",
-            args: [matchId],
-        });
-        return result;
+        const program = getProgram();
+        const [marketPDA] = getMarketPDA(matchId);
+        const market = await (program.account as any).market.fetch(marketPDA);
+        return market;
     } catch (err: any) {
-        console.error(`Chain read error (getMatchFull ${matchId}):`, err.message);
+        if (!err.message?.includes("Account does not exist")) {
+            console.error(`[Chain] getMarketOnChain(${matchId}) error:`, err.message);
+        }
         return null;
     }
 }
 
-export async function getSupporters(matchId: bigint): Promise<Address[]> {
+export async function getBetOnChain(matchId: number, userAddress: string) {
     try {
-        const result = await publicClient.readContract({
-            address: ARENA,
-            abi: GoalNadArenaABI,
-            functionName: "getSupporters",
-            args: [matchId],
-        });
-        return result as Address[];
+        const program = getProgram();
+        const userKey = new PublicKey(userAddress);
+        const [betPDA] = getBetPDA(matchId, userKey);
+        const bet = await (program.account as any).bet.fetch(betPDA);
+        return bet;
     } catch {
-        return [];
+        return null;
     }
 }
 
-export async function getBidAmount(matchId: bigint, agent: Address): Promise<bigint> {
+/**
+ * Get $GOAL token balance for a wallet.
+ * Uses SPL token account lookup. Returns 0 if no account exists.
+ */
+export async function getGoalTokenBalance(walletAddress: string): Promise<number> {
     try {
-        const result = await publicClient.readContract({
-            address: ARENA,
-            abi: GoalNadArenaABI,
-            functionName: "bids",
-            args: [matchId, agent],
-        });
-        return result as bigint;
+        const goalMint = config.goalTokenMint;
+        if (!goalMint) return 0;
+
+        const { TOKEN_PROGRAM_ID, getAssociatedTokenAddress, getAccount } = await import("@solana/spl-token");
+        const wallet = new PublicKey(walletAddress);
+        const mint = new PublicKey(goalMint);
+        const ata = await getAssociatedTokenAddress(mint, wallet);
+        const account = await getAccount(connection, ata);
+        return Number(account.amount);
     } catch {
-        return 0n;
+        return 0;
     }
 }
 
-export async function getSupportQuota(agent: Address): Promise<bigint> {
-    try {
-        const result = await publicClient.readContract({
-            address: ARENA,
-            abi: GoalNadArenaABI,
-            functionName: "supportQuota",
-            args: [agent],
-        });
-        return result as bigint;
-    } catch {
-        return 0n;
-    }
-}
+// ─── Write Functions (Oracle Authority) ──────────────────────────────────────
 
-export async function getGoalBalance(agent: Address): Promise<string> {
-    try {
-        const result = await publicClient.readContract({
-            address: GOAL_TOKEN,
-            abi: GoalTokenABI,
-            functionName: "balanceOf",
-            args: [agent],
-        });
-        return formatEther(result as bigint);
-    } catch {
-        return "0";
-    }
-}
-
-export async function getNextMatchId(): Promise<bigint> {
-    try {
-        const result = await publicClient.readContract({
-            address: ARENA,
-            abi: GoalNadArenaABI,
-            functionName: "nextMatchId",
-        });
-        return result as bigint;
-    } catch {
-        return 0n;
-    }
-}
-
-// ─── Write Functions (Admin Wallet Client) ──────────────────────────
-
-export async function publishPredictionOnChain(
-    apiMatchId: number,
-    prediction: number,
-    exactScore: string,
-    comment: string,
-    lockdownTime: number
-): Promise<{ txHash: string; onchainMatchId: bigint }> {
-    const client = getWalletClient();
-    const account = getAdminAccount();
-
-    // Read nextMatchId BEFORE the tx to know which ID will be assigned
-    const onchainMatchId = await getNextMatchId();
-
-    const hash = await client.writeContract({
-        account,
-        chain: monad,
-        address: ARENA,
-        abi: GoalNadArenaABI,
-        functionName: "publishPrediction",
-        args: [BigInt(apiMatchId), prediction, exactScore, comment, BigInt(lockdownTime)],
-    });
-
-    console.log(`[Chain] publishPrediction tx: ${hash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-
-    if (receipt.status === "reverted") {
-        throw new Error(`Transaction reverted: ${hash}`);
-    }
-
-    console.log(`[Chain] publishPrediction confirmed in block ${receipt.blockNumber}, onchainMatchId=${onchainMatchId}`);
-    return { txHash: hash, onchainMatchId };
-}
-
-export async function resolveMatchOnChain(
-    matchId: bigint,
-    result: number
+/**
+ * Create a match market on-chain.
+ * Called by oracle when publishing a prediction.
+ */
+export async function createMatchOnChain(
+    matchId: number,
+    kickoffTimestamp: number  // unix seconds
 ): Promise<string> {
-    const client = getWalletClient();
-    const account = getAdminAccount();
+    const program = getProgram();
+    const oracleKeypair = loadOracleKeypair();
+    const treasury = getTreasuryKey();
+    const [marketPDA] = getMarketPDA(matchId);
 
-    const hash = await client.writeContract({
-        account,
-        chain: monad,
-        address: ARENA,
-        abi: GoalNadArenaABI,
-        functionName: "resolveMatch",
-        args: [matchId, result],
-    });
+    const tx = await program.methods
+        .createMatch(new BN(matchId), new BN(kickoffTimestamp))
+        .accounts({
+            market: marketPDA,
+            oracle: oracleKeypair.publicKey,
+            treasury,
+            systemProgram: SystemProgram.programId,
+        })
+        .signers([oracleKeypair])
+        .rpc();
 
-    console.log(`[Chain] resolveMatch tx: ${hash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`[Chain] resolveMatch confirmed in block ${receipt.blockNumber}`);
-    return hash;
+    console.log(`[Chain] createMatch(${matchId}) tx: ${tx}`);
+    await connection.confirmTransaction(tx, "confirmed");
+    return tx;
 }
 
-export async function cancelMatchOnChain(matchId: bigint): Promise<string> {
-    const client = getWalletClient();
-    const account = getAdminAccount();
+/**
+ * Resolve a match on-chain after it finishes.
+ * result: 0 = Home, 1 = Draw, 2 = Away
+ */
+export async function resolveMatchOnChain(
+    matchId: number,
+    result: number   // OUTCOME_HOME | OUTCOME_DRAW | OUTCOME_AWAY
+): Promise<string> {
+    const program = getProgram();
+    const oracleKeypair = loadOracleKeypair();
+    const [marketPDA] = getMarketPDA(matchId);
 
-    const hash = await client.writeContract({
-        account,
-        chain: monad,
-        address: ARENA,
-        abi: GoalNadArenaABI,
-        functionName: "cancelMatch",
-        args: [matchId],
-    });
+    const tx = await program.methods
+        .resolveMatch(new BN(matchId), result)
+        .accounts({
+            market: marketPDA,
+            oracle: oracleKeypair.publicKey,
+            systemProgram: SystemProgram.programId,
+        })
+        .signers([oracleKeypair])
+        .rpc();
 
-    console.log(`[Chain] cancelMatch tx: ${hash}`);
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
-    console.log(`[Chain] cancelMatch confirmed in block ${receipt.blockNumber}`);
-    return hash;
+    console.log(`[Chain] resolveMatch(${matchId}, result=${result}) tx: ${tx}`);
+    await connection.confirmTransaction(tx, "confirmed");
+    return tx;
 }
 
-// NOTE: bidOnBehalf / supportOnBehalf relay functions removed.
-// Agents now sign their own bid() / support() transactions directly.
-// On-chain events are synced to DB by the indexer.
+// ─── Utility ──────────────────────────────────────────────────────────────────
 
+export function lamportsToSol(lamports: number | bigint): number {
+    return Number(lamports) / LAMPORTS_PER_SOL;
+}
 
-// ─── Utility ────────────────────────────────────────────────────────
+export function solToLamports(sol: number): number {
+    return Math.floor(sol * LAMPORTS_PER_SOL);
+}
 
 export function isChainEnabled(): boolean {
-    return !!(config.goalTokenAddress && config.arenaAddress && config.adminPrivateKey);
+    return !!(config.oracleKeypairPath && config.treasuryAddress && config.solanaRpcUrl);
 }
 
-export { GOAL_TOKEN, ARENA, formatEther, parseEther };
+export { PROGRAM_ID as ARENA };

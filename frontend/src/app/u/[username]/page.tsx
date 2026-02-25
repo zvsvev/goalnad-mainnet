@@ -4,29 +4,26 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Swords,
-  Shield,
   Trophy,
-  CircleDollarSign,
   ArrowLeft,
   Target,
   Loader2,
   ExternalLink,
+  Coins,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
-import { fetchAgent, type ApiAgentProfile, type ApiAgentBid } from "@/lib/api";
-
-const PERSONA_COLORS: Record<string, string> = {
-  Aggressive: "bg-red-500/10 text-red-400 border-red-500/30",
-  "Stats-Nerd": "bg-blue-500/10 text-blue-400 border-blue-500/30",
-  Contrarian: "bg-purple-500/10 text-purple-400 border-purple-500/30",
-  "Momentum-Rider": "bg-orange-500/10 text-orange-400 border-orange-500/30",
-  "Value-Hunter": "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-};
+import {
+  fetchUserProfile,
+  outcomeName,
+  outcomeColor,
+  type ApiUserProfile,
+} from "@/lib/api";
 
 function timeAgo(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -39,26 +36,39 @@ function timeAgo(iso: string) {
   return `${days}d ago`;
 }
 
-export default function AgentProfilePage() {
+function shortAddr(addr: string) {
+  return addr.slice(0, 6) + "…" + addr.slice(-4);
+}
+
+function betStatusLabel(bet: ApiUserProfile["recent_bets"][0]): {
+  label: string;
+  cls: string;
+} {
+  if (!bet.resolved) return { label: "OPEN", cls: "text-primary border-primary/30" };
+  if (bet.claimed) return { label: "CLAIMED", cls: "text-green-400 border-green-400/30" };
+  if (bet.refunded) return { label: "REFUNDED", cls: "text-yellow-400 border-yellow-400/30" };
+  if (bet.result === null) return { label: "PENDING", cls: "text-muted-foreground border-border/50" };
+  if (bet.outcome === bet.result) return { label: "WON", cls: "text-green-400 border-green-400/30" };
+  return { label: "LOST", cls: "text-red-400 border-red-400/30" };
+}
+
+export default function UserProfilePage() {
   const params = useParams();
   const wallet = params.username as string;
 
-  const [profile, setProfile] = useState<ApiAgentProfile | null>(null);
+  const [profile, setProfile] = useState<ApiUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const data = await fetchAgent(wallet);
-        if (!data) {
-          setError("Agent not found");
-        } else {
-          setProfile(data);
-        }
+        const data = await fetchUserProfile(wallet);
+        if (!data) setNotFound(true);
+        else setProfile(data);
       } catch (e) {
-        console.error("Failed to load agent:", e);
-        setError("Failed to load agent data");
+        console.error("Failed to load profile:", e);
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
@@ -78,13 +88,16 @@ export default function AgentProfilePage() {
     );
   }
 
-  if (error || !profile) {
+  if (notFound || !profile) {
     return (
       <div className="min-h-screen">
         <Navbar />
         <div className="mx-auto max-w-4xl px-4 py-16 text-center">
-          <p className="text-muted-foreground">{error || "Agent not found"}</p>
-          <Link href="/" className="mt-4 inline-block text-primary hover:underline text-sm">
+          <p className="text-muted-foreground font-mono">Player not found</p>
+          <p className="mt-2 text-xs text-muted-foreground/60 font-mono">
+            {shortAddr(wallet)} has not placed any bets yet
+          </p>
+          <Link href="/" className="mt-6 inline-block text-primary hover:underline text-sm font-mono">
             ← Back to Matches
           </Link>
         </div>
@@ -93,13 +106,15 @@ export default function AgentProfilePage() {
     );
   }
 
-  const { agent, recentBids } = profile;
+  const { stats, recent_bets } = profile;
+  const solWagered = (stats.total_wagered / 1e9).toFixed(3);
+  const solClaimed = (stats.total_claimed / 1e9).toFixed(3);
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
         {/* Breadcrumb */}
         <div className="mb-8">
           <Link
@@ -111,48 +126,69 @@ export default function AgentProfilePage() {
           </Link>
         </div>
 
-        {/* Agent Hero */}
-        <div className="mb-10 space-y-4">
-          {agent.personaType && (
-            <Badge
-              variant="outline"
-              className={`font-mono text-xs ${PERSONA_COLORS[agent.personaType] ?? ""}`}
-            >
-              {agent.personaType}
-            </Badge>
-          )}
-
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {agent.name || "Anonymous Agent"}
-            </h1>
-            <div className="mt-2 flex items-center gap-2">
+        {/* Profile Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-none bg-background border border-border flex items-center justify-center">
+              <span className="font-mono text-sm text-primary font-bold">
+                {wallet.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h1 className="text-xl font-bold font-mono">
+                {shortAddr(wallet)}
+              </h1>
               <a
-                href={`https://monadexplorer.com/address/${agent.wallet}`}
+                href={`https://solscan.io/account/${wallet}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 rounded bg-secondary/50 px-2 py-0.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors font-mono"
               >
-                {agent.wallet}
-                <ExternalLink className="h-3 w-3 shrink-0" />
+                {wallet}
+                <ExternalLink className="h-2.5 w-2.5 shrink-0" />
               </a>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground font-mono">
+            Joined {timeAgo(profile.created_at)}
+          </p>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-10">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
           {[
-            { icon: Target, label: "Win Rate", value: `${agent.winRate}%`, highlight: true },
-            { icon: Swords, label: "Challenges", value: String(recentBids.filter(b => b.type === "challenge").length), highlight: false },
-            { icon: Shield, label: "Supports", value: String(recentBids.filter(b => b.type === "support").length), highlight: false },
-            { icon: CircleDollarSign, label: "Balance", value: `${agent.balance.toLocaleString()} $GOAL`, highlight: true },
+            {
+              icon: Target,
+              label: "Win Rate",
+              value: `${stats.win_rate}%`,
+              cls: stats.win_rate >= 60 ? "text-green-400" : stats.win_rate >= 40 ? "text-yellow-400" : "text-muted-foreground",
+            },
+            {
+              icon: Trophy,
+              label: "W / L",
+              value: `${stats.wins}W – ${stats.losses}L`,
+              cls: "text-foreground",
+            },
+            {
+              icon: Coins,
+              label: "SOL Wagered",
+              value: `${solWagered} SOL`,
+              cls: "text-primary",
+            },
+            {
+              icon: TrendingUp,
+              label: "SOL Claimed",
+              value: `${solClaimed} SOL`,
+              cls: "text-green-400",
+            },
           ].map((stat) => (
-            <Card key={stat.label} className="border-border/50 bg-card/60 backdrop-blur">
+            <Card key={stat.label} className="border-border rounded-none shadow-none bg-background">
               <CardContent className="pt-4 pb-4 text-center space-y-1">
                 <stat.icon className="h-4 w-4 mx-auto text-muted-foreground" />
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                <p className={`font-mono text-sm font-bold ${stat.highlight ? "text-primary" : ""}`}>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-mono">
+                  {stat.label}
+                </p>
+                <p className={`font-mono text-sm font-bold ${stat.cls}`}>
                   {stat.value}
                 </p>
               </CardContent>
@@ -160,81 +196,82 @@ export default function AgentProfilePage() {
           ))}
         </div>
 
-        {/* W/L Record */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-primary" />
-            <span className="font-mono text-sm">
-              <span className="text-green-400 font-bold">{agent.wins}W</span>
-              {" - "}
-              <span className="text-red-400 font-bold">{agent.losses}L</span>
-            </span>
-          </div>
-          <span className="text-[10px] text-muted-foreground font-mono">
-            {profile.totalBids} total actions
-          </span>
-        </div>
-
         <Separator className="mb-8 opacity-50" />
 
-        {/* Recent Activity */}
-        <div className="space-y-4">
+        {/* Betting History */}
+        <div className="space-y-3">
           <h3 className="text-lg font-bold flex items-center gap-2">
-            <Swords className="h-5 w-5 text-primary" />
-            Recent Activity
+            <Clock className="h-5 w-5 text-primary" />
+            Betting History
+            <span className="text-sm font-normal text-muted-foreground font-mono">
+              ({stats.total_bets} bets)
+            </span>
           </h3>
 
-          {recentBids.length === 0 ? (
-            <Card className="border-border/50 bg-card/80">
+          {recent_bets.length === 0 ? (
+            <Card className="border-border rounded-none shadow-none bg-background">
               <CardContent className="py-8 text-center">
-                <p className="text-sm text-muted-foreground font-mono">
-                  No activity yet
-                </p>
+                <p className="text-sm text-muted-foreground font-mono">No bets placed yet</p>
               </CardContent>
             </Card>
           ) : (
-            recentBids.map((bid: ApiAgentBid, i: number) => (
-              <Card key={i} className="border-border/50 bg-card/80 backdrop-blur">
-                <CardContent className="pt-4 pb-4">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="font-mono text-[9px] tracking-widest uppercase">
-                        {bid.league_id}
-                      </Badge>
-                      <Link
-                        href={`/match/${bid.api_match_id}`}
-                        className="text-sm font-bold hover:text-primary transition-colors"
-                      >
-                        {bid.home_team} vs {bid.away_team}
-                      </Link>
-                    </div>
+            recent_bets.map((bet, i) => {
+              const status = betStatusLabel(bet);
+              const betColor = outcomeColor(bet.outcome);
+              const resultColor = outcomeColor(bet.result);
+              const solAmount = (bet.amount / 1e9).toFixed(4);
 
-                    <div className="flex items-center gap-2">
-                      {bid.type === "challenge" ? (
-                        <Badge className="bg-red-500/10 text-red-400 border-red-500/30 font-mono text-[10px]">
-                          <Swords className="mr-1 h-2.5 w-2.5" />
-                          BID {bid.amount > 0 ? `${bid.amount.toLocaleString()} $GOAL` : ""}
-                        </Badge>
-                      ) : (
-                        <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/30 font-mono text-[10px]">
-                          <Shield className="mr-1 h-2.5 w-2.5" />
-                          SUPPORT
-                        </Badge>
-                      )}
-                      <span className="text-[10px] text-muted-foreground font-mono">
-                        {timeAgo(bid.created_at)}
-                      </span>
-                    </div>
-                  </div>
+              return (
+                <Card key={i} className="border-border rounded-none shadow-none bg-background">
+                  <CardContent className="pt-4 pb-4">
+                    <div className="flex items-start justify-between flex-wrap gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="border-border rounded-none bg-background font-mono text-[9px] tracking-widest uppercase text-muted-foreground"
+                          >
+                            {bet.league_id}
+                          </Badge>
+                          <Link
+                            href={`/match/${bet.api_match_id}`}
+                            className="text-sm font-bold hover:text-primary transition-colors"
+                          >
+                            {bet.home_team} vs {bet.away_team}
+                          </Link>
+                        </div>
+                        <div className="flex items-center gap-3 text-[10px] font-mono">
+                          <span>
+                            Bet:{" "}
+                            <span className={`font-bold ${betColor}`}>
+                              {outcomeName(bet.outcome)}
+                            </span>
+                          </span>
+                          <span className="text-primary font-bold">{solAmount} SOL</span>
+                          {bet.resolved === 1 && bet.result !== null && (
+                            <span>
+                              Result:{" "}
+                              <span className={`font-bold ${resultColor}`}>
+                                {outcomeName(bet.result)}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                  {bid.comment && (
-                    <p className="mt-2 text-sm text-muted-foreground/80 italic leading-relaxed">
-                      &ldquo;{bid.comment}&rdquo;
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={`font-mono text-[9px] rounded-none ${status.cls}`}
+                        >
+                          {status.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
           )}
         </div>
       </div>

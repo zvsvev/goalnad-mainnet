@@ -5,7 +5,7 @@ export const config = {
     port: parseInt(process.env.PORT || "3001", 10),
     footballDataToken: process.env.FOOTBALL_DATA_TOKEN || "",
     footballDataBaseUrl: "http://api.football-data.org/v4",
-    dbPath: process.env.DB_PATH || "./data/goalnad.db",
+    dbPath: process.env.DB_PATH || "./data/goalscore.db",
 
     // Target leagues (football-data.org competition codes)
     leagues: {
@@ -15,9 +15,21 @@ export const config = {
         BUNDESLIGA: { code: "BL1", name: "Bundesliga", shortName: "Bundesliga" },
     },
 
-    // ─── Monad (On-Chain) ───
-    monadRpcUrl: process.env.MONAD_RPC_URL || "https://rpc.monad.xyz",
-    goalTokenAddress: process.env.GOAL_TOKEN_ADDRESS || "",
-    arenaAddress: process.env.ARENA_ADDRESS || "",
-    adminPrivateKey: process.env.ADMIN_PRIVATE_KEY || "",
+    // ─── Solana (On-Chain) ───────────────────────────────────────────
+    solanaRpcUrl: process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com",
+    oracleKeypairPath: process.env.ORACLE_KEYPAIR_PATH || "",
+    treasuryAddress: process.env.TREASURY_ADDRESS || "",
+    goalTokenMint: process.env.GOAL_TOKEN_MINT || "",  // SPL token mint address (after pump.fun launch)
+
+    // ─── Oracle Gating ───────────────────────────────────────────────
+    // Minimum $GOAL tokens (raw, no decimals) required to see oracle predictions
+    // Change this in .env without redeployment
+    oracleGateMinimum: parseInt(process.env.ORACLE_GATE_MINIMUM || "100000", 10),
+
+    // ─── Privy ──────────────────────────────────────────────────────
+    privyAppId: process.env.PRIVY_APP_ID || "cmm1k9mbf001m0bky2uzpj9wi",
+    privyAppSecret: process.env.PRIVY_APP_SECRET || "",
+
+    // ─── OpenAI ─────────────────────────────────────────────────────
+    openaiApiKey: process.env.OPENAI_API_KEY || "",
 };

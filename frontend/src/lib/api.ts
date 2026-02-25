@@ -1,229 +1,220 @@
 const RAW_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-// Strip trailing /api or /api/ to prevent double-prefix (e.g. /api/api/matches)
+// Strip trailing /api or /api/ to prevent double-prefix
 const API_URL = RAW_URL.replace(/\/api\/?$/, "");
 
-// --- Types ---
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/** Outcome constants matching the smart contract */
+export const OUTCOME_HOME = 0;
+export const OUTCOME_DRAW = 1;
+export const OUTCOME_AWAY = 2;
+
+export type Outcome = 0 | 1 | 2;
+
+export function outcomeName(o: number | null | undefined): string {
+  if (o === OUTCOME_HOME) return "Home";
+  if (o === OUTCOME_DRAW) return "Draw";
+  if (o === OUTCOME_AWAY) return "Away";
+  return "—";
+}
+
+export function outcomeColor(o: number | null | undefined): string {
+  if (o === OUTCOME_HOME) return "text-blue-400";
+  if (o === OUTCOME_DRAW) return "text-yellow-400";
+  if (o === OUTCOME_AWAY) return "text-red-400";
+  return "text-muted-foreground";
+}
 
 export interface ApiMatch {
-    id: number;
+  id: number;
+  api_match_id: number;
+  league_id: string;
+  league_name: string;
+  home_team: string;
+  away_team: string;
+  home_score: number | null;
+  away_score: number | null;
+  status: string;
+  match_date: string;
+  round: string | null;
+  venue: string | null;
+  home_logo: string | null;
+  away_logo: string | null;
+  // Oracle prediction
+  oracle_prediction: Outcome | null; // 0=Home, 1=Draw, 2=Away
+  oracle_score: string | null;
+  oracle_analysis: string | null;
+  oracle_conviction: number | null;
+  oracle_tx_hash: string | null;
+  kickoff_time: string | null;
+  // On-chain market state
+  total_pot: number | null;        // in lamports
+  total_home: number | null;
+  total_draw: number | null;
+  total_away: number | null;
+  resolved: number | null;         // 0 or 1
+  result: Outcome | null;          // 0=Home, 1=Draw, 2=Away
+  resolve_tx_hash: string | null;
+}
+
+export interface ApiBet {
+  user_wallet: string;
+  outcome: Outcome;
+  amount: number;             // lamports
+  claimed: boolean;
+  refunded: boolean;
+  tx_hash: string | null;
+  created_at: string;
+}
+
+export interface ApiUserProfile {
+  wallet: string;
+  privy_id: string | null;
+  created_at: string;
+  stats: {
+    total_bets: number;
+    wins: number;
+    losses: number;
+    draws: number;
+    win_rate: number;
+    total_wagered: number; // lamports
+    total_claimed: number; // lamports
+  };
+  recent_bets: Array<{
     api_match_id: number;
-    league_id: string;
-    league_name: string;
     home_team: string;
     away_team: string;
-    home_score: number | null;
-    away_score: number | null;
-    status: string;
     match_date: string;
-    round: string | null;
-    venue: string | null;
-    home_logo: string | null;
-    away_logo: string | null;
-    // Oracle prediction fields
-    oracle_prediction: number | null;
-    oracle_score: string | null;
-    oracle_analysis: string | null;
-    oracle_conviction: number | null;
-    oracle_tx_hash: string | null;
-    lockdown_time: string | null;
-    total_pot: number | null;
-    highest_bid: number | null;
-    highest_bidder: string | null;
-    resolved: number | null;
-    result: number | null;
-    resolve_tx_hash: string | null;
-    lucky_supporter: string | null;
+    league_id: string;
+    outcome: Outcome;
+    amount: number;
+    claimed: boolean;
+    refunded: boolean;
+    result: Outcome | null;
+    resolved: number;
+  }>;
 }
 
-export interface StandingEntry {
-    position: number;
-    team: {
-        id: number;
-        name: string;
-        shortName: string;
-        tla: string;
-        crest: string;
-    };
-    playedGames: number;
-    won: number;
-    draw: number;
-    lost: number;
-    points: number;
-    goalsFor: number;
-    goalsAgainst: number;
-    goalDifference: number;
-}
-
-export interface StandingsResponse {
-    source: string;
-    standings: Array<{
-        stage: string;
-        type: string;
-        table: StandingEntry[];
-    }>;
-}
-
-// --- Fetchers ---
+// ─── Match Fetchers ───────────────────────────────────────────────────────────
 
 export async function fetchMatches(params?: {
-    league?: string;
-    status?: string;
-    from?: string;
-    to?: string;
-    limit?: number;
-    predicted?: string;
-    biddable?: string;
+  league?: string;
+  status?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+  predicted?: string;
 }): Promise<ApiMatch[]> {
-    const url = new URL(`${API_URL}/api/matches`);
-    if (params) {
-        Object.entries(params).forEach(([k, v]) => {
-            if (v !== undefined) url.searchParams.set(k, String(v));
-        });
-    }
-    const res = await fetch(url.toString(), { cache: "no-store" });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
-    return data.matches;
+  const url = new URL(`${API_URL}/api/matches`);
+  if (params) {
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined) url.searchParams.set(k, String(v));
+    });
+  }
+  const res = await fetch(url.toString(), { cache: "no-store" });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const data = await res.json();
+  return data.matches;
 }
 
 export async function fetchMatch(id: number): Promise<ApiMatch | null> {
-    const res = await fetch(`${API_URL}/api/matches/${id}`, { cache: "no-store" });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+  const res = await fetch(`${API_URL}/api/matches/${id}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
-export async function fetchStandings(competitionCode: string): Promise<StandingsResponse> {
-    const res = await fetch(`${API_URL}/api/standings/${competitionCode}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+export async function fetchMatchBets(matchId: number): Promise<ApiBet[]> {
+  const res = await fetch(`${API_URL}/api/matches/${matchId}/bets`, { cache: "no-store" });
+  if (res.status === 404) return [];
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const data = await res.json();
+  return data.bets;
 }
 
-// --- Match Bids ---
+// ─── User / Profile ───────────────────────────────────────────────────────────
 
-export interface ApiBid {
-    agent_wallet: string;
-    agent_name: string | null;
-    persona_type: string | null;
-    type: "challenge" | "support";
-    amount: number;
-    comment: string | null;
-    tx_hash: string | null;
-    created_at: string;
-    wins: number;
-    losses: number;
-    activity_type?: "bid" | "claim";
+export async function fetchUserProfile(wallet: string): Promise<ApiUserProfile | null> {
+  const res = await fetch(`${API_URL}/api/users/${wallet}`, { cache: "no-store" });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
-export async function fetchMatchBids(matchId: number): Promise<{
-    bids: ApiBid[];
-    resolve_tx_hash: string | null;
-    lucky_supporter: string | null;
-}> {
-    const res = await fetch(`${API_URL}/api/matches/${matchId}/bids`, { cache: "no-store" });
-    if (res.status === 404) return { bids: [], resolve_tx_hash: null, lucky_supporter: null };
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
-    return {
-        bids: data.bids,
-        resolve_tx_hash: data.resolve_tx_hash || null,
-        lucky_supporter: data.lucky_supporter || null
-    };
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+
+export interface LeaderboardEntry {
+  wallet: string;
+  total_bets: number;
+  wins: number;
+  losses: number;
+  win_rate: number;
+  total_wagered: number; // lamports
 }
 
-// --- Agent Profile ---
-
-export interface ApiAgent {
-    wallet: string;
-    name: string | null;
-    balance: number;
-    supportQuota: number;
-    wins: number;
-    losses: number;
-    winRate: number;
-    personaType: string | null;
+export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
+  const res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const data = await res.json();
+  return data.players;
 }
 
-export interface ApiAgentBid {
-    amount: number;
-    type: "challenge" | "support";
-    comment: string | null;
-    created_at: string;
-    api_match_id: number;
-    home_team: string;
-    away_team: string;
-    match_date: string;
-    match_status: string;
-    league_id: string;
+// ─── Oracle Prediction (gated) ────────────────────────────────────────────────
+
+export interface OraclePrediction {
+  match_id: number;
+  outcome: Outcome;
+  score: string;
+  analysis: string;
+  conviction: number;
+  tx_hash: string | null;
 }
 
-export interface ApiAgentProfile {
-    agent: ApiAgent;
-    recentBids: ApiAgentBid[];
-    totalBids: number;
+export async function fetchOraclePrediction(
+  matchId: number,
+  authToken?: string
+): Promise<OraclePrediction | null> {
+  const headers: Record<string, string> = {};
+  if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+  const res = await fetch(`${API_URL}/api/oracle/${matchId}`, {
+    headers,
+    cache: "no-store",
+  });
+  if (res.status === 401 || res.status === 403) return null; // gated
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
 }
 
-export async function fetchAgent(wallet: string): Promise<ApiAgentProfile | null> {
-    const res = await fetch(`${API_URL}/api/agent/${wallet}`, { cache: "no-store" });
-    if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    return res.json();
+// ─── Bet placement ────────────────────────────────────────────────────────────
+
+export async function placeBetApi(params: {
+  matchId: number;
+  outcome: Outcome;
+  amountLamports: number;
+  userWallet: string;
+  signedTx: string; // base64 serialized signed transaction
+}): Promise<{ txHash: string }> {
+  const res = await fetch(`${API_URL}/api/bets/place`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error || `API error: ${res.status}`);
+  }
+  return res.json();
 }
 
-// --- Live Feed ---
+// ─── Utility ──────────────────────────────────────────────────────────────────
 
-export interface FeedItem {
-    agent_wallet: string;
-    agent_name: string | null;
-    persona_type: string | null;
-    type: "challenge" | "support";
-    amount: number;
-    comment: string | null;
-    tx_hash: string | null;
-    created_at: string;
-    api_match_id: number;
-    home_team: string;
-    away_team: string;
-    league_id: string;
+export function lamportsToSol(lamports: number): string {
+  return (lamports / 1e9).toFixed(4).replace(/\.?0+$/, "");
 }
 
-export async function fetchRecentFeed(): Promise<FeedItem[]> {
-    const res = await fetch(`${API_URL}/api/matches/feed/recent`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
-    return data.feed;
+export function formatSol(lamports: number): string {
+  const sol = lamports / 1e9;
+  if (sol >= 1) return sol.toFixed(2) + " SOL";
+  return (sol * 1000).toFixed(1) + " mSOL";
 }
-
-// --- Leaderboard ---
-
-export interface LeaderboardAgent {
-    wallet: string;
-    name: string | null;
-    personaType: string | null;
-    wins: number;
-    losses: number;
-    winRate: number;
-    totalChallenges: number;
-    totalSupports: number;
-    totalBidAmount: number;
-}
-
-export async function fetchLeaderboard(period: "all" | "week" = "all"): Promise<LeaderboardAgent[]> {
-    const res = await fetch(`${API_URL}/api/leaderboard?period=${period}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
-    return data.agents;
-}
-
-// --- Winner Info (enriched match response) ---
-
-export interface WinnerInfo {
-    oracleCorrect: boolean;
-    outcome: "ORACLE_RIGHT" | "ORACLE_WRONG" | "DRAW";
-    message: string;
-    winnerWallet?: string;
-    winnerName?: string;
-    prize?: number;
-}
-
-

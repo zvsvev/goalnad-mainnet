@@ -34,4 +34,7 @@ backend/data/
 .vercel
 .env*.local
 
+# Keypairs (sensitive)
+*-keypair.json
+
 
