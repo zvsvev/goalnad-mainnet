@@ -35,11 +35,25 @@ export const connection = new Connection(RPC_URL, "confirmed");
 
 // ─── Oracle Keypair (deployer / oracle authority) ─────────────────────────────
 function loadOracleKeypair(): Keypair {
-    const keypairPath = config.oracleKeypairPath;
-    if (!keypairPath) {
-        throw new Error("ORACLE_KEYPAIR_PATH not set in config");
+    let raw;
+
+    // First try the JSON string from environment (easiest for Railway)
+    if (process.env.ORACLE_KEYPAIR_JSON) {
+        try {
+            raw = JSON.parse(process.env.ORACLE_KEYPAIR_JSON);
+        } catch (e) {
+            throw new Error("Failed to parse ORACLE_KEYPAIR_JSON environment variable");
+        }
     }
-    const raw = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
+    // Fallback to the file path
+    else {
+        const keypairPath = config.oracleKeypairPath;
+        if (!keypairPath) {
+            throw new Error("Neither ORACLE_KEYPAIR_JSON nor ORACLE_KEYPAIR_PATH are set");
+        }
+        raw = JSON.parse(fs.readFileSync(keypairPath, "utf-8"));
+    }
+
     return Keypair.fromSecretKey(Uint8Array.from(raw));
 }
 
