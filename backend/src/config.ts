@@ -32,4 +32,9 @@ export const config = {
 
     // ─── OpenAI ─────────────────────────────────────────────────────
     openaiApiKey: process.env.OPENAI_API_KEY || "",
+
+    // ─── Aliases (backward compat with old Monad references) ─────
+    goalTokenAddress: process.env.GOAL_TOKEN_MINT || "",
+    arenaAddress: process.env.ARENA_PROGRAM_ID || "EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL",
+    monadRpcUrl: process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com",
 };

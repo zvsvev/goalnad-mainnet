@@ -2,31 +2,26 @@ import { Router, Request, Response } from "express";
 import { config } from "../config.js";
 import {
     isChainEnabled,
-    getMatchOnChain,
-    getSupporters,
-    getGoalBalance,
-    getSupportQuota,
-    getNextMatchId,
-    formatEther,
-    GOAL_TOKEN,
-    ARENA,
+    getMarketOnChain,
+    getGoalTokenBalance,
+    PROGRAM_ID,
+    lamportsToSol,
 } from "../services/chain.js";
-import type { Address } from "viem";
 
 const router = Router();
 
 // ─── GET /api/chain/contracts — contract addresses & status ───
 router.get("/contracts", (_req: Request, res: Response) => {
     res.json({
-        chain: "monad",
-        chainId: 143, // Monad mainnet
-        rpc: config.monadRpcUrl,
+        chain: "solana",
+        network: config.solanaRpcUrl.includes("devnet") ? "devnet" : "mainnet",
+        rpc: config.solanaRpcUrl,
         enabled: isChainEnabled(),
         contracts: {
-            goalToken: config.goalTokenAddress || null,
-            arena: config.arenaAddress || null,
+            goalToken: config.goalTokenMint || null,
+            arena: PROGRAM_ID.toBase58(),
         },
-        explorer: "https://monadscan.com",
+        explorer: "https://explorer.solana.com",
     });
 });
 
@@ -37,29 +32,16 @@ router.get("/match/:matchId", async (req: Request, res: Response) => {
             return res.status(503).json({ error: "Chain not configured" });
         }
 
-        const matchId = BigInt(req.params.matchId as string);
-        const data = await getMatchOnChain(matchId) as any;
+        const matchId = Number(req.params.matchId);
+        const data = await getMarketOnChain(matchId);
 
         if (!data) {
             return res.status(404).json({ error: "Match not found on-chain" });
         }
 
-        const supporters = await getSupporters(matchId);
-
         res.json({
-            matchId: Number(matchId),
-            apiMatchId: Number(data.apiMatchId),
-            oraclePrediction: data.oraclePrediction,
-            lockdownTime: Number(data.lockdownTime),
-            highestBid: formatEther(data.highestBid),
-            highestBidder: data.highestBidder,
-            totalPot: formatEther(data.totalPot),
-            result: data.result,
-            resolved: data.resolved,
-            cancelled: data.cancelled,
-            supporterCount: Number(data.supporterCount),
-            bidderCount: Number(data.bidderCount),
-            supporters,
+            matchId,
+            market: data,
         });
     } catch (err: any) {
         console.error("Error reading chain match:", err.message);
@@ -74,16 +56,12 @@ router.get("/agent/:address", async (req: Request, res: Response) => {
             return res.status(503).json({ error: "Chain not configured" });
         }
 
-        const address = req.params.address as Address;
-        const [balance, quota] = await Promise.all([
-            getGoalBalance(address),
-            getSupportQuota(address),
-        ]);
+        const address = req.params.address as string;
+        const goalBalance = await getGoalTokenBalance(address);
 
         res.json({
             address,
-            goalBalance: balance,
-            supportQuota: Number(quota),
+            goalBalance,
         });
     } catch (err: any) {
         console.error("Error reading chain agent:", err.message);
@@ -98,13 +76,10 @@ router.get("/stats", async (_req: Request, res: Response) => {
             return res.status(503).json({ error: "Chain not configured" });
         }
 
-        const nextMatchId = await getNextMatchId();
-
         res.json({
-            totalMatchesPublished: Number(nextMatchId),
             contracts: {
-                goalToken: config.goalTokenAddress,
-                arena: config.arenaAddress,
+                goalToken: config.goalTokenMint || null,
+                arena: PROGRAM_ID.toBase58(),
             },
         });
     } catch (err: any) {

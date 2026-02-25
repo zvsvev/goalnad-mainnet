@@ -18,10 +18,7 @@ import {
 import { AnchorProvider, Program, BN, setProvider, web3, Wallet } from "@coral-xyz/anchor";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
 import { config } from "../config.js";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 export const PROGRAM_ID = new PublicKey("EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL");

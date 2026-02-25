@@ -82,7 +82,7 @@ export async function autoResolve(): Promise<void> {
 
         try {
             const txHash = await resolveMatchOnChain(
-                BigInt(match.onchain_match_id),
+                Number(match.onchain_match_id),
                 result
             );
 

@@ -14,12 +14,10 @@ import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/connection.js";
 import { config } from "../config.js";
 import {
-    publishPredictionOnChain,
+    createMatchOnChain,
     resolveMatchOnChain,
     isChainEnabled,
-    getNextMatchId,
 } from "../services/chain.js";
-import type { Address } from "viem";
 
 const router = Router();
 
@@ -115,15 +113,11 @@ router.post("/test-match", async (req: Request, res: Response) => {
         if (publishOnChain && isChainEnabled()) {
             try {
                 const lockdownTimestamp = Math.floor(lockdownTime.getTime() / 1000);
-                const chainResult = await publishPredictionOnChain(
+                txHash = await createMatchOnChain(
                     fakeApiMatchId,
-                    oraclePrediction,
-                    oracleScore || "",
-                    analysis,
                     lockdownTimestamp
                 );
-                txHash = chainResult.txHash;
-                onchainMatchId = Number(chainResult.onchainMatchId);
+                onchainMatchId = fakeApiMatchId;
 
                 // Store tx hash and on-chain match ID
                 db.prepare("UPDATE matches SET oracle_tx_hash = ?, onchain_match_id = ? WHERE id = ?")
@@ -283,7 +277,7 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
         if (resolveOnChain && isChainEnabled() && match.onchain_match_id != null) {
             try {
                 onChainTxHash = await resolveMatchOnChain(
-                    BigInt(match.onchain_match_id),
+                    Number(match.onchain_match_id),
                     matchResult
                 );
                 console.log(`[Admin] On-chain resolution tx: ${onChainTxHash}`);

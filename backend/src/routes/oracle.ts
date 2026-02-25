@@ -10,7 +10,7 @@
 
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/connection.js";
-import { publishPredictionOnChain, isChainEnabled } from "../services/chain.js";
+import { createMatchOnChain, isChainEnabled } from "../services/chain.js";
 import {
     postPredictionToMoltbook,
     postResultToMoltbook,
@@ -89,15 +89,11 @@ router.post("/predict", async (req: Request, res: Response) => {
         let onchainMatchId: number | null = match.onchain_match_id || null;
         if (isChainEnabled() && !alreadyOnChain && !skipOnChain) {
             try {
-                const chainResult = await publishPredictionOnChain(
+                txHash = await createMatchOnChain(
                     matchId,
-                    prediction,
-                    exactScore,
-                    analysis || `Oracle predicts ${match.home_team} vs ${match.away_team}.`,
                     lockdownTimestamp
                 );
-                txHash = chainResult.txHash;
-                onchainMatchId = Number(chainResult.onchainMatchId);
+                onchainMatchId = matchId;
                 console.log(`[Oracle] ✅ Successfully published on-chain: ${txHash}, onchainMatchId: ${onchainMatchId}`);
             } catch (chainErr: any) {
                 console.error(`[Oracle] ❌ On-chain publish FAILED: ${chainErr.message}`);
