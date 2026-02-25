@@ -10,7 +10,7 @@ const solanaConnectors = toSolanaWalletConnectors({
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <PrivyProvider
         appId="cmm1k9mbf001m0bky2uzpj9wi"
         config={{
