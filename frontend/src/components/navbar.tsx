@@ -102,7 +102,7 @@ export function Navbar() {
                     onClick={() => setDropdownOpen(false)}
                   >
                     <Settings className="h-3.5 w-3.5 text-primary" />
-                    Settings
+                    Edit Profile
                   </Link>
                   <button
                     onClick={() => { logout(); setDropdownOpen(false); }}
