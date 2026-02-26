@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "goalscore.fun" }],
+        destination: "https://devnet.goalscore.fun/:path*",
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
