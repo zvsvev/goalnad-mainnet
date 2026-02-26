@@ -277,11 +277,12 @@ router.get("/:wallet/referral", (req: Request, res: Response) => {
     // Prefer username as referral code, fallback to random code
     const refCode = user?.username || user?.referral_code || null;
 
+    const frontendUrl = process.env.FRONTEND_URL || "https://goalscore.fun";
     res.json({
         referral_code: refCode,
         referred_count: referredCount?.count || 0,
         referral_link: refCode
-            ? `https://goalscore.fun/?ref=${refCode}`
+            ? `${frontendUrl}/?ref=${refCode}`
             : null,
     });
 });

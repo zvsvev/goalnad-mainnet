@@ -308,9 +308,10 @@ function UsernameClaim({
 function ShareCard({ profile }: { profile: ApiUserProfile }) {
   const { stats, wallet, username } = profile;
   const displayName = username ? `@${username}` : shortAddr(wallet);
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://goalscore.fun";
   const profileUrl = username
-    ? `https://goalscore.fun/u/@${username}`
-    : `https://goalscore.fun/u/${wallet}`;
+    ? `${origin}/u/@${username}`
+    : `${origin}/u/${wallet}`;
 
   const tweetText = encodeURIComponent(
     `I'm ${stats.win_rate}% accurate on GoalScore.fun 🎯\n\n` +
