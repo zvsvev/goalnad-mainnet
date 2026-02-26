@@ -80,6 +80,18 @@ export function initSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_bids_agent ON bids(agent_wallet);
     CREATE INDEX IF NOT EXISTS idx_claims_match ON claims(match_id);
     CREATE INDEX IF NOT EXISTS idx_claims_agent ON claims(agent_wallet);
+
+    CREATE TABLE IF NOT EXISTS users (
+      wallet TEXT PRIMARY KEY,
+      username TEXT UNIQUE,
+      avatar_seed TEXT,
+      referral_code TEXT UNIQUE,
+      referred_by TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+    CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code);
   `);
 
   // Migrate existing tables — add new columns if they don't exist yet

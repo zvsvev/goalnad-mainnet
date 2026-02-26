@@ -69,6 +69,9 @@ export interface ApiBet {
 
 export interface ApiUserProfile {
   wallet: string;
+  username: string | null;
+  avatar_seed: string;
+  referral_code: string | null;
   privy_id: string | null;
   created_at: string;
   stats: {
@@ -93,6 +96,17 @@ export interface ApiUserProfile {
     result: Outcome | null;
     resolved: number;
   }>;
+}
+
+export interface PnlEntry {
+  date: string;
+  pnl: number; // lamports, cumulative
+}
+
+export interface ReferralInfo {
+  referral_code: string | null;
+  referred_count: number;
+  referral_link: string | null;
 }
 
 // ─── Match Fetchers ───────────────────────────────────────────────────────────
@@ -134,14 +148,45 @@ export async function fetchMatchBets(matchId: number): Promise<ApiBet[]> {
 
 // ─── User / Profile ───────────────────────────────────────────────────────────
 
-export async function fetchUserProfile(wallet: string): Promise<ApiUserProfile | null> {
-  const res = await fetch(`${API_URL}/api/users/${wallet}`, { cache: "no-store" });
+export async function fetchUserProfile(walletOrUsername: string): Promise<ApiUserProfile | null> {
+  const res = await fetch(`${API_URL}/api/users/${walletOrUsername}`, { cache: "no-store" });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }
 
-// ─── Leaderboard ─────────────────────────────────────────────────────────────
+export async function claimUsername(wallet: string, username: string): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_URL}/api/users/claim-username`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, username }),
+  });
+  const data = await res.json();
+  if (!res.ok) return { success: false, error: data.error };
+  return { success: true };
+}
+
+export async function updateAvatar(wallet: string, avatarSeed: string): Promise<{ success: boolean }> {
+  const res = await fetch(`${API_URL}/api/users/update-avatar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, avatarSeed }),
+  });
+  return res.json();
+}
+
+export async function fetchPnl(wallet: string): Promise<PnlEntry[]> {
+  const res = await fetch(`${API_URL}/api/users/${wallet}/pnl`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.pnl;
+}
+
+export async function fetchReferral(wallet: string): Promise<ReferralInfo> {
+  const res = await fetch(`${API_URL}/api/users/${wallet}/referral`, { cache: "no-store" });
+  if (!res.ok) return { referral_code: null, referred_count: 0, referral_link: null };
+  return res.json();
+}
 
 export interface LeaderboardEntry {
   wallet: string;
