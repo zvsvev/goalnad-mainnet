@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
+import { useGoalBalance, GOAL_HOLDER_THRESHOLD } from "@/hooks/useGoalBalance";
 import {
   Trophy,
   Timer,
@@ -180,8 +181,8 @@ function MatchCard({ match }: { match: ApiMatch }) {
 }
 
 function OracleGate({ children }: { children: React.ReactNode }) {
-  const { authenticated } = usePrivy();
-  if (!authenticated) {
+  const { isHolder } = useGoalBalance();
+  if (!isHolder) {
     return (
       <div className="relative">
         <div className="pointer-events-none select-none blur-sm opacity-60 grayscale">
@@ -190,7 +191,7 @@ function OracleGate({ children }: { children: React.ReactNode }) {
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 border border-border rounded-none">
           <Lock className="h-8 w-8 text-primary" />
           <p className="font-mono text-sm text-center text-foreground">
-            Hold <span className="text-primary font-bold">100K $GOAL</span> to see Oracle predictions
+            Hold <span className="text-primary font-bold">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL</span> to see Oracle predictions
           </p>
           <p className="font-mono text-[10px] text-muted-foreground text-center max-w-48">
             Connect your wallet and hold $GOAL to unlock Oracle insights
@@ -372,7 +373,7 @@ No house edge. 1% fee. Pure on-chain.`}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Deep AI analysis — unlocked for{" "}
-              <span className="text-primary font-mono">100K+ $GOAL</span> holders
+              <span className="text-primary font-mono">{GOAL_HOLDER_THRESHOLD.toLocaleString()}+ $GOAL</span> holders
             </p>
           </div>
 
@@ -566,12 +567,12 @@ No house edge. 1% fee. Pure on-chain.`}
             </div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">$GOAL Token</h2>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              The utility token of GoalScore.fun. Hold 100K $GOAL to unlock Oracle predictions and analysis.
+              The utility token of GoalScore.fun. Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to unlock Oracle predictions and analysis.
               Deployed on Solana via pump.fun.
             </p>
             <div className="mt-6 inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
               <Lock className="h-3.5 w-3.5 text-primary" />
-              <span className="font-mono text-xs text-primary">100,000 $GOAL = Oracle Access</span>
+              <span className="font-mono text-xs text-primary">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL = Oracle Access</span>
             </div>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button

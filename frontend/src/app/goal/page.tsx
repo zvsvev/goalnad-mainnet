@@ -31,7 +31,7 @@ const PROGRAM_ID = "GoaLSc5GJk4KMEhBqBvAtRtSyHCGGkGxXkHtc7KWFRz";
 const FAQ_ITEMS = [
   {
     q: "What is $GOAL?",
-    a: "$GOAL is the native token of GoalScore.fun on Solana. Holding 100K+ $GOAL unlocks the AI Oracle's full match analysis and predictions.",
+    a: "$GOAL is the native token of GoalScore.fun on Solana. Holding 1,000,000+ $GOAL unlocks the AI Oracle's full match analysis and predictions.",
   },
   {
     q: "How do I get $GOAL?",
@@ -39,7 +39,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What does holding $GOAL unlock?",
-    a: "Holding 100,000+ $GOAL unlocks the Oracle's full prediction analysis, score forecasts, conviction scores, and on-chain reasoning for every match.",
+    a: "Holding 1,000,000+ $GOAL unlocks the Oracle's full prediction analysis, score forecasts, conviction scores, and on-chain reasoning for every match.",
   },
   {
     q: "Do I need $GOAL to bet?",
@@ -124,7 +124,7 @@ export default function GoalTokenPage() {
                 Oracle Access — Holder Benefits
               </h2>
               <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-                Hold 100,000+ $GOAL to unlock the full AI Oracle analysis for
+                Hold 1,000,000+ $GOAL to unlock the full AI Oracle analysis for
                 every match.
               </p>
             </div>
@@ -189,7 +189,7 @@ export default function GoalTokenPage() {
                     </p>
                     {item.locked && (
                       <p className="mt-2 font-mono text-[10px] text-primary/60 uppercase tracking-wider">
-                        Requires 100K $GOAL
+                        Requires 1M $GOAL
                       </p>
                     )}
                   </CardContent>
@@ -378,8 +378,8 @@ export default function GoalTokenPage() {
                 >
                   <Card
                     className={`border-border rounded-none shadow-none bg-white transition-colors ${openFaq === i
-                        ? "border-primary"
-                        : "hover:border-black"
+                      ? "border-primary"
+                      : "hover:border-black"
                       }`}
                   >
                     <CardContent className="pt-4 pb-4">

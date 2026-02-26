@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { usePrivy } from "@privy-io/react-auth";
+import { useGoalBalance, GOAL_HOLDER_THRESHOLD } from "@/hooks/useGoalBalance";
 import {
   Bot,
   ExternalLink,
@@ -93,6 +94,7 @@ export default function MatchPage() {
   const params = useParams();
   const id = params.id as string;
   const { authenticated } = usePrivy();
+  const { isHolder, loading: goalLoading } = useGoalBalance();
 
   const [match, setMatch] = useState<ApiMatch | null>(null);
   const [bets, setBets] = useState<ApiBet[]>([]);
@@ -294,24 +296,24 @@ export default function MatchPage() {
           </div>
         )}
 
-        {/* Oracle Analysis (gated) */}
+        {/* Oracle Analysis (gated by $GOAL balance) */}
         {match.oracle_analysis && (
-          <Card className={`rounded-none border-border shadow-none bg-background mb-8 ${!authenticated ? "relative overflow-hidden" : ""}`}>
+          <Card className={`rounded-none border-border shadow-none bg-background mb-8 ${!isHolder ? "relative overflow-hidden" : ""}`}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-2 mb-3">
                 <Bot className="h-4 w-4 text-primary" />
                 <span className="font-mono text-xs font-bold text-primary uppercase tracking-wider">
                   Oracle Analysis
                 </span>
-                {!authenticated && <Lock className="h-3 w-3 text-muted-foreground ml-auto" />}
+                {!isHolder && <Lock className="h-3 w-3 text-muted-foreground ml-auto" />}
               </div>
-              {authenticated ? (
+              {isHolder ? (
                 <p className="text-sm text-muted-foreground leading-relaxed">{match.oracle_analysis}</p>
               ) : (
                 <div>
                   <p className="text-sm text-muted-foreground leading-relaxed blur-sm select-none">{match.oracle_analysis}</p>
                   <p className="mt-3 text-xs font-mono text-primary text-center">
-                    Hold 100K $GOAL to read full Oracle analysis
+                    Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to read full Oracle analysis
                   </p>
                 </div>
               )}
