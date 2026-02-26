@@ -18,7 +18,7 @@ const router = Router();
 function generateReferralCode(): string {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I to avoid confusion
     let code = "GOAL";
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
         code += chars[Math.floor(Math.random() * chars.length)];
     }
     return code;
@@ -245,16 +245,19 @@ router.get("/:wallet/referral", (req: Request, res: Response) => {
 
     ensureUserRow(wallet);
 
-    const user = db.prepare("SELECT referral_code FROM users WHERE wallet = ?").get(wallet) as any;
+    const user = db.prepare("SELECT referral_code, username FROM users WHERE wallet = ?").get(wallet) as any;
     const referredCount = db.prepare(
         "SELECT COUNT(*) as count FROM users WHERE referred_by = ?"
     ).get(wallet) as any;
 
+    // Prefer username as referral code, fallback to random code
+    const refCode = user?.username || user?.referral_code || null;
+
     res.json({
-        referral_code: user?.referral_code || null,
+        referral_code: refCode,
         referred_count: referredCount?.count || 0,
-        referral_link: user?.referral_code
-            ? `https://goalscore.fun/?ref=${user.referral_code}`
+        referral_link: refCode
+            ? `https://goalscore.fun/?ref=${refCode}`
             : null,
     });
 });
