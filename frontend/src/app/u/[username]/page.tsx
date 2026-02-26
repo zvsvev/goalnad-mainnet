@@ -77,6 +77,11 @@ function diceBearUrl(seed: string) {
   return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`;
 }
 
+function getAvatarUrl(profile: ApiUserProfile | null, wallet: string) {
+  if (profile?.avatar_url) return profile.avatar_url;
+  return diceBearUrl(profile?.avatar_seed ?? wallet);
+}
+
 // ─── P&L Sparkline ──────────────────────────────────────────────────
 
 function PnlChart({ pnl }: { pnl: PnlEntry[] }) {
@@ -489,9 +494,9 @@ export default function UserProfilePage() {
             <div className="shrink-0">
               <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-none border-2 border-primary/30 bg-primary/5 overflow-hidden">
                 <img
-                  src={diceBearUrl(avatarSeed)}
+                  src={getAvatarUrl(profile, wallet)}
                   alt="avatar"
-                  className="w-full h-full"
+                  className="w-full h-full object-cover"
                 />
               </div>
               {isOwner && (

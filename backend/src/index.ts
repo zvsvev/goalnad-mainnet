@@ -20,7 +20,7 @@ import { initWebSocket, getWsConnectionCount } from "./services/websocket.js";
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
 // --- Rate Limiting ---
 const globalLimiter = rateLimit({

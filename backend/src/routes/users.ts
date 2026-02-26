@@ -105,6 +105,7 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
         wallet: user.wallet,
         username: user.username || null,
         avatar_seed: user.avatar_seed || wallet,
+        avatar_url: user.avatar_url || null,
         email: user.email || null,
         referral_code: user.referral_code || null,
         privy_id: null,
@@ -217,6 +218,32 @@ router.post("/update-email", (req: Request, res: Response) => {
     db.prepare("UPDATE users SET email = ? WHERE wallet = ?").run(cleanEmail, wallet);
 
     res.json({ success: true, email: cleanEmail });
+});
+
+// ─── POST /api/users/upload-avatar ──────────────────────────────────
+
+router.post("/upload-avatar", (req: Request, res: Response) => {
+    const { wallet, avatarData } = req.body;
+
+    if (!wallet || !avatarData) {
+        return res.status(400).json({ error: "wallet and avatarData are required" });
+    }
+
+    // Validate base64 data URI format
+    if (typeof avatarData !== "string" || !avatarData.startsWith("data:image/")) {
+        return res.status(400).json({ error: "avatarData must be a base64 data URI (data:image/...)" });
+    }
+
+    // Max ~500KB base64 string (~375KB actual image)
+    if (avatarData.length > 700_000) {
+        return res.status(400).json({ error: "Image too large (max 500KB)" });
+    }
+
+    ensureUserRow(wallet);
+
+    db.prepare("UPDATE users SET avatar_url = ? WHERE wallet = ?").run(avatarData, wallet);
+
+    res.json({ success: true, avatar_url: avatarData });
 });
 
 // ─── GET /api/users/:wallet/pnl ──────────────────────────────────────
