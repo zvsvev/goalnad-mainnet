@@ -99,11 +99,18 @@ function AvatarSection({
     };
 
     const handlePick = async (seed: string) => {
-        const result = await updateAvatar(wallet, seed);
-        if (result.success) {
-            onUpdate(seed);
-            setPicking(false);
-            showToast({ type: "success", message: "Avatar updated!" });
+        try {
+            const result = await updateAvatar(wallet, seed);
+            if (result.success) {
+                onUpdate(seed);
+                setPicking(false);
+                showToast({ type: "success", message: "Avatar updated!" });
+            } else {
+                showToast({ type: "error", message: "Failed to update avatar" });
+            }
+        } catch (e) {
+            console.error("Avatar update error:", e);
+            showToast({ type: "error", message: "Network error — check your connection" });
         }
     };
 
@@ -155,8 +162,8 @@ function AvatarSection({
                                         key={seed}
                                         onClick={() => handlePick(seed)}
                                         className={`border-2 p-1 transition-colors rounded-none hover:border-primary ${currentSeed === seed
-                                                ? "border-primary"
-                                                : "border-border"
+                                            ? "border-primary"
+                                            : "border-border"
                                             }`}
                                     >
                                         <img
@@ -199,16 +206,22 @@ function UsernameSection({
     const handleClaim = async () => {
         setError(null);
         setLoading(true);
-        const result = await claimUsername(wallet, input.toLowerCase().trim());
-        setLoading(false);
-        if (result.success) {
-            onClaim(input.toLowerCase().trim());
-            showToast({
-                type: "success",
-                message: `Username @${input.toLowerCase().trim()} claimed!`,
-            });
-        } else {
-            setError(result.error || "Failed to claim");
+        try {
+            const result = await claimUsername(wallet, input.toLowerCase().trim());
+            if (result.success) {
+                onClaim(input.toLowerCase().trim());
+                showToast({
+                    type: "success",
+                    message: `Username @${input.toLowerCase().trim()} claimed!`,
+                });
+            } else {
+                setError(result.error || "Failed to claim");
+            }
+        } catch (e) {
+            console.error("Username claim error:", e);
+            setError("Network error — check your connection");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -311,14 +324,20 @@ function EmailSection({
             setLoading(false);
             return;
         }
-        const result = await updateEmail(wallet, cleanEmail || null);
-        setLoading(false);
-        if (result.success) {
-            onUpdate(cleanEmail || null);
-            setEditing(false);
-            showToast({ type: "success", message: "Email updated!" });
-        } else {
-            setError(result.error || "Failed to update");
+        try {
+            const result = await updateEmail(wallet, cleanEmail || null);
+            if (result.success) {
+                onUpdate(cleanEmail || null);
+                setEditing(false);
+                showToast({ type: "success", message: "Email updated!" });
+            } else {
+                setError(result.error || "Failed to update");
+            }
+        } catch (e) {
+            console.error("Email update error:", e);
+            setError("Network error — check your connection");
+        } finally {
+            setLoading(false);
         }
     };
 
