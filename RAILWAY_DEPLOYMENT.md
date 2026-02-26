@@ -11,8 +11,7 @@ This guide contains the specific environment variables needed to deploy the Goal
 | `FOOTBALL_DATA_TOKEN` | *(Your football-data.org API key)* |
 | `PRIVY_APP_ID` | `cmm1k9mbf001m0bky2uzpj9wi` |
 | `PRIVY_APP_SECRET` | *(Create this in your Privy Dashboard → App Clients)* |
-| `OPENAI_API_KEY` | *(Your OpenAI key for the Oracle predictions)* |
-| `ADMIN_API_KEY` | *(Your custom secret password for /api/admin routes)* |
+| `ADMIN_API_KEY` | `goalscore-secret-9xY2pL4mK8vZ1Qw` |
 
 ---
 
