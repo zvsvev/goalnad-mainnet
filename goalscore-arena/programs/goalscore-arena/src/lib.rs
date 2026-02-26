@@ -8,11 +8,15 @@ declare_id!("EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL");
 const FEE_BPS: u64 = 100;
 const BPS_DENOM: u64 = 10_000;
 
+/// Minimum bet: 0.01 SOL = 10,000,000 lamports
+const MIN_BET: u64 = 10_000_000;
+
 /// Outcomes
 const OUTCOME_HOME: u8 = 0;
 const OUTCOME_DRAW: u8 = 1;
 const OUTCOME_AWAY: u8 = 2;
 const OUTCOME_NONE: u8 = 255;
+const OUTCOME_CANCELLED: u8 = 254;
 
 #[program]
 pub mod goalscore_arena {
@@ -31,6 +35,7 @@ pub mod goalscore_arena {
         market.kickoff_time = kickoff_time;
         market.result = OUTCOME_NONE;
         market.resolved = false;
+        market.cancelled = false;
         market.total_pot = 0;
         market.total_home = 0;
         market.total_draw = 0;
@@ -60,10 +65,11 @@ pub mod goalscore_arena {
             outcome == OUTCOME_HOME || outcome == OUTCOME_DRAW || outcome == OUTCOME_AWAY,
             GoalScoreError::InvalidOutcome
         );
-        require!(amount > 0, GoalScoreError::ZeroAmount);
+        require!(amount >= MIN_BET, GoalScoreError::BetTooSmall);
 
         let market = &ctx.accounts.market;
         require!(!market.resolved, GoalScoreError::MarketResolved);
+        require!(!market.cancelled, GoalScoreError::MarketCancelled);
 
         let clock = Clock::get()?;
         require!(
@@ -149,6 +155,7 @@ pub mod goalscore_arena {
 
         let market = &mut ctx.accounts.market;
         require!(!market.resolved, GoalScoreError::MarketResolved);
+        require!(!market.cancelled, GoalScoreError::MarketCancelled);
         require!(market.oracle == ctx.accounts.oracle.key(), GoalScoreError::Unauthorized);
 
         market.result = result;
@@ -159,6 +166,49 @@ pub mod goalscore_arena {
             result,
             total_pot: market.total_pot,
         });
+
+        Ok(())
+    }
+
+    /// Oracle cancels a match (e.g. postponed, abandoned).
+    /// All bettors can then call `refund` to get their SOL back.
+    pub fn cancel_match(
+        ctx: Context<ResolveMatch>,
+        _match_id: u64,
+    ) -> Result<()> {
+        let market = &mut ctx.accounts.market;
+        require!(!market.resolved, GoalScoreError::MarketResolved);
+        require!(!market.cancelled, GoalScoreError::MarketCancelled);
+        require!(market.oracle == ctx.accounts.oracle.key(), GoalScoreError::Unauthorized);
+
+        market.cancelled = true;
+        market.result = OUTCOME_CANCELLED;
+
+        emit!(MatchCancelled {
+            match_id: market.match_id,
+            total_pot: market.total_pot,
+        });
+
+        Ok(())
+    }
+
+    /// Oracle transfers oracle authority to a new key (key rotation).
+    pub fn update_oracle(
+        ctx: Context<UpdateOracle>,
+        _match_id: u64,
+        new_oracle: Pubkey,
+    ) -> Result<()> {
+        require!(new_oracle != Pubkey::default(), GoalScoreError::InvalidOracle);
+
+        let market = &mut ctx.accounts.market;
+
+        emit!(OracleUpdated {
+            match_id: market.match_id,
+            old_oracle: market.oracle,
+            new_oracle,
+        });
+
+        market.oracle = new_oracle;
 
         Ok(())
     }
@@ -235,11 +285,14 @@ pub mod goalscore_arena {
         Ok(())
     }
 
-    /// Refund on draw — full net bet returned, no fee.
+    /// Refund — available on draw OR cancelled matches. Full net bet returned, no fee.
     pub fn refund(ctx: Context<Refund>, match_id: u64) -> Result<()> {
         let market = &ctx.accounts.market;
-        require!(market.resolved, GoalScoreError::MarketNotResolved);
-        require!(market.result == OUTCOME_DRAW, GoalScoreError::NotADraw);
+
+        // Allow refund if: (1) resolved as draw, OR (2) cancelled
+        let is_draw = market.resolved && market.result == OUTCOME_DRAW;
+        let is_cancelled = market.cancelled;
+        require!(is_draw || is_cancelled, GoalScoreError::RefundNotAllowed);
 
         let bet = &ctx.accounts.bet;
         require!(!bet.claimed, GoalScoreError::AlreadyClaimed);
@@ -271,6 +324,19 @@ pub mod goalscore_arena {
             amount: refund_amount,
         });
 
+        Ok(())
+    }
+
+    /// Close a bet account after it's been claimed/refunded. Rent goes back to user.
+    pub fn close_bet(_ctx: Context<CloseBet>, _match_id: u64) -> Result<()> {
+        // Anchor's `close` attribute handles the lamport transfer and zeroing.
+        Ok(())
+    }
+
+    /// Close a market account after it's fully resolved. Rent goes back to oracle.
+    /// Only callable by oracle after market is resolved or cancelled.
+    pub fn close_market(_ctx: Context<CloseMarket>, _match_id: u64) -> Result<()> {
+        // Anchor's `close` attribute handles the lamport transfer and zeroing.
         Ok(())
     }
 }
@@ -346,6 +412,22 @@ pub struct ResolveMatch<'info> {
 
 #[derive(Accounts)]
 #[instruction(match_id: u64)]
+pub struct UpdateOracle<'info> {
+    #[account(
+        mut,
+        seeds = [b"market", match_id.to_le_bytes().as_ref()],
+        bump = market.bump,
+    )]
+    pub market: Account<'info, Market>,
+
+    #[account(mut, constraint = oracle.key() == market.oracle @ GoalScoreError::Unauthorized)]
+    pub oracle: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+#[instruction(match_id: u64)]
 pub struct Claim<'info> {
     #[account(
         mut,
@@ -396,6 +478,49 @@ pub struct Refund<'info> {
     pub system_program: Program<'info, System>,
 }
 
+/// Close a bet account. User must have claimed or been refunded.
+#[derive(Accounts)]
+#[instruction(match_id: u64)]
+pub struct CloseBet<'info> {
+    #[account(
+        seeds = [b"market", match_id.to_le_bytes().as_ref()],
+        bump = market.bump,
+        constraint = market.resolved || market.cancelled @ GoalScoreError::MarketNotResolved,
+    )]
+    pub market: Account<'info, Market>,
+
+    #[account(
+        mut,
+        seeds = [b"bet", match_id.to_le_bytes().as_ref(), user.key().as_ref()],
+        bump = bet.bump,
+        constraint = bet.user == user.key() @ GoalScoreError::Unauthorized,
+        constraint = bet.claimed || bet.refunded @ GoalScoreError::BetNotSettled,
+        close = user,
+    )]
+    pub bet: Account<'info, Bet>,
+
+    #[account(mut)]
+    pub user: Signer<'info>,
+}
+
+/// Close a market account. Only oracle can close. Market must be resolved/cancelled.
+#[derive(Accounts)]
+#[instruction(match_id: u64)]
+pub struct CloseMarket<'info> {
+    #[account(
+        mut,
+        seeds = [b"market", match_id.to_le_bytes().as_ref()],
+        bump = market.bump,
+        constraint = market.resolved || market.cancelled @ GoalScoreError::MarketNotResolved,
+        constraint = market.oracle == oracle.key() @ GoalScoreError::Unauthorized,
+        close = oracle,
+    )]
+    pub market: Account<'info, Market>,
+
+    #[account(mut)]
+    pub oracle: Signer<'info>,
+}
+
 // ─── State ────────────────────────────────────────────────────────────────────
 
 #[account]
@@ -407,6 +532,7 @@ pub struct Market {
     pub kickoff_time: i64,
     pub result: u8,
     pub resolved: bool,
+    pub cancelled: bool,          // NEW: supports cancel/void
     pub total_pot: u64,
     pub total_home: u64,
     pub total_draw: u64,
@@ -452,6 +578,19 @@ pub struct MatchResolved {
 }
 
 #[event]
+pub struct MatchCancelled {
+    pub match_id: u64,
+    pub total_pot: u64,
+}
+
+#[event]
+pub struct OracleUpdated {
+    pub match_id: u64,
+    pub old_oracle: Pubkey,
+    pub new_oracle: Pubkey,
+}
+
+#[event]
 pub struct Claimed {
     pub match_id: u64,
     pub user: Pubkey,
@@ -475,10 +614,14 @@ pub enum GoalScoreError {
     InvalidOutcome,
     #[msg("Amount must be greater than zero.")]
     ZeroAmount,
+    #[msg("Bet too small. Minimum bet is 0.01 SOL.")]
+    BetTooSmall,
     #[msg("Market is already resolved.")]
     MarketResolved,
     #[msg("Market is not yet resolved.")]
     MarketNotResolved,
+    #[msg("Market has been cancelled.")]
+    MarketCancelled,
     #[msg("Betting is closed — match has started.")]
     BettingClosed,
     #[msg("You have already claimed your winnings.")]
@@ -489,10 +632,14 @@ pub enum GoalScoreError {
     WrongOutcome,
     #[msg("Match ended in a draw — use refund instead of claim.")]
     DrawUseRefund,
-    #[msg("Match result was not a draw — use claim instead of refund.")]
-    NotADraw,
+    #[msg("Refund not allowed — market is not a draw and not cancelled.")]
+    RefundNotAllowed,
     #[msg("Unauthorized.")]
     Unauthorized,
     #[msg("Cannot change outcome on an existing bet.")]
     OutcomeMismatch,
+    #[msg("Bet has not been settled (claimed or refunded) yet.")]
+    BetNotSettled,
+    #[msg("Invalid oracle address.")]
+    InvalidOracle,
 }
