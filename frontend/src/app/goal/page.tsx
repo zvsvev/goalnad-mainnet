@@ -25,8 +25,8 @@ import { Footer } from "@/components/footer";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
 
 // Placeholder — update once $GOAL is deployed on Solana
-const GOAL_MINT = "TBD — deploying soon";
-const PROGRAM_ID = "GoaLSc5GJk4KMEhBqBvAtRtSyHCGGkGxXkHtc7KWFRz";
+const GOAL_MINT = "AinZf6mvHp2eoJq2WQZc5UEUAMfTkqRVkkiFE3DF9uPV";
+const PROGRAM_ID = "EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL";
 
 const FAQ_ITEMS = [
   {
@@ -79,7 +79,7 @@ export default function GoalTokenPage() {
                   <img
                     src="/logo.png"
                     alt="$GOAL Token"
-                    className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-none mix-blend-multiply"
+                    className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-none"
                   />
                 </div>
               </div>
@@ -106,7 +106,7 @@ export default function GoalTokenPage() {
                   variant="outline"
                   className="border-border rounded-none bg-background font-mono text-xs text-primary px-4 py-1.5"
                 >
-                  🚀 Launching Soon on Solana
+                  🚀 Live on Solana Devnet
                 </Badge>
               </div>
             </MotionWrapper>
@@ -302,9 +302,9 @@ export default function GoalTokenPage() {
                   <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
                     $GOAL Mint
                   </p>
-                  <p className="font-mono text-xs text-muted-foreground/70 italic">
+                  <code className="font-mono text-xs text-primary break-all select-all">
                     {GOAL_MINT}
-                  </p>
+                  </code>
                 </div>
                 <div className="mt-4 flex gap-3">
                   <a
@@ -314,7 +314,16 @@ export default function GoalTokenPage() {
                     className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
                   >
                     <ExternalLink className="h-3 w-3" />
-                    View on Solscan
+                    Program on Solscan
+                  </a>
+                  <a
+                    href={`https://solscan.io/token/${GOAL_MINT}?cluster=devnet`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                    $GOAL on Solscan
                   </a>
                 </div>
               </CardContent>
