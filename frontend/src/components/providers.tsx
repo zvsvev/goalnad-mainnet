@@ -3,6 +3,7 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { ThemeProvider } from "next-themes";
+import { ToastContainer } from "@/components/ui/toast";
 
 const solanaConnectors = toSolanaWalletConnectors({
   shouldAutoConnect: false,
@@ -31,7 +32,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }}
       >
         {children}
+        <ToastContainer />
       </PrivyProvider>
     </ThemeProvider>
   );
 }
+

@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import http from "http";
+import rateLimit from "express-rate-limit";
 import { config } from "./config.js";
 import { initSchema } from "./db/schema.js";
 import matchesRouter from "./routes/matches.js";
@@ -12,11 +14,31 @@ import leaderboardRouter from "./routes/leaderboard.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
 import { isChainEnabled } from "./services/chain.js";
 import { startIndexer, getIndexerStatus } from "./services/indexer.js";
+import { initWebSocket, getWsConnectionCount } from "./services/websocket.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// --- Rate Limiting ---
+const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,  // 1 minute
+    max: 100,             // 100 req/min per IP
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Too many requests, please try again later" },
+});
+
+const sensitiveLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,              // 10 req/min for admin/oracle endpoints
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: "Rate limit exceeded for this endpoint" },
+});
+
+app.use(globalLimiter);
 
 // --- Routes ---
 app.get("/api/health", (_req, res) => {
@@ -26,6 +48,7 @@ app.get("/api/health", (_req, res) => {
         timestamp: new Date().toISOString(),
         chain: isChainEnabled() ? "connected" : "offline",
         indexer: indexerStatus.running ? "running" : "stopped",
+        websocket: { connections: getWsConnectionCount() },
         contracts: {
             goalToken: config.goalTokenAddress || null,
             arena: config.arenaAddress || null,
@@ -37,8 +60,8 @@ app.use("/api/matches", matchesRouter);
 app.use("/api/standings", standingsRouter);
 app.use("/api/agent", agentRouter);
 app.use("/api/chain", chainRouter);
-app.use("/api/admin", adminRouter);
-app.use("/api/oracle", oracleRouter);
+app.use("/api/admin", sensitiveLimiter, adminRouter);
+app.use("/api/oracle", sensitiveLimiter, oracleRouter);
 app.use("/api/leaderboard", leaderboardRouter);
 
 // --- Start ---
@@ -64,37 +87,20 @@ async function start() {
         console.log("\n⚠️  Event indexer disabled (ENABLE_INDEXER=false)");
     }
 
-    app.listen(config.port, () => {
-        console.log(`\n🚀 Goalnad Backend running on http://localhost:${config.port}`);
-        console.log(`   Chain: ${isChainEnabled() ? "Monad (CONNECTED)" : "OFFLINE (no keys configured)"}`);
+    // Create HTTP server and attach WebSocket
+    const server = http.createServer(app);
+    initWebSocket(server);
+
+    server.listen(config.port, () => {
+        console.log(`\n🚀 GoalScore Backend running on http://localhost:${config.port}`);
+        console.log(`   Chain: ${isChainEnabled() ? "Solana (CONNECTED)" : "OFFLINE (no keys configured)"}`);
         if (isChainEnabled()) {
             console.log(`   $GOAL Token: ${config.goalTokenAddress}`);
             console.log(`   Arena:       ${config.arenaAddress}`);
         }
-        console.log(`   API Provider: football-data.org (free tier)\n`);
-        console.log(`   Endpoints:`);
-        console.log(`   GET  /api/health`);
-        console.log(`   GET  /api/matches`);
-        console.log(`   GET  /api/matches/:id`);
-        console.log(`   GET  /api/standings/:competitionCode`);
-        console.log(`   POST /api/agent/register`);
-        console.log(`   GET  /api/agent/status`);
-        console.log(`   POST /api/agent/bid`);
-        console.log(`   POST /api/agent/support`);
-        console.log(`   GET  /api/chain/match/:matchId`);
-        console.log(`   GET  /api/chain/agent/:address`);
-        console.log(`   GET  /api/chain/contracts`);
-        console.log(`   POST /api/admin/test-match`);
-        console.log(`   POST /api/admin/resolve-test`);
-        console.log(`   POST /api/admin/oracle-predict`);
-        console.log(`   POST /api/admin/fund-agent`);
-        console.log(`   GET  /api/admin/test-timeline`);
-        console.log(`   POST /api/oracle/predict`);
-        console.log(`   GET  /api/oracle/stats`);
-        console.log(`   POST /api/oracle/post-result`);
-        console.log(`   POST /api/oracle/hype`);
-        console.log(`   GET  /api/matches/feed/recent`);
-        console.log(`   GET  /api/leaderboard`);
+        console.log(`   API Provider: football-data.org (free tier)`);
+        console.log(`   WebSocket: ws://localhost:${config.port}/ws`);
+        console.log(`   Rate Limit: 100 req/min (global), 10 req/min (admin/oracle)\n`);
     });
 }
 

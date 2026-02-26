@@ -70,7 +70,7 @@ export default function GoalTokenPage() {
       <Navbar />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-white">
+      <section className="relative overflow-hidden bg-background">
         <div className="relative mx-auto max-w-4xl px-4 py-20 sm:py-28">
           <div className="mx-auto max-w-2xl text-center">
             <MotionWrapper delay={0}>
@@ -104,7 +104,7 @@ export default function GoalTokenPage() {
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Badge
                   variant="outline"
-                  className="border-border rounded-none bg-white font-mono text-xs text-primary px-4 py-1.5"
+                  className="border-border rounded-none bg-background font-mono text-xs text-primary px-4 py-1.5"
                 >
                   🚀 Launching Soon on Solana
                 </Badge>
@@ -115,7 +115,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* Oracle Gate — Holder Benefits */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
@@ -171,7 +171,7 @@ export default function GoalTokenPage() {
             ].map((item, i) => (
               <MotionWrapper key={i} delay={0.1 + i * 0.05}>
                 <Card
-                  className={`border-border rounded-none shadow-none bg-white h-full relative overflow-hidden ${item.locked ? "opacity-80" : ""
+                  className={`border-border rounded-none shadow-none bg-background h-full relative overflow-hidden ${item.locked ? "opacity-80" : ""
                     }`}
                 >
                   {item.locked && (
@@ -180,7 +180,7 @@ export default function GoalTokenPage() {
                     </div>
                   )}
                   <CardContent className="pt-6">
-                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-none bg-white border border-border">
+                    <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-none bg-background border border-border">
                       <item.icon className="h-4 w-4 text-primary" />
                     </div>
                     <h3 className="font-bold text-sm mb-1">{item.title}</h3>
@@ -201,7 +201,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* Fee & Burn Model */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
@@ -238,7 +238,7 @@ export default function GoalTokenPage() {
               },
             ].map((item, i) => (
               <MotionWrapper key={i} delay={0.1 + i * 0.05}>
-                <Card className="border-border rounded-none shadow-none bg-white text-center">
+                <Card className="border-border rounded-none shadow-none bg-background text-center">
                   <CardContent className="pt-8 pb-6">
                     <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-2">
                       {item.label}
@@ -260,7 +260,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* Program Address */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
@@ -275,7 +275,7 @@ export default function GoalTokenPage() {
           </MotionWrapper>
 
           <MotionWrapper delay={0.1}>
-            <Card className="border-border rounded-none shadow-none bg-white mx-auto max-w-2xl">
+            <Card className="border-border rounded-none shadow-none bg-background mx-auto max-w-2xl">
               <CardContent className="pt-6 pb-6">
                 <div className="mb-2">
                   <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
@@ -283,12 +283,12 @@ export default function GoalTokenPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="flex-1 overflow-x-auto rounded-none bg-white border border-border px-4 py-3 font-mono text-xs sm:text-sm text-primary select-all">
+                  <code className="flex-1 overflow-x-auto rounded-none bg-background border border-border px-4 py-3 font-mono text-xs sm:text-sm text-primary select-all">
                     {PROGRAM_ID}
                   </code>
                   <button
                     onClick={handleCopy}
-                    className="shrink-0 rounded-none border border-border bg-white p-3 hover:bg-black hover:text-white transition-colors"
+                    className="shrink-0 rounded-none border border-border bg-background p-3 hover:bg-black hover:text-white transition-colors"
                     title="Copy program ID"
                   >
                     {copied ? (
@@ -324,7 +324,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* Tokenomics */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
@@ -335,7 +335,7 @@ export default function GoalTokenPage() {
             </div>
           </MotionWrapper>
           <MotionWrapper delay={0.1}>
-            <Card className="border-border rounded-none shadow-none bg-white mx-auto max-w-xl">
+            <Card className="border-border rounded-none shadow-none bg-background mx-auto max-w-xl">
               <CardContent className="pt-8 pb-8">
                 <p className="text-center text-2xl sm:text-3xl font-bold text-muted-foreground/50">
                   COMING SOON 👀
@@ -358,7 +358,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* FAQ */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
@@ -377,7 +377,7 @@ export default function GoalTokenPage() {
                   className="w-full text-left"
                 >
                   <Card
-                    className={`border-border rounded-none shadow-none bg-white transition-colors ${openFaq === i
+                    className={`border-border rounded-none shadow-none bg-background transition-colors ${openFaq === i
                       ? "border-primary"
                       : "hover:border-black"
                       }`}
@@ -405,7 +405,7 @@ export default function GoalTokenPage() {
       </section>
 
       {/* CTA */}
-      <section className="border-t border-border bg-white">
+      <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <div className="text-center">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl mb-3">
@@ -426,7 +426,7 @@ export default function GoalTokenPage() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="font-mono rounded-none border-border bg-white hover:bg-black hover:text-white transition-all" asChild>
+              <Button size="lg" variant="outline" className="font-mono rounded-none border-border bg-background hover:bg-black hover:text-white transition-all" asChild>
                 <a
                   href="https://x.com/GoalScoreFun"
                   target="_blank"
