@@ -23,10 +23,6 @@ import {
     cancelMatchOnChain,
     isChainEnabled,
 } from "../services/chain.js";
-import {
-    postResultToMoltbook,
-    isMoltbookEnabled,
-} from "../services/moltbook.js";
 
 interface UnresolvedMatch {
     id: number;
@@ -202,9 +198,6 @@ async function resolveFinishedMatches(): Promise<void> {
 
             console.log(`[AutoResolve] ✅ Resolved match ${match.id} — tx: ${txHash}`);
 
-            // ── Post-match result summary to Moltbook ──
-            await postMatchResult(match, result, oracleCorrect);
-
             // Delay between resolves to avoid nonce issues
             await new Promise((r) => setTimeout(r, 5000));
         } catch (err: any) {
@@ -215,43 +208,3 @@ async function resolveFinishedMatches(): Promise<void> {
     console.log("[AutoResolve] Cycle complete");
 }
 
-/**
- * Post match result summary to Moltbook after resolution.
- */
-async function postMatchResult(
-    match: UnresolvedMatch,
-    result: number,
-    oracleCorrect: boolean
-): Promise<void> {
-    if (!isMoltbookEnabled()) return;
-
-    try {
-        // Get oracle accuracy stats
-        const stats = db.prepare(`
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN result = oracle_prediction THEN 1 ELSE 0 END) as correct
-            FROM matches
-            WHERE oracle_prediction IS NOT NULL AND resolved = 1
-        `).get() as any;
-
-        const accuracy = stats.total > 0
-            ? ((stats.correct / stats.total) * 100).toFixed(1)
-            : "N/A";
-
-        await postResultToMoltbook({
-            homeTeam: match.home_team,
-            awayTeam: match.away_team,
-            homeScore: match.home_score,
-            awayScore: match.away_score,
-            oraclePrediction: match.oracle_prediction,
-            oracleScore: match.oracle_score || undefined,
-            oracleCorrect,
-            accuracy,
-        });
-
-        console.log(`[AutoResolve] 📝 Result posted to Moltbook for ${match.home_team} vs ${match.away_team}`);
-    } catch (err: any) {
-        console.warn(`[AutoResolve] Moltbook result post failed (non-fatal): ${err.message}`);
-    }
-}
