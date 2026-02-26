@@ -104,6 +104,7 @@ export function initSchema(): void {
     "ALTER TABLE bids ADD COLUMN tx_hash TEXT",
     "ALTER TABLE matches ADD COLUMN resolve_tx_hash TEXT",
     "ALTER TABLE matches ADD COLUMN lucky_supporter TEXT",
+    "ALTER TABLE matches ADD COLUMN onchain_closed INTEGER",
   ];
 
   for (const sql of migrations) {

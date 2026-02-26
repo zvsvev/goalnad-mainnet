@@ -3,6 +3,7 @@ import { db } from "../db/connection.js";
 import { config } from "../config.js";
 import { getMatches, FDMatch } from "../services/footballData.js";
 import { autoResolve } from "./autoResolve.js";
+import { cleanupAccounts } from "./cleanupAccounts.js";
 
 // --- Lazy prepared statement ---
 let _upsertStmt: ReturnType<typeof db.prepare> | null = null;
@@ -149,13 +150,19 @@ export function scheduleSyncJobs() {
         }
     });
 
-    // Sync results every hour, then auto-resolve immediately
+    // Sync results every hour, then auto-resolve + auto-cancel immediately
     cron.schedule("0 * * * *", async () => {
         await syncResults();
         await autoResolve();
     });
 
+    // Close settled market accounts daily to reclaim rent
+    cron.schedule("0 7 * * *", async () => {
+        await cleanupAccounts();
+    });
+
     console.log("⏰ Cron jobs scheduled:");
     console.log("   - Fixture sync: daily at 06:00 UTC");
-    console.log("   - Result sync + auto-resolve: every hour");
+    console.log("   - Result sync + auto-resolve + auto-cancel: every hour");
+    console.log("   - Account cleanup: daily at 07:00 UTC");
 }

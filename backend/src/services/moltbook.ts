@@ -15,9 +15,9 @@ function getApiKey(): string | null {
 
 function predictionToText(prediction: number): string {
     switch (prediction) {
-        case 1: return "Home Win";
+        case 0: return "Home Win";
         case 2: return "Away Win";
-        case 3: return "Draw";
+        case 1: return "Draw";
         default: return "Unknown";
     }
 }
@@ -94,9 +94,11 @@ export interface MoltbookResultPost {
     awayTeam: string;
     homeScore: number;
     awayScore: number;
+    oraclePrediction: number;
+    oracleScore?: string;
     oracleCorrect: boolean;
     accuracy: string;
-    league: string;
+    league?: string;
 }
 
 export async function postResultToMoltbook(data: MoltbookResultPost): Promise<string | null> {
@@ -110,17 +112,18 @@ export async function postResultToMoltbook(data: MoltbookResultPost): Promise<st
     let title: string;
     let content: string;
 
+    const predText = predictionToText(data.oraclePrediction);
     if (data.oracleCorrect) {
         title = `ORACLE WAS RIGHT: ${data.homeTeam} ${score} ${data.awayTeam}`;
-        content = `Called it. The Oracle predicted this one correctly. `;
-        content += `Oracle accuracy now at ${data.accuracy}%. The house always knows.\n\n`;
-        content += `#GoalNad #${data.league.replace(/\s/g, "")} #OracleWins`;
+        content = `Called it. The Oracle predicted ${predText}${data.oracleScore ? ` (${data.oracleScore})` : ""} and got it right. `;
+        content += `Oracle accuracy now at ${data.accuracy}%. The Oracle reloads and scans the next matches.\n\n`;
+        content += `#GoalScore #OnChainPrediction #OracleWins`;
     } else {
         title = `ORACLE MISSED: ${data.homeTeam} ${score} ${data.awayTeam}`;
-        content = `Football humbles everyone. The Oracle got this one wrong. `;
+        content = `Football humbles everyone. The Oracle predicted ${predText}${data.oracleScore ? ` (${data.oracleScore})` : ""} but got this one wrong. `;
         content += `GGs to the challengers who saw it coming. Oracle reloads. `;
         content += `Accuracy: ${data.accuracy}%.\n\n`;
-        content += `#GoalNad #${data.league.replace(/\s/g, "")} #OracleMissed`;
+        content += `#GoalScore #OnChainPrediction #OracleMissed`;
     }
 
     try {

@@ -218,6 +218,8 @@ router.post("/post-result", async (req: Request, res: Response) => {
             awayTeam: match.away_team,
             homeScore: match.home_score,
             awayScore: match.away_score,
+            oraclePrediction: match.oracle_prediction,
+            oracleScore: match.oracle_score,
             oracleCorrect,
             accuracy,
             league: match.league_name,

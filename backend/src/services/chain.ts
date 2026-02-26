@@ -214,6 +214,57 @@ export async function resolveMatchOnChain(
     return tx;
 }
 
+/**
+ * Cancel a match on-chain (postponed / abandoned).
+ * Users can then call refund to get their SOL back.
+ */
+export async function cancelMatchOnChain(
+    matchId: number
+): Promise<string> {
+    const program = getProgram();
+    const oracleKeypair = loadOracleKeypair();
+    const [marketPDA] = getMarketPDA(matchId);
+
+    const tx = await program.methods
+        .cancelMatch(new BN(matchId))
+        .accounts({
+            market: marketPDA,
+            oracle: oracleKeypair.publicKey,
+            systemProgram: SystemProgram.programId,
+        })
+        .signers([oracleKeypair])
+        .rpc();
+
+    console.log(`[Chain] cancelMatch(${matchId}) tx: ${tx}`);
+    await connection.confirmTransaction(tx, "confirmed");
+    return tx;
+}
+
+/**
+ * Close a market account on-chain to reclaim rent.
+ * Only callable after market is resolved or cancelled.
+ */
+export async function closeMarketOnChain(
+    matchId: number
+): Promise<string> {
+    const program = getProgram();
+    const oracleKeypair = loadOracleKeypair();
+    const [marketPDA] = getMarketPDA(matchId);
+
+    const tx = await program.methods
+        .closeMarket(new BN(matchId))
+        .accounts({
+            market: marketPDA,
+            oracle: oracleKeypair.publicKey,
+        })
+        .signers([oracleKeypair])
+        .rpc();
+
+    console.log(`[Chain] closeMarket(${matchId}) tx: ${tx}`);
+    await connection.confirmTransaction(tx, "confirmed");
+    return tx;
+}
+
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 export function lamportsToSol(lamports: number | bigint): number {

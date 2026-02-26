@@ -100,34 +100,44 @@ function filterEligibleMatches(matches) {
  * Call Minimax AI API for prediction
  */
 async function getAIPrediction(match) {
-    const prompt = `You are the GoalNad Oracle, an expert football analyst. Analyze this upcoming match and provide a prediction.
+    const matchDate = new Date(match.utcDate).toLocaleDateString('en-GB', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
 
-Match: ${match.homeTeam.name} vs ${match.awayTeam.name}
-Competition: ${match.competition.name}
-Date: ${new Date(match.utcDate).toLocaleDateString()}
+    const prompt = `You are the GoalScore Oracle — an elite AI football analyst on the GoalScore.fun prediction platform (Solana blockchain). Your analysis is premium content, only visible to $GOAL token holders. Write like a sharp, confident analyst who backs every statement with reasoning.
 
-Analyze:
-1. Recent form (last 5 matches)
-2. Head-to-head record
-3. Home/away performance
-4. Key player availability
-5. Tactical matchup
+MATCH DETAILS:
+- Home: ${match.homeTeam.name}
+- Away: ${match.awayTeam.name}
+- Competition: ${match.competition.name}
+- Date: ${matchDate}
 
-Provide your prediction in this JSON format:
+ANALYSIS INSTRUCTIONS:
+Write a thorough 2-4 paragraph analysis covering:
+
+Paragraph 1 — FORM & MOMENTUM: Analyze both teams' recent form (last 5-8 matches). Mention win streaks, losing runs, goals scored/conceded trends. Reference specific recent results if possible.
+
+Paragraph 2 — TACTICAL & HEAD-TO-HEAD: Discuss the tactical matchup. Which team's style favors this encounter? Reference the historical H2H record at this venue. Note any tactical edges (pressing style vs possession, counter-attack vs high line, etc).
+
+Paragraph 3 — KEY FACTORS: Highlight decisive factors — home advantage, key player influence, injury concerns, fixture congestion, motivation levels (title race, relegation battle, dead rubber), and weather/travel fatigue.
+
+Paragraph 4 — VERDICT: State your prediction clearly with conviction. Explain why you chose this outcome and this exact score. Acknowledge the risk and the alternative scenario.
+
+RESPONSE FORMAT — You MUST respond with valid JSON only, no markdown:
 {
-  "prediction": "1" or "2",
-  "exactScore": "2-1",
-- "1" = Home win, "2" = Away win (DO NOT predict draws)
-- conviction = confidence level (50-100)
-- exactScore = predicted final score
-
-Example JSON:
-{
-  "prediction": "1",
+  "prediction": "0" or "2",
   "exactScore": "2-1",
   "conviction": 75,
-  "reasoning": "..."
+  "analysis": "Full multi-paragraph analysis here. Use proper sentences and line breaks (\\n\\n) between paragraphs."
 }
+
+RULES:
+- "prediction" must be "0" (Home win) or "2" (Away win). NEVER predict a draw.
+- "conviction" is your confidence from 50 to 95. Be honest — don't always say 80+.
+- "exactScore" must be a realistic scoreline matching your prediction.
+- "analysis" MUST be 2-4 paragraphs, minimum 150 words total. This is premium content for paying users.
+- Write with authority but acknowledge uncertainty. Don't hedge everything.
+- NO markdown formatting in the analysis. Plain text only with \\n\\n paragraph breaks.
 `;
 
     console.log(`  🤖 Calling Minimax AI for prediction...`);
@@ -148,7 +158,8 @@ Example JSON:
             role: 'user',
             content: prompt
         }],
-        temperature: 0.7
+        temperature: 0.7,
+        max_tokens: 1500
     };
 
     const response = await httpsRequest(options, requestBody);
@@ -164,7 +175,14 @@ Example JSON:
         throw new Error('Failed to parse AI prediction JSON');
     }
 
-    return JSON.parse(jsonMatch[0]);
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Validate analysis length
+    if (!parsed.analysis || parsed.analysis.length < 100) {
+        throw new Error('AI analysis too short — retrying would be needed');
+    }
+
+    return parsed;
 }
 
 /**
@@ -190,9 +208,9 @@ async function publishPrediction(match, prediction) {
         oracleAddress: CONFIG.oracleWallet,
         prediction: parseInt(prediction.prediction, 10),
         exactScore: prediction.exactScore,
-        conviction: parseInt(prediction.conviction, 10) || 70,
-        reasoning: prediction.reasoning,
-        analysis: `Oracle predicts ${parseInt(prediction.prediction, 10) === 1 ? match.homeTeam.name : match.awayTeam.name} to win (${prediction.exactScore}). Reason: ${prediction.reasoning}`
+        conviction: Math.min(95, Math.max(50, parseInt(prediction.conviction, 10) || 70)),
+        reasoning: prediction.analysis,
+        analysis: prediction.analysis
     };
 
     try {
