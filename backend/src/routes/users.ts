@@ -105,6 +105,7 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
         wallet: user.wallet,
         username: user.username || null,
         avatar_seed: user.avatar_seed || wallet,
+        email: user.email || null,
         referral_code: user.referral_code || null,
         privy_id: null,
         created_at: user.created_at,
@@ -193,6 +194,29 @@ router.post("/update-avatar", (req: Request, res: Response) => {
     db.prepare("UPDATE users SET avatar_seed = ? WHERE wallet = ?").run(avatarSeed, wallet);
 
     res.json({ success: true, avatar_seed: avatarSeed });
+});
+
+// ─── POST /api/users/update-email ───────────────────────────────────
+
+router.post("/update-email", (req: Request, res: Response) => {
+    const { wallet, email } = req.body;
+
+    if (!wallet) {
+        return res.status(400).json({ error: "wallet is required" });
+    }
+
+    // Allow clearing email by sending null/empty
+    const cleanEmail = email ? email.trim().toLowerCase() : null;
+
+    if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+        return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    ensureUserRow(wallet);
+
+    db.prepare("UPDATE users SET email = ? WHERE wallet = ?").run(cleanEmail, wallet);
+
+    res.json({ success: true, email: cleanEmail });
 });
 
 // ─── GET /api/users/:wallet/pnl ──────────────────────────────────────

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth/solana";
 import { Button } from "@/components/ui/button";
-import { Wallet, LogOut, User, ChevronDown, Sun, Moon } from "lucide-react";
+import { Wallet, LogOut, User, ChevronDown, Sun, Moon, Settings } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
 
@@ -95,6 +95,14 @@ export function Navbar() {
                   >
                     <User className="h-3.5 w-3.5 text-primary" />
                     My Profile
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-secondary/50 transition-colors"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <Settings className="h-3.5 w-3.5 text-primary" />
+                    Settings
                   </Link>
                   <button
                     onClick={() => { logout(); setDropdownOpen(false); }}

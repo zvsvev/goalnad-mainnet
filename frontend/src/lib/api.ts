@@ -71,6 +71,7 @@ export interface ApiUserProfile {
   wallet: string;
   username: string | null;
   avatar_seed: string;
+  email: string | null;
   referral_code: string | null;
   privy_id: string | null;
   created_at: string;
@@ -173,6 +174,17 @@ export async function updateAvatar(wallet: string, avatarSeed: string): Promise<
     body: JSON.stringify({ wallet, avatarSeed }),
   });
   return res.json();
+}
+
+export async function updateEmail(wallet: string, email: string | null): Promise<{ success: boolean; error?: string }> {
+  const res = await fetch(`${API_URL}/api/users/update-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ wallet, email }),
+  });
+  const data = await res.json();
+  if (!res.ok) return { success: false, error: data.error };
+  return { success: true };
 }
 
 export async function fetchPnl(wallet: string): Promise<PnlEntry[]> {

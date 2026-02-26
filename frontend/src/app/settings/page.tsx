@@ -1,0 +1,777 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePrivy } from "@privy-io/react-auth";
+import { useWallets } from "@privy-io/react-auth/solana";
+import {
+    ArrowLeft,
+    Loader2,
+    Copy,
+    Check,
+    Pencil,
+    Shuffle,
+    Mail,
+    Twitter,
+    Wallet,
+    User,
+    Settings,
+    ExternalLink,
+    Link2,
+    AlertCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Navbar } from "@/components/navbar";
+import { Footer } from "@/components/footer";
+import { showToast } from "@/components/ui/toast";
+import {
+    fetchUserProfile,
+    claimUsername,
+    updateAvatar,
+    updateEmail,
+    type ApiUserProfile,
+} from "@/lib/api";
+
+// ─── Helpers ──────────────────────────────────────────────────────────
+
+function shortAddr(addr: string) {
+    return addr.slice(0, 6) + "…" + addr.slice(-4);
+}
+
+function diceBearUrl(seed: string) {
+    return `https://api.dicebear.com/9.x/pixel-art/svg?seed=${encodeURIComponent(seed)}&backgroundColor=transparent`;
+}
+
+// ─── Section Wrapper ────────────────────────────────────────────────
+
+function SettingsSection({
+    icon: Icon,
+    title,
+    description,
+    children,
+}: {
+    icon: React.ElementType;
+    title: string;
+    description?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <Card className="border-border rounded-none shadow-none bg-background">
+            <CardContent className="pt-5 pb-5">
+                <div className="flex items-center gap-2 mb-1">
+                    <Icon className="h-4 w-4 text-primary" />
+                    <h2 className="font-mono text-sm font-bold uppercase tracking-wider">
+                        {title}
+                    </h2>
+                </div>
+                {description && (
+                    <p className="text-xs text-muted-foreground mb-4">{description}</p>
+                )}
+                <div className="mt-3">{children}</div>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ─── Avatar Section ─────────────────────────────────────────────────
+
+function AvatarSection({
+    currentSeed,
+    wallet,
+    onUpdate,
+}: {
+    currentSeed: string;
+    wallet: string;
+    onUpdate: (seed: string) => void;
+}) {
+    const [picking, setPicking] = useState(false);
+    const [seeds, setSeeds] = useState<string[]>([]);
+
+    const generateSeeds = () => {
+        const newSeeds = Array.from({ length: 8 }, () =>
+            Math.random().toString(36).slice(2, 10)
+        );
+        setSeeds(newSeeds);
+    };
+
+    const handlePick = async (seed: string) => {
+        const result = await updateAvatar(wallet, seed);
+        if (result.success) {
+            onUpdate(seed);
+            setPicking(false);
+            showToast({ type: "success", message: "Avatar updated!" });
+        }
+    };
+
+    return (
+        <SettingsSection
+            icon={User}
+            title="Avatar"
+            description="Choose a pixel-art avatar for your profile"
+        >
+            <div className="flex items-center gap-4">
+                <div className="h-20 w-20 rounded-none border-2 border-primary/30 bg-primary/5 overflow-hidden shrink-0">
+                    <img
+                        src={diceBearUrl(currentSeed)}
+                        alt="current avatar"
+                        className="w-full h-full"
+                    />
+                </div>
+                <div className="flex-1">
+                    {!picking ? (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="font-mono text-xs rounded-none border-border"
+                            onClick={() => {
+                                generateSeeds();
+                                setPicking(true);
+                            }}
+                        >
+                            <Pencil className="mr-1.5 h-3 w-3" />
+                            Change Avatar
+                        </Button>
+                    ) : (
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+                                    Pick an avatar
+                                </span>
+                                <button
+                                    onClick={generateSeeds}
+                                    className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
+                                >
+                                    <Shuffle className="h-2.5 w-2.5" />
+                                    Randomize
+                                </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-2">
+                                {seeds.map((seed) => (
+                                    <button
+                                        key={seed}
+                                        onClick={() => handlePick(seed)}
+                                        className={`border-2 p-1 transition-colors rounded-none hover:border-primary ${currentSeed === seed
+                                                ? "border-primary"
+                                                : "border-border"
+                                            }`}
+                                    >
+                                        <img
+                                            src={diceBearUrl(seed)}
+                                            alt="avatar option"
+                                            className="w-full aspect-square"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setPicking(false)}
+                                className="mt-2 text-[10px] font-mono text-muted-foreground hover:text-foreground"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </SettingsSection>
+    );
+}
+
+// ─── Username Section ───────────────────────────────────────────────
+
+function UsernameSection({
+    username,
+    wallet,
+    onClaim,
+}: {
+    username: string | null;
+    wallet: string;
+    onClaim: (username: string) => void;
+}) {
+    const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleClaim = async () => {
+        setError(null);
+        setLoading(true);
+        const result = await claimUsername(wallet, input.toLowerCase().trim());
+        setLoading(false);
+        if (result.success) {
+            onClaim(input.toLowerCase().trim());
+            showToast({
+                type: "success",
+                message: `Username @${input.toLowerCase().trim()} claimed!`,
+            });
+        } else {
+            setError(result.error || "Failed to claim");
+        }
+    };
+
+    return (
+        <SettingsSection
+            icon={User}
+            title="Username"
+            description={
+                username
+                    ? "Your username is set and cannot be changed"
+                    : "Claim a unique username (one-time only)"
+            }
+        >
+            {username ? (
+                <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm text-primary font-bold">
+                        @{username}
+                    </span>
+                    <Badge
+                        variant="outline"
+                        className="text-[9px] font-mono rounded-none border-primary/30 text-primary"
+                    >
+                        Claimed
+                    </Badge>
+                </div>
+            ) : (
+                <div>
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <span className="absolute left-2.5 top-2 text-muted-foreground text-sm">
+                                @
+                            </span>
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => {
+                                    setInput(e.target.value.replace(/[^a-z0-9_]/gi, ""));
+                                    setError(null);
+                                }}
+                                placeholder="username"
+                                maxLength={20}
+                                className="w-full pl-7 pr-3 py-1.5 rounded-none border border-border bg-background font-mono text-sm focus:outline-none focus:border-primary lowercase"
+                            />
+                        </div>
+                        <Button
+                            onClick={handleClaim}
+                            disabled={input.length < 3 || loading}
+                            className="font-mono text-xs bg-primary text-background hover:bg-foreground hover:text-background rounded-none border-none"
+                            size="sm"
+                        >
+                            {loading ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                                "Claim"
+                            )}
+                        </Button>
+                    </div>
+                    {error && (
+                        <p className="text-red-400 text-[10px] font-mono mt-1 flex items-center gap-1">
+                            <AlertCircle className="h-2.5 w-2.5" />
+                            {error}
+                        </p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                        3-20 chars, lowercase letters, numbers, underscores
+                    </p>
+                </div>
+            )}
+        </SettingsSection>
+    );
+}
+
+// ─── Email Section ──────────────────────────────────────────────────
+
+function EmailSection({
+    profile,
+    wallet,
+    onUpdate,
+}: {
+    profile: ApiUserProfile;
+    wallet: string;
+    onUpdate: (email: string | null) => void;
+}) {
+    const { user: privyUser, linkEmail, unlinkEmail } = usePrivy();
+    const privyEmail = privyUser?.email?.address ?? null;
+    const dbEmail = profile.email;
+    const displayEmail = privyEmail || dbEmail;
+
+    const [input, setInput] = useState(dbEmail || "");
+    const [editing, setEditing] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSaveEmail = async () => {
+        setError(null);
+        setLoading(true);
+        const cleanEmail = input.trim().toLowerCase();
+        if (cleanEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+            setError("Invalid email address");
+            setLoading(false);
+            return;
+        }
+        const result = await updateEmail(wallet, cleanEmail || null);
+        setLoading(false);
+        if (result.success) {
+            onUpdate(cleanEmail || null);
+            setEditing(false);
+            showToast({ type: "success", message: "Email updated!" });
+        } else {
+            setError(result.error || "Failed to update");
+        }
+    };
+
+    const handleLinkEmail = async () => {
+        try {
+            await linkEmail();
+        } catch (e) {
+            // User cancelled
+        }
+    };
+
+    const handleUnlinkEmail = async () => {
+        if (!privyEmail) return;
+        try {
+            // Find the linked account to unlink
+            const emailAccount = privyUser?.linkedAccounts?.find(
+                (a: any) => a.type === "email"
+            );
+            if (emailAccount) {
+                await unlinkEmail(privyEmail);
+                showToast({ type: "success", message: "Email unlinked!" });
+            }
+        } catch (e) {
+            showToast({ type: "error", message: "Failed to unlink email" });
+        }
+    };
+
+    return (
+        <SettingsSection
+            icon={Mail}
+            title="Email"
+            description="Connect your email for notifications and recovery"
+        >
+            <div className="space-y-3">
+                {/* Privy-linked email */}
+                {privyEmail && (
+                    <div className="flex items-center justify-between gap-2 p-2.5 border border-border rounded-none bg-background">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <Mail className="h-3.5 w-3.5 text-primary shrink-0" />
+                            <span className="font-mono text-xs truncate">{privyEmail}</span>
+                            <Badge
+                                variant="outline"
+                                className="text-[8px] font-mono rounded-none border-primary/30 text-primary shrink-0"
+                            >
+                                Privy
+                            </Badge>
+                        </div>
+                        <button
+                            onClick={handleUnlinkEmail}
+                            className="text-[10px] font-mono text-destructive hover:underline shrink-0"
+                        >
+                            Unlink
+                        </button>
+                    </div>
+                )}
+
+                {!privyEmail && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="font-mono text-xs rounded-none border-border w-full"
+                        onClick={handleLinkEmail}
+                    >
+                        <Link2 className="mr-1.5 h-3 w-3" />
+                        Link Email via Privy
+                    </Button>
+                )}
+
+                <Separator className="opacity-30" />
+
+                {/* Custom email (stored in DB) */}
+                <div>
+                    <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
+                        Custom Email
+                    </p>
+                    {!editing ? (
+                        <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono text-xs text-muted-foreground">
+                                {dbEmail || "Not set"}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    setInput(dbEmail || "");
+                                    setEditing(true);
+                                }}
+                                className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
+                            >
+                                <Pencil className="h-2.5 w-2.5" />
+                                {dbEmail ? "Edit" : "Add"}
+                            </button>
+                        </div>
+                    ) : (
+                        <div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="email"
+                                    value={input}
+                                    onChange={(e) => {
+                                        setInput(e.target.value);
+                                        setError(null);
+                                    }}
+                                    placeholder="user@example.com"
+                                    className="flex-1 px-3 py-1.5 rounded-none border border-border bg-background font-mono text-sm focus:outline-none focus:border-primary"
+                                />
+                                <Button
+                                    onClick={handleSaveEmail}
+                                    disabled={loading}
+                                    className="font-mono text-xs bg-primary text-background hover:bg-foreground hover:text-background rounded-none border-none"
+                                    size="sm"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                        "Save"
+                                    )}
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="font-mono text-xs rounded-none border-border"
+                                    onClick={() => {
+                                        setEditing(false);
+                                        setError(null);
+                                    }}
+                                >
+                                    Cancel
+                                </Button>
+                            </div>
+                            {error && (
+                                <p className="text-red-400 text-[10px] font-mono mt-1 flex items-center gap-1">
+                                    <AlertCircle className="h-2.5 w-2.5" />
+                                    {error}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </SettingsSection>
+    );
+}
+
+// ─── Social Connections Section ─────────────────────────────────────
+
+function SocialSection() {
+    const { user: privyUser, linkTwitter, unlinkTwitter, linkGoogle, unlinkGoogle } = usePrivy();
+    const privyTwitter = (privyUser as any)?.twitter?.username ?? null;
+    const privyGoogle = privyUser?.google?.email ?? null;
+
+    const handleLinkTwitter = async () => {
+        try {
+            await linkTwitter();
+        } catch (e) {
+            // User cancelled
+        }
+    };
+
+    const handleUnlinkTwitter = async () => {
+        if (!privyTwitter) return;
+        try {
+            const twitterAccount = privyUser?.linkedAccounts?.find(
+                (a: any) => a.type === "twitter_oauth"
+            );
+            if (twitterAccount) {
+                await unlinkTwitter((twitterAccount as any).subject);
+                showToast({ type: "success", message: "Twitter unlinked!" });
+            }
+        } catch (e) {
+            showToast({ type: "error", message: "Failed to unlink Twitter" });
+        }
+    };
+
+    const handleLinkGoogle = async () => {
+        try {
+            await linkGoogle();
+        } catch (e) {
+            // User cancelled
+        }
+    };
+
+    const handleUnlinkGoogle = async () => {
+        if (!privyGoogle) return;
+        try {
+            const googleAccount = privyUser?.linkedAccounts?.find(
+                (a: any) => a.type === "google_oauth"
+            );
+            if (googleAccount) {
+                await unlinkGoogle((googleAccount as any).subject);
+                showToast({ type: "success", message: "Google unlinked!" });
+            }
+        } catch (e) {
+            showToast({ type: "error", message: "Failed to unlink Google" });
+        }
+    };
+
+    return (
+        <SettingsSection
+            icon={Link2}
+            title="Social Connections"
+            description="Link your social accounts for identity verification"
+        >
+            <div className="space-y-2">
+                {/* Twitter */}
+                <div className="flex items-center justify-between gap-2 p-2.5 border border-border rounded-none bg-background">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Twitter className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        {privyTwitter ? (
+                            <>
+                                <span className="font-mono text-xs">@{privyTwitter}</span>
+                                <Badge
+                                    variant="outline"
+                                    className="text-[8px] font-mono rounded-none border-green-400/30 text-green-400 shrink-0"
+                                >
+                                    Connected
+                                </Badge>
+                            </>
+                        ) : (
+                            <span className="font-mono text-xs text-muted-foreground">
+                                X/Twitter — Not connected
+                            </span>
+                        )}
+                    </div>
+                    {privyTwitter ? (
+                        <button
+                            onClick={handleUnlinkTwitter}
+                            className="text-[10px] font-mono text-destructive hover:underline shrink-0"
+                        >
+                            Unlink
+                        </button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="font-mono text-[10px] rounded-none border-border h-7"
+                            onClick={handleLinkTwitter}
+                        >
+                            Connect
+                        </Button>
+                    )}
+                </div>
+
+                {/* Google */}
+                <div className="flex items-center justify-between gap-2 p-2.5 border border-border rounded-none bg-background">
+                    <div className="flex items-center gap-2 min-w-0">
+                        <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                        {privyGoogle ? (
+                            <>
+                                <span className="font-mono text-xs truncate">{privyGoogle}</span>
+                                <Badge
+                                    variant="outline"
+                                    className="text-[8px] font-mono rounded-none border-green-400/30 text-green-400 shrink-0"
+                                >
+                                    Connected
+                                </Badge>
+                            </>
+                        ) : (
+                            <span className="font-mono text-xs text-muted-foreground">
+                                Google — Not connected
+                            </span>
+                        )}
+                    </div>
+                    {privyGoogle ? (
+                        <button
+                            onClick={handleUnlinkGoogle}
+                            className="text-[10px] font-mono text-destructive hover:underline shrink-0"
+                        >
+                            Unlink
+                        </button>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="font-mono text-[10px] rounded-none border-border h-7"
+                            onClick={handleLinkGoogle}
+                        >
+                            Connect
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </SettingsSection>
+    );
+}
+
+// ─── Wallet Section ─────────────────────────────────────────────────
+
+function WalletSection({ wallet }: { wallet: string }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(wallet);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <SettingsSection
+            icon={Wallet}
+            title="Wallet"
+            description="Your connected Solana wallet address"
+        >
+            <div className="flex items-center gap-2">
+                <code className="flex-1 overflow-x-auto rounded-none border border-border bg-background px-3 py-2 font-mono text-xs text-muted-foreground select-all">
+                    {wallet}
+                </code>
+                <button
+                    onClick={handleCopy}
+                    className="shrink-0 rounded-none border border-border bg-background p-2 hover:bg-primary hover:text-background transition-colors"
+                >
+                    {copied ? (
+                        <Check className="h-3.5 w-3.5" />
+                    ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                    )}
+                </button>
+                <a
+                    href={`https://solscan.io/account/${wallet}?cluster=devnet`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 rounded-none border border-border bg-background p-2 hover:bg-primary hover:text-background transition-colors"
+                >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+            </div>
+        </SettingsSection>
+    );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────
+
+export default function SettingsPage() {
+    const router = useRouter();
+    const { ready, authenticated } = usePrivy();
+    const { wallets } = useWallets();
+    const currentWallet = wallets[0]?.address ?? null;
+
+    const [profile, setProfile] = useState<ApiUserProfile | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    const loadProfile = useCallback(async () => {
+        if (!currentWallet) return;
+        try {
+            const data = await fetchUserProfile(currentWallet);
+            setProfile(data);
+        } catch (e) {
+            console.error("Failed to load profile:", e);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentWallet]);
+
+    useEffect(() => {
+        if (ready && !authenticated) {
+            router.replace("/");
+            return;
+        }
+        if (currentWallet) {
+            loadProfile();
+        }
+    }, [ready, authenticated, currentWallet, loadProfile, router]);
+
+    if (!ready || loading) {
+        return (
+            <div className="min-h-screen">
+                <Navbar />
+                <div className="flex items-center justify-center py-32">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+                <Footer />
+            </div>
+        );
+    }
+
+    if (!authenticated || !currentWallet) {
+        return null; // Redirect handled in useEffect
+    }
+
+    const wallet = currentWallet;
+    const avatarSeed = profile?.avatar_seed ?? wallet;
+
+    return (
+        <div className="min-h-screen">
+            <Navbar />
+
+            <div className="mx-auto max-w-2xl px-4 py-6 sm:py-12">
+                {/* Header */}
+                <div className="mb-6 sm:mb-8 flex items-center justify-between">
+                    <Link
+                        href={
+                            profile?.username
+                                ? `/u/@${profile.username}`
+                                : `/u/${wallet}`
+                        }
+                        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        Back to Profile
+                    </Link>
+                </div>
+
+                <div className="mb-8">
+                    <div className="flex items-center gap-3">
+                        <Settings className="h-6 w-6 text-primary" />
+                        <h1 className="text-2xl font-bold font-mono">Settings</h1>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1 ml-9">
+                        Manage your profile and account settings
+                    </p>
+                </div>
+
+                {/* Settings Sections */}
+                <div className="space-y-4">
+                    <AvatarSection
+                        currentSeed={avatarSeed}
+                        wallet={wallet}
+                        onUpdate={(seed) => {
+                            if (profile) setProfile({ ...profile, avatar_seed: seed });
+                        }}
+                    />
+
+                    <UsernameSection
+                        username={profile?.username ?? null}
+                        wallet={wallet}
+                        onClaim={(u) => {
+                            if (profile) setProfile({ ...profile, username: u });
+                        }}
+                    />
+
+                    <EmailSection
+                        profile={profile ?? {
+                            wallet,
+                            username: null,
+                            avatar_seed: wallet,
+                            email: null,
+                            referral_code: null,
+                            privy_id: null,
+                            created_at: "",
+                            stats: { total_bets: 0, wins: 0, losses: 0, draws: 0, win_rate: 0, total_wagered: 0, total_claimed: 0 },
+                            recent_bets: [],
+                        }}
+                        wallet={wallet}
+                        onUpdate={(email) => {
+                            if (profile) setProfile({ ...profile, email });
+                        }}
+                    />
+
+                    <SocialSection />
+
+                    <WalletSection wallet={wallet} />
+                </div>
+            </div>
+
+            <Footer />
+        </div>
+    );
+}
