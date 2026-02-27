@@ -99,34 +99,9 @@ function AvatarSection({
     onUpdate: (update: { avatar_seed?: string; avatar_url?: string | null }) => void;
 }) {
     const [uploading, setUploading] = useState(false);
-    const [picking, setPicking] = useState(false);
-    const [seeds, setSeeds] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const displayUrl = avatarDisplayUrl(avatarUrl, currentSeed);
-
-    const generateSeeds = () => {
-        const newSeeds = Array.from({ length: 8 }, () =>
-            Math.random().toString(36).slice(2, 10)
-        );
-        setSeeds(newSeeds);
-    };
-
-    const handlePickSeed = async (seed: string) => {
-        try {
-            const result = await updateAvatar(wallet, seed);
-            if (result.success) {
-                onUpdate({ avatar_seed: seed, avatar_url: null });
-                setPicking(false);
-                showToast({ type: "success", message: "Avatar updated!" });
-            } else {
-                showToast({ type: "error", message: "Failed to update avatar" });
-            }
-        } catch (e) {
-            console.error("Avatar update error:", e);
-            showToast({ type: "error", message: "Network error — check your connection" });
-        }
-    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -167,7 +142,7 @@ function AvatarSection({
         <SettingsSection
             icon={User}
             title="Avatar"
-            description="Upload a custom image or pick a pixel-art avatar"
+            description="Upload a custom profile image (default: random pixel-art)"
         >
             <div className="flex items-start gap-4">
                 <div className="h-20 w-20 rounded-none border-2 border-primary/30 bg-primary/5 overflow-hidden shrink-0">
@@ -185,29 +160,6 @@ function AvatarSection({
                         {uploading ? "Uploading..." : "Upload Image"}
                     </Button>
                     <p className="text-[10px] text-muted-foreground">PNG, JPG, GIF, WebP — max 500KB</p>
-
-                    {!picking ? (
-                        <button onClick={() => { generateSeeds(); setPicking(true); }} className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1">
-                            <Shuffle className="h-2.5 w-2.5" /> Or pick a pixel-art avatar
-                        </button>
-                    ) : (
-                        <div className="p-2 border border-border rounded-none bg-background">
-                            <div className="flex items-center justify-between mb-2">
-                                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">Pick an avatar</span>
-                                <button onClick={generateSeeds} className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1">
-                                    <Shuffle className="h-2.5 w-2.5" /> Randomize
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-4 gap-1.5">
-                                {seeds.map((seed) => (
-                                    <button key={seed} onClick={() => handlePickSeed(seed)} className={`border-2 p-0.5 transition-colors rounded-none hover:border-primary ${currentSeed === seed && !avatarUrl ? "border-primary" : "border-border"}`}>
-                                        <img src={diceBearUrl(seed)} alt="avatar option" className="w-full aspect-square" />
-                                    </button>
-                                ))}
-                            </div>
-                            <button onClick={() => setPicking(false)} className="mt-1.5 text-[10px] font-mono text-muted-foreground hover:text-foreground">Cancel</button>
-                        </div>
-                    )}
                 </div>
             </div>
         </SettingsSection>
