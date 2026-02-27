@@ -1,4 +1,8 @@
-const RAW_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+let RAW_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+// Auto-prepend https:// if no protocol specified
+if (RAW_URL && !RAW_URL.startsWith("http://") && !RAW_URL.startsWith("https://")) {
+  RAW_URL = `https://${RAW_URL}`;
+}
 // Strip trailing /api or /api/ to prevent double-prefix
 const API_URL = RAW_URL.replace(/\/api\/?$/, "");
 export { API_URL };
