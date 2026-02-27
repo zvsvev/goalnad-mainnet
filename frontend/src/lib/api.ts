@@ -1,9 +1,5 @@
-function resolveApiUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  const url = raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`;
-  return url.replace(/\/api\/?$/, "");
-}
-const API_URL = resolveApiUrl();
+const _raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = (_raw.startsWith("http") ? _raw : "https://" + _raw).replace(/\/api\/?$/, "");
 export { API_URL };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
