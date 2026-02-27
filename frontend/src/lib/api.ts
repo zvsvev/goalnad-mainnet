@@ -1,6 +1,7 @@
 const RAW_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 // Strip trailing /api or /api/ to prevent double-prefix
 const API_URL = RAW_URL.replace(/\/api\/?$/, "");
+export { API_URL };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
