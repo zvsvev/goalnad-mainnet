@@ -20,6 +20,7 @@ import {
     ExternalLink,
     Link2,
     AlertCircle,
+    Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,6 +35,7 @@ import {
     updateAvatar,
     updateEmail,
     uploadAvatar,
+    fetchReferral,
     type ApiUserProfile,
 } from "@/lib/api";
 
@@ -690,6 +692,81 @@ function WalletSection({ wallet }: { wallet: string }) {
     );
 }
 
+// ─── Referral Section ─────────────────────────────────────────────
+
+function ReferralSection({ wallet }: { wallet: string }) {
+    const [referralLink, setReferralLink] = useState<string | null>(null);
+    const [referralCode, setReferralCode] = useState<string | null>(null);
+    const [referredCount, setReferredCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [copied, setCopied] = useState(false);
+
+    useEffect(() => {
+        async function load() {
+            try {
+                const data = await fetchReferral(wallet);
+                setReferralCode(data.referral_code);
+                setReferralLink(data.referral_link);
+                setReferredCount(data.referred_count);
+            } catch (e) {
+                console.error("Failed to load referral:", e);
+            } finally {
+                setLoading(false);
+            }
+        }
+        load();
+    }, [wallet]);
+
+    const handleCopy = async () => {
+        if (!referralLink) return;
+        await navigator.clipboard.writeText(referralLink);
+        setCopied(true);
+        showToast({ type: "success", message: "Referral link copied!" });
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <SettingsSection
+            icon={Share2}
+            title="Referral"
+            description="Share your referral link and earn rewards"
+        >
+            {loading ? (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <span className="font-mono text-xs">Loading...</span>
+                </div>
+            ) : referralLink ? (
+                <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                        <code className="flex-1 overflow-x-auto rounded-none border border-border bg-background px-3 py-2 font-mono text-xs text-muted-foreground select-all">
+                            {referralLink}
+                        </code>
+                        <button
+                            onClick={handleCopy}
+                            className="shrink-0 rounded-none border border-border bg-background p-2 hover:bg-primary hover:text-background transition-colors"
+                        >
+                            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                        </button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-[9px] font-mono rounded-none border-primary/30 text-primary">
+                            Code: {referralCode}
+                        </Badge>
+                        <span className="font-mono text-xs text-muted-foreground">
+                            {referredCount} {referredCount === 1 ? "referral" : "referrals"}
+                        </span>
+                    </div>
+                </div>
+            ) : (
+                <p className="font-mono text-xs text-muted-foreground">
+                    Claim a username to get your referral link
+                </p>
+            )}
+        </SettingsSection>
+    );
+}
+
 // ─── Main Page ──────────────────────────────────────────────────────
 
 export default function SettingsPage() {
@@ -813,6 +890,8 @@ export default function SettingsPage() {
                     <SocialSection />
 
                     <WalletSection wallet={wallet} />
+
+                    <ReferralSection wallet={wallet} />
                 </div>
             </div>
 
