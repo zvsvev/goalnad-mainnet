@@ -115,3 +115,24 @@ Anchor program handling the match lifecycle on Solana:
 - Fixed leaderboard API data mismatch (`agents` vs `players`)
 - Added protocol auto-detection for API URL configuration
 - Profile page with P&L chart, share cards, referral links
+- Added **Sentry** (error monitoring), **PostHog** (analytics), and **Resend** (email notifications) integrations
+
+## Environment Variables & External Services
+
+To run the complete platform, the following external accounts and environment variables are required:
+
+### Frontend (`frontend/.env.local` / Vercel)
+- `NEXT_PUBLIC_SOLANA_RPC_URL` — Solana RPC endpoint (e.g. Helius, devnet/mainnet)
+- `NEXT_PUBLIC_GOAL_TOKEN_MINT` — $GOAL SPL Token address for gating features
+- `NEXT_PUBLIC_TREASURY_ADDRESS` — Treasury wallet address to collect 1% fee
+- `NEXT_PUBLIC_API_URL` — Node.js backend URL
+- `NEXT_PUBLIC_SENTRY_DSN` — **Sentry.io** DSN for Next.js error tracking (Required for monitoring)
+- `NEXT_PUBLIC_POSTHOG_API_KEY` — **PostHog.com** project API key for product analytics (Required for analytics)
+- `NEXT_PUBLIC_POSTHOG_HOST` — **PostHog.com** instance host (e.g. `https://us.i.posthog.com`)
+
+### Backend (`backend/.env` / Railway)
+- `DATABASE_URL` — SQLite / PostgreSQL connection string
+- `SOLANA_RPC_URL` — Solana RPC endpoint for event indexer
+- `FOOTBALL_DATA_TOKEN` — **football-data.org** API token for syncing match fixtures
+- `SENTRY_DSN` — **Sentry.io** DSN for Node.js backend error tracking (Required for monitoring)
+- `RESEND_API_KEY` — **Resend.com** API key for sending transactional emails (Required for email alerts)
