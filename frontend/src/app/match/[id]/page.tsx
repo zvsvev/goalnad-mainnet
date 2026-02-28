@@ -954,8 +954,10 @@ export default function MatchPage() {
               <div className="space-y-1 max-h-96 overflow-y-auto">
                 {comments.map((c) => (
                   <div key={c.id} className="flex items-start gap-2 border border-border bg-background p-2">
-                    <img
+                    <Image
                       src={c.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${c.avatar_seed}`}
+                      width={20}
+                      height={20}
                       alt=""
                       className="h-5 w-5 rounded-none border border-border shrink-0 mt-0.5 object-cover"
                     />

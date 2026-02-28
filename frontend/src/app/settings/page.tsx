@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth/solana";
 import {
@@ -146,7 +147,7 @@ function AvatarSection({
         >
             <div className="flex items-start gap-4">
                 <div className="h-20 w-20 rounded-none border-2 border-primary/30 bg-primary/5 overflow-hidden shrink-0">
-                    <img src={displayUrl} alt="current avatar" className="w-full h-full object-cover" />
+                    <Image src={displayUrl} width={80} height={80} alt="current avatar" className="w-full h-full object-cover" />
                 </div>
                 <div className="flex-1 space-y-2">
                     <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={handleFileUpload} className="hidden" />

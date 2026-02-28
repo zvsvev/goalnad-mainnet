@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ExternalLink,
   Copy,
@@ -16,6 +17,7 @@ import {
   Trophy,
   HelpCircle,
   ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
+
 
 // Placeholder — update once $GOAL is deployed on Solana
 const GOAL_MINT = "AinZf6mvHp2eoJq2WQZc5UEUAMfTkqRVkkiFE3DF9uPV";
@@ -55,6 +58,47 @@ const FAQ_ITEMS = [
   },
 ];
 
+function LiveBurnStats() {
+  const [burned, setBurned] = useState<string>("...");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchBurn() {
+      try {
+        const res = await fetch("/api/goal-burn");
+        const data = await res.json();
+        if (data.burned) setBurned(data.burned);
+      } catch (err) {
+        console.error("Failed to fetch burn stats", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchBurn();
+    const interval = setInterval(fetchBurn, 30000); // refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center">
+      <div className="flex items-center gap-3">
+        {loading ? (
+          <RefreshCw className="h-6 w-6 animate-spin text-orange-400" />
+        ) : (
+          <Flame className="h-8 w-8 text-orange-500 animate-pulse" />
+        )}
+        <span className="text-4xl sm:text-5xl font-bold font-mono text-foreground">
+          {burned}
+        </span>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">
+        Updated automatically from on-chain data
+      </p>
+    </div>
+  );
+}
+
 export default function GoalTokenPage() {
   const [copied, setCopied] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -76,8 +120,10 @@ export default function GoalTokenPage() {
             <MotionWrapper delay={0}>
               <div className="mb-8 inline-flex items-center justify-center">
                 <div className="relative">
-                  <img
+                  <Image
                     src="/logo.png"
+                    width={160}
+                    height={160}
                     alt="$GOAL Token"
                     className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-none"
                   />
@@ -256,6 +302,31 @@ export default function GoalTokenPage() {
               </MotionWrapper>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Live Burn Dashboard */}
+      <section className="border-t border-border bg-background">
+        <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
+          <MotionWrapper delay={0.05}>
+            <div className="text-center mb-8">
+              <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center justify-center gap-2">
+                <Flame className="h-5 w-5 text-orange-400" />
+                Live Burn Stats
+              </h2>
+            </div>
+          </MotionWrapper>
+
+          <MotionWrapper delay={0.1}>
+            <Card className="border-border rounded-none shadow-none bg-background mx-auto max-w-2xl text-center">
+              <CardContent className="pt-8 pb-8">
+                <p className="font-mono text-xs text-muted-foreground uppercase tracking-widest mb-3">
+                  Total $GOAL Burned
+                </p>
+                <LiveBurnStats />
+              </CardContent>
+            </Card>
+          </MotionWrapper>
         </div>
       </section>
 

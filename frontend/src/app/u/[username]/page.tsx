@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth/solana";
 import {
@@ -230,8 +231,10 @@ function AvatarPicker({
             className={`border-2 p-1 transition-colors rounded-none hover:border-primary ${currentSeed === seed ? "border-primary" : "border-border"
               }`}
           >
-            <img
+            <Image
               src={diceBearUrl(seed)}
+              width={96}
+              height={96}
               alt="avatar option"
               className="w-full aspect-square"
             />
@@ -515,8 +518,10 @@ export default function UserProfilePage() {
             {/* DiceBear Avatar */}
             <div className="shrink-0">
               <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-none border-2 border-primary/30 bg-primary/5 overflow-hidden">
-                <img
+                <Image
                   src={getAvatarUrl(profile, wallet)}
+                  width={80}
+                  height={80}
                   alt="avatar"
                   className="w-full h-full object-cover"
                 />

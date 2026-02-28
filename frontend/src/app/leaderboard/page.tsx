@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -86,8 +87,8 @@ export default function LeaderboardPage() {
                                 key={p.value}
                                 onClick={() => setPeriod(p.value)}
                                 className={`px-3 py-1.5 rounded-none font-mono text-xs transition-all border border-border ${period === p.value
-                                        ? "bg-foreground text-background"
-                                        : "bg-background text-muted-foreground hover:bg-foreground hover:text-background"
+                                    ? "bg-foreground text-background"
+                                    : "bg-background text-muted-foreground hover:bg-foreground hover:text-background"
                                     }`}
                             >
                                 {p.label}
@@ -103,8 +104,8 @@ export default function LeaderboardPage() {
                                 key={s.value}
                                 onClick={() => setSort(s.value)}
                                 className={`px-2.5 py-1 rounded-none font-mono text-[10px] transition-all border border-border ${sort === s.value
-                                        ? "bg-primary text-background border-primary"
-                                        : "bg-background text-muted-foreground hover:border-primary/50"
+                                    ? "bg-primary text-background border-primary"
+                                    : "bg-background text-muted-foreground hover:border-primary/50"
                                     }`}
                             >
                                 {s.label}
@@ -149,8 +150,10 @@ export default function LeaderboardPage() {
                                             {i + 1}
                                         </div>
                                         <div className="col-span-4 flex items-center gap-2 min-w-0">
-                                            <img
+                                            <Image
                                                 src={avatarUrl(player)}
+                                                width={28}
+                                                height={28}
                                                 alt=""
                                                 className="h-7 w-7 rounded-none border border-border shrink-0 object-cover"
                                             />
@@ -170,10 +173,10 @@ export default function LeaderboardPage() {
                                             <Badge
                                                 variant="outline"
                                                 className={`text-[9px] font-mono rounded-none ${player.winRate >= 60
-                                                        ? "border-green-400/30 text-green-400"
-                                                        : player.winRate >= 40
-                                                            ? "border-yellow-400/30 text-yellow-400"
-                                                            : "border-red-400/30 text-red-400"
+                                                    ? "border-green-400/30 text-green-400"
+                                                    : player.winRate >= 40
+                                                        ? "border-yellow-400/30 text-yellow-400"
+                                                        : "border-red-400/30 text-red-400"
                                                     }`}
                                             >
                                                 {player.winRate}%

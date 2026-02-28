@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePrivy } from "@privy-io/react-auth";
 import { useWallets } from "@privy-io/react-auth/solana";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function Navbar() {
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <img src="/apple-touch-icon.png" alt="GoalScore Logo" className="h-8 w-8 rounded-none" />
+          <Image src="/apple-touch-icon.png" width={32} height={32} alt="GoalScore Logo" className="h-8 w-8 rounded-none" />
           <span className="text-lg font-bold tracking-tight">
             GoalScore<span className="text-primary">.fun</span>
           </span>
@@ -61,6 +62,9 @@ export function Navbar() {
           </Link>
           <Link href="/oracle" className="hover:text-primary transition-colors">
             Oracle
+          </Link>
+          <Link href="/referrals" className="hover:text-primary transition-colors">
+            Referrals
           </Link>
           <Link href="/goal" className="hover:text-primary transition-colors text-primary/70">
             $GOAL

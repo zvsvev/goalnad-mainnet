@@ -1,26 +1,27 @@
 import { NextResponse } from "next/server";
 
-const MONAD_RPC = "https://rpc.monad.xyz";
-const GOAL_TOKEN = "0xB8D8B36Ff6D2145F54345db2a96021BcA8637777";
-const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-
-// balanceOf(address) selector = 0x70a08231
-// address parameter padded to 32 bytes
-const CALL_DATA =
-    "0x70a08231000000000000000000000000000000000000000000000000000000000000dEaD";
+const SOLANA_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || "https://api.devnet.solana.com";
+// Goal Token Mint (update when deployed on mainnet)
+const GOAL_MINT = process.env.NEXT_PUBLIC_GOAL_TOKEN_MINT || "AinZf6mvHp2eoJq2WQZc5UEUAMfTkqRVkkiFE3DF9uPV";
+// Standard Solana burn address / incinerator
+const BURN_ADDRESS = "1nc1nerator11111111111111111111111111111111";
 
 export const revalidate = 60; // cache for 60 seconds
 
 export async function GET() {
     try {
-        const res = await fetch(MONAD_RPC, {
+        const res = await fetch(SOLANA_RPC, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 id: 1,
-                method: "eth_call",
-                params: [{ to: GOAL_TOKEN, data: CALL_DATA }, "latest"],
+                method: "getTokenAccountsByOwner",
+                params: [
+                    BURN_ADDRESS,
+                    { mint: GOAL_MINT },
+                    { encoding: "jsonParsed" },
+                ],
             }),
         });
 
@@ -40,25 +41,22 @@ export async function GET() {
             );
         }
 
-        // Result is a hex-encoded uint256
-        const rawHex: string = json.result;
-        const rawBigInt = BigInt(rawHex);
+        const accounts = json.result?.value || [];
 
-        // $GOAL has 18 decimals
-        const decimals = 18;
-        const divisor = BigInt(10 ** decimals);
-        const whole = rawBigInt / divisor;
-        const fraction = rawBigInt % divisor;
+        let totalBurned = 0;
+        let decimals = 6; // Standard SPL decimals, often 6 or 9
 
-        // Format with 2 decimal places
-        const fractionStr = fraction.toString().padStart(decimals, "0").slice(0, 2);
-        const burned = `${whole.toLocaleString("en-US")}.${fractionStr}`;
+        for (const account of accounts) {
+            const tokenAmount = account.account.data.parsed.info.tokenAmount;
+            totalBurned += Number(tokenAmount.uiAmount || 0);
+            decimals = tokenAmount.decimals;
+        }
 
         return NextResponse.json({
-            burned,
-            raw: rawBigInt.toString(),
+            burned: totalBurned.toLocaleString("en-US", { maximumFractionDigits: 2 }),
+            raw: totalBurned.toString(),
             burnAddress: BURN_ADDRESS,
-            tokenAddress: GOAL_TOKEN,
+            tokenMint: GOAL_MINT,
         });
     } catch (err) {
         console.error("Failed to fetch burn stats:", err);

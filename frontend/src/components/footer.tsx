@@ -1,11 +1,12 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function Footer() {
   return (
     <footer className="border-t border-border/50">
       <div className="mx-auto flex flex-col max-w-6xl items-center justify-center px-4 py-6 gap-4">
         <Link href="/" className="flex items-center gap-2">
-          <img src="/apple-touch-icon.png" alt="GoalScore Logo" className="h-6 w-6 rounded-none" />
+          <Image src="/apple-touch-icon.png" width={24} height={24} alt="GoalScore Logo" className="h-6 w-6 rounded-none" />
           <span className="text-sm font-bold">
             GoalScore<span className="text-primary">.fun</span>
           </span>

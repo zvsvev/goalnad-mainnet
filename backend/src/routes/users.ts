@@ -68,6 +68,42 @@ router.get("/search", (req: Request, res: Response) => {
     }
 });
 
+// ─── GET /api/users/referrals/leaderboard ────────────────────────────
+
+router.get("/referrals/leaderboard", (_req: Request, res: Response) => {
+    try {
+        const referrers = db.prepare(`
+            SELECT
+                u.wallet,
+                u.username,
+                u.avatar_seed,
+                u.avatar_url,
+                COUNT(r.wallet) as referred_count
+            FROM users u
+            JOIN users r ON r.referred_by = u.wallet
+            GROUP BY u.wallet
+            HAVING referred_count > 0
+            ORDER BY referred_count DESC
+            LIMIT 20
+        `).all() as any[];
+
+        res.json({
+            count: referrers.length,
+            referrers: referrers.map((r: any, i: number) => ({
+                rank: i + 1,
+                wallet: r.wallet,
+                username: r.username || null,
+                avatar_seed: r.avatar_seed || r.wallet,
+                avatar_url: r.avatar_url || null,
+                referred_count: r.referred_count,
+            })),
+        });
+    } catch (err: any) {
+        console.error("Error fetching referral leaderboard:", err.message);
+        res.status(500).json({ error: "Failed to fetch referral leaderboard" });
+    }
+});
+
 // ─── GET /api/users/:walletOrUsername ─────────────────────────────────
 
 router.get("/:walletOrUsername", (req: Request, res: Response) => {

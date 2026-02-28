@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePrivy } from "@privy-io/react-auth";
 import { useGoalBalance, GOAL_HOLDER_THRESHOLD } from "@/hooks/useGoalBalance";
 import {
@@ -110,7 +111,7 @@ function MatchCard({ match }: { match: ApiMatch }) {
         <div className="flex items-center justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             {match.home_logo && (
-              <img src={match.home_logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+              <Image src={match.home_logo} width={24} height={24} alt="" className="h-6 w-6 object-contain shrink-0" />
             )}
             <span className="text-sm font-semibold truncate">{match.home_team}</span>
           </div>
@@ -126,7 +127,7 @@ function MatchCard({ match }: { match: ApiMatch }) {
           <div className="flex items-center gap-2 justify-end min-w-0">
             <span className="text-sm font-semibold truncate text-right">{match.away_team}</span>
             {match.away_logo && (
-              <img src={match.away_logo} alt="" className="h-6 w-6 object-contain shrink-0" />
+              <Image src={match.away_logo} width={24} height={24} alt="" className="h-6 w-6 object-contain shrink-0" />
             )}
           </div>
         </div>
@@ -511,8 +512,10 @@ No house edge. 1% fee. Pure on-chain.`}
                     <div className={`grid grid-cols-[32px_1fr_72px_72px_100px] items-center px-4 py-3 border-b border-border last:border-0 hover:bg-foreground/5 transition-colors ${i === 0 ? "bg-primary/5" : "bg-background"}`}>
                       <span className="font-mono text-sm font-bold text-muted-foreground">{i + 1}</span>
                       <div className="flex items-center gap-2 min-w-0">
-                        <img
+                        <Image
                           src={player.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar_seed || player.wallet}`}
+                          width={24}
+                          height={24}
                           alt=""
                           className="h-6 w-6 rounded-none border border-border shrink-0 object-cover"
                         />
@@ -575,8 +578,10 @@ No house edge. 1% fee. Pure on-chain.`}
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mb-4 inline-flex items-center justify-center">
-              <img
+              <Image
                 src="/apple-touch-icon.png"
+                width={96}
+                height={96}
                 alt="$GOAL Token"
                 className="h-24 w-24 rounded-none border border-border"
               />
