@@ -848,14 +848,6 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* Debug — remove after fixing network error */}
-            <div className="mx-auto max-w-2xl px-4 py-4">
-                <div className="border border-yellow-500/30 bg-yellow-500/5 rounded-none p-3">
-                    <p className="font-mono text-[10px] text-yellow-500 uppercase tracking-wider mb-1">⚠ Debug Info</p>
-                    <p className="font-mono text-xs text-muted-foreground">API URL: <code className="text-yellow-400">{API_URL}</code></p>
-                </div>
-            </div>
-
             <Footer />
         </div>
     );
