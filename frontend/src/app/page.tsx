@@ -477,11 +477,14 @@ No house edge. 1% fee. Pure on-chain.`}
       {/* ── Leaderboard ── */}
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               Top Players
             </h2>
+            <Link href="/leaderboard" className="font-mono text-xs text-primary hover:underline">
+              View Full Leaderboard →
+            </Link>
           </div>
           {leaderboard.length === 0 ? (
             <p className="text-sm text-muted-foreground font-mono py-6 text-center">
@@ -498,22 +501,29 @@ No house edge. 1% fee. Pure on-chain.`}
               </div>
               {leaderboard.slice(0, 10).map((player, i) => (
                 <MotionWrapper key={player.wallet} delay={i * 0.04} viewportAmount={0.1}>
-                  <Link href={`/u/${player.wallet}`}>
+                  <Link href={player.username ? `/u/@${player.username}` : `/u/${player.wallet}`}>
                     <div className={`grid grid-cols-[32px_1fr_72px_72px_100px] items-center px-4 py-3 border-b border-border last:border-0 hover:bg-foreground/5 transition-colors ${i === 0 ? "bg-primary/5" : "bg-background"}`}>
                       <span className="font-mono text-sm font-bold text-muted-foreground">{i + 1}</span>
-                      <span className="font-mono text-sm font-bold text-primary truncate">
-                        {player.wallet.slice(0, 6)}…{player.wallet.slice(-4)}
-                      </span>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img
+                          src={player.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${player.avatar_seed || player.wallet}`}
+                          alt=""
+                          className="h-6 w-6 rounded-none border border-border shrink-0 object-cover"
+                        />
+                        <span className="font-mono text-sm font-bold text-primary truncate">
+                          {player.username ? `@${player.username}` : `${player.wallet.slice(0, 6)}…${player.wallet.slice(-4)}`}
+                        </span>
+                      </div>
                       <span className="text-center font-mono text-xs">
                         <span className="text-green-400">{player.wins}W</span>
                         {" – "}
                         <span className="text-red-400">{player.losses}L</span>
                       </span>
-                      <span className={`text-center font-mono text-xs font-bold ${player.win_rate >= 60 ? "text-green-400" : player.win_rate >= 40 ? "text-yellow-400" : "text-muted-foreground"}`}>
-                        {player.win_rate}%
+                      <span className={`text-center font-mono text-xs font-bold ${(player.winRate ?? 0) >= 60 ? "text-green-400" : (player.winRate ?? 0) >= 40 ? "text-yellow-400" : "text-muted-foreground"}`}>
+                        {player.winRate ?? 0}%
                       </span>
                       <span className="text-center font-mono text-xs text-muted-foreground">
-                        {(player.total_wagered / 1e9).toFixed(2)} SOL
+                        {((player.totalBidAmount ?? 0) / 1e9).toFixed(2)} SOL
                       </span>
                     </div>
                   </Link>

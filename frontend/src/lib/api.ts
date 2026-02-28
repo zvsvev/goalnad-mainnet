@@ -213,15 +213,25 @@ export async function fetchReferral(wallet: string): Promise<ReferralInfo> {
 
 export interface LeaderboardEntry {
   wallet: string;
-  total_bets: number;
+  name: string | null;
+  personaType: string | null;
   wins: number;
   losses: number;
-  win_rate: number;
-  total_wagered: number; // lamports
+  winRate: number;
+  totalChallenges: number;
+  totalSupports: number;
+  totalBidAmount: number; // lamports
+  username: string | null;
+  avatar_seed: string | null;
+  avatar_url: string | null;
 }
 
-export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
-  const res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
+export async function fetchLeaderboard(opts?: { period?: string; sort?: string }): Promise<LeaderboardEntry[]> {
+  const params = new URLSearchParams();
+  if (opts?.period) params.set("period", opts.period);
+  if (opts?.sort) params.set("sort", opts.sort);
+  const qs = params.toString() ? `?${params.toString()}` : "";
+  const res = await fetch(`${API_URL}/api/leaderboard${qs}`, { cache: "no-store" });
   if (!res.ok) return [];
   const data = await res.json();
   return data.players || data.agents || [];
