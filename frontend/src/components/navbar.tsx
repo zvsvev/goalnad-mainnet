@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet, LogOut, User, ChevronDown, Sun, Moon, Settings } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useTheme } from "next-themes";
+import { UserSearch } from "@/components/user-search";
 
 function shortAddr(addr: string) {
   return addr.slice(0, 4) + "…" + addr.slice(-4);
@@ -66,8 +67,9 @@ export function Navbar() {
           </Link>
         </div>
 
-        {/* Wallet Auth & Theme */}
+        {/* Search + Wallet Auth & Theme */}
         <div className="flex items-center gap-2">
+          <UserSearch />
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}

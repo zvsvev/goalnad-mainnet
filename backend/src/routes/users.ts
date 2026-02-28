@@ -38,6 +38,36 @@ function ensureUserRow(wallet: string): void {
     }
 }
 
+// ─── GET /api/users/search?q= ────────────────────────────────────────
+
+router.get("/search", (req: Request, res: Response) => {
+    const q = (req.query.q as string || "").trim().toLowerCase();
+    if (q.length < 2) {
+        return res.json({ users: [] });
+    }
+
+    try {
+        const users = db.prepare(`
+            SELECT wallet, username, avatar_seed, avatar_url
+            FROM users
+            WHERE LOWER(username) LIKE ? OR LOWER(wallet) LIKE ?
+            LIMIT 10
+        `).all(`${q}%`, `%${q}%`) as any[];
+
+        res.json({
+            users: users.map((u: any) => ({
+                wallet: u.wallet,
+                username: u.username || null,
+                avatar_seed: u.avatar_seed || u.wallet,
+                avatar_url: u.avatar_url || null,
+            })),
+        });
+    } catch (err: any) {
+        console.error("Error searching users:", err.message);
+        res.status(500).json({ error: "Failed to search users" });
+    }
+});
+
 // ─── GET /api/users/:walletOrUsername ─────────────────────────────────
 
 router.get("/:walletOrUsername", (req: Request, res: Response) => {

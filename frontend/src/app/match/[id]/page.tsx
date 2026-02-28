@@ -720,6 +720,47 @@ export default function MatchPage() {
             </Card>
           )}
 
+          {/* Your Bet summary */}
+          {userBet && (
+            <Card className="border-primary/30 rounded-none shadow-none bg-background mb-8">
+              <CardContent className="pt-5 pb-5">
+                <h3 className="font-bold mb-3 flex items-center gap-2 text-sm">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  Your Bet
+                </h3>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className={`font-mono text-sm font-bold ${outcomeColor(userBet.outcome)}`}>
+                      {outcomeName(userBet.outcome)}
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">Prediction</div>
+                  </div>
+                  <div>
+                    <div className="font-mono text-sm font-bold text-foreground">
+                      {formatSol(userBet.amount)}
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">Amount</div>
+                  </div>
+                  <div>
+                    <div className={`font-mono text-sm font-bold ${userBet.claimed ? "text-green-400" :
+                        userBet.refunded ? "text-yellow-400" :
+                          isResolved && match.result === userBet.outcome ? "text-green-400" :
+                            isResolved ? "text-red-400" :
+                              "text-muted-foreground"
+                      }`}>
+                      {userBet.claimed ? "Claimed ✓" :
+                        userBet.refunded ? "Refunded ✓" :
+                          isResolved && match.result === userBet.outcome ? "Won! 🎉" :
+                            isResolved ? "Lost" :
+                              "Pending"}
+                    </div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">Status</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Separator className="mb-8 opacity-50" />
 
           {/* Bets list */}

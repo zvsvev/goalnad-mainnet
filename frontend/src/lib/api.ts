@@ -327,6 +327,23 @@ export async function placeBetApi(params: {
   return res.json();
 }
 
+// ─── User Search ──────────────────────────────────────────────────────────────
+
+export interface SearchUser {
+  wallet: string;
+  username: string | null;
+  avatar_seed: string;
+  avatar_url: string | null;
+}
+
+export async function searchUsers(query: string): Promise<SearchUser[]> {
+  if (query.length < 2) return [];
+  const res = await fetch(`${API_URL}/api/users/search?q=${encodeURIComponent(query)}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.users || [];
+}
+
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 export function lamportsToSol(lamports: number): string {
