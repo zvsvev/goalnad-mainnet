@@ -90,8 +90,18 @@ export function initSchema(): void {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS match_comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      match_id INTEGER NOT NULL,
+      wallet TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(match_id) REFERENCES matches(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
     CREATE INDEX IF NOT EXISTS idx_users_referral ON users(referral_code);
+    CREATE INDEX IF NOT EXISTS idx_comments_match ON match_comments(match_id);
   `);
 
   // Migrate existing tables — add new columns if they don't exist yet

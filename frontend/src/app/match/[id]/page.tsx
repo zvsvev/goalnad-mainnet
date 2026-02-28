@@ -8,6 +8,7 @@ import Head from "next/head";
 import { usePrivy } from "@privy-io/react-auth";
 import { useGoalBalance, GOAL_HOLDER_THRESHOLD } from "@/hooks/useGoalBalance";
 import { usePlaceBet, useClaimRefund } from "@/hooks/useBetting";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import {
   Bot,
   ExternalLink,
@@ -32,11 +33,14 @@ import { Footer } from "@/components/footer";
 import {
   fetchMatch,
   fetchMatchBets,
+  fetchComments,
+  postComment,
   outcomeName,
   outcomeColor,
   formatSol,
   type ApiMatch,
   type ApiBet,
+  type MatchComment,
   OUTCOME_HOME,
   OUTCOME_DRAW,
   OUTCOME_AWAY,
@@ -463,19 +467,23 @@ export default function MatchPage() {
 
   const [match, setMatch] = useState<ApiMatch | null>(null);
   const [bets, setBets] = useState<ApiBet[]>([]);
+  const [comments, setComments] = useState<MatchComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const numId = parseInt(id, 10);
+  const { subscribe } = useWebSocket(isNaN(numId) ? undefined : numId);
+
   const loadData = useCallback(async () => {
     try {
-      const numId = parseInt(id, 10);
       if (isNaN(numId)) { setError("Invalid match ID"); setLoading(false); return; }
-      const [matchData, betsData] = await Promise.all([
+      const [matchData, betsData, commentsData] = await Promise.all([
         fetchMatch(numId),
         fetchMatchBets(numId),
+        fetchComments(numId),
       ]);
       if (!matchData) { setError("Match not found"); }
-      else { setMatch(matchData); setBets(betsData); }
+      else { setMatch(matchData); setBets(betsData); setComments(commentsData); }
     } catch (e) {
       console.error("Failed to load match:", e);
       setError("Failed to load match data");
@@ -485,6 +493,15 @@ export default function MatchPage() {
   }, [id]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Live reload on WebSocket events
+  useEffect(() => {
+    return subscribe((event) => {
+      if (event.type === "bet_placed" || event.type === "match_resolved" || event.type === "match_updated") {
+        loadData();
+      }
+    });
+  }, [subscribe, loadData]);
 
   // Find current user's bet
   const userBet = walletAddress
@@ -743,10 +760,10 @@ export default function MatchPage() {
                   </div>
                   <div>
                     <div className={`font-mono text-sm font-bold ${userBet.claimed ? "text-green-400" :
-                        userBet.refunded ? "text-yellow-400" :
-                          isResolved && match.result === userBet.outcome ? "text-green-400" :
-                            isResolved ? "text-red-400" :
-                              "text-muted-foreground"
+                      userBet.refunded ? "text-yellow-400" :
+                        isResolved && match.result === userBet.outcome ? "text-green-400" :
+                          isResolved ? "text-red-400" :
+                            "text-muted-foreground"
                       }`}>
                       {userBet.claimed ? "Claimed ✓" :
                         userBet.refunded ? "Refunded ✓" :
@@ -831,6 +848,78 @@ export default function MatchPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ── Match Chat ── */}
+          <Separator className="mb-8 opacity-50" />
+          <div className="space-y-4 mb-8">
+            <h3 className="flex items-center gap-2 text-lg font-bold">
+              <Users className="h-5 w-5 text-primary" />
+              Match Chat
+              <span className="font-mono text-xs text-muted-foreground font-normal ml-auto">{comments.length}</span>
+            </h3>
+
+            {/* Comment input */}
+            {authenticated && walletAddress ? (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Write a comment…"
+                  className="flex-1 rounded-none border border-border bg-background px-3 py-2 font-mono text-sm focus:outline-none focus:border-primary"
+                  maxLength={500}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter") {
+                      const input = e.target as HTMLInputElement;
+                      const msg = input.value.trim();
+                      if (msg && walletAddress) {
+                        input.disabled = true;
+                        await postComment(match.api_match_id, walletAddress, msg);
+                        input.value = "";
+                        input.disabled = false;
+                        loadData();
+                      }
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <p className="font-mono text-xs text-muted-foreground">
+                Connect your wallet to chat
+              </p>
+            )}
+
+            {/* Comments list */}
+            {comments.length === 0 ? (
+              <div className="border border-border rounded-none py-6 text-center">
+                <p className="font-mono text-xs text-muted-foreground">No comments yet — be the first!</p>
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {comments.map((c) => (
+                  <div key={c.id} className="flex items-start gap-2 border border-border bg-background p-2">
+                    <img
+                      src={c.avatar_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${c.avatar_seed}`}
+                      alt=""
+                      className="h-5 w-5 rounded-none border border-border shrink-0 mt-0.5 object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <Link
+                          href={c.username ? `/u/@${c.username}` : `/u/${c.wallet}`}
+                          className="font-mono text-[10px] font-bold text-primary hover:underline truncate"
+                        >
+                          {c.username ? `@${c.username}` : `${c.wallet.slice(0, 6)}…${c.wallet.slice(-4)}`}
+                        </Link>
+                        <span className="font-mono text-[9px] text-muted-foreground shrink-0">
+                          {timeAgo(c.created_at)}
+                        </span>
+                      </div>
+                      <p className="font-mono text-xs text-foreground/90 break-words">{c.message}</p>
+                    </div>
                   </div>
                 ))}
               </div>

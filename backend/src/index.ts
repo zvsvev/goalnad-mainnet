@@ -12,6 +12,7 @@ import adminRouter from "./routes/admin.js";
 import oracleRouter from "./routes/oracle.js";
 import leaderboardRouter from "./routes/leaderboard.js";
 import usersRouter from "./routes/users.js";
+import commentsRouter from "./routes/comments.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
 import { isChainEnabled } from "./services/chain.js";
 import { startIndexer, getIndexerStatus } from "./services/indexer.js";
@@ -65,6 +66,7 @@ app.use("/api/admin", sensitiveLimiter, adminRouter);
 app.use("/api/oracle", sensitiveLimiter, oracleRouter);
 app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/comments", commentsRouter);
 
 // --- Start ---
 async function start() {

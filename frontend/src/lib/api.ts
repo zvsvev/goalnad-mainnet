@@ -327,6 +327,34 @@ export async function placeBetApi(params: {
   return res.json();
 }
 
+// ─── Match Comments ───────────────────────────────────────────────────────────
+
+export interface MatchComment {
+  id: number;
+  wallet: string;
+  username: string | null;
+  avatar_seed: string;
+  avatar_url: string | null;
+  message: string;
+  created_at: string;
+}
+
+export async function fetchComments(matchApiId: number): Promise<MatchComment[]> {
+  const res = await fetch(`${API_URL}/api/comments/${matchApiId}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.comments || [];
+}
+
+export async function postComment(matchApiId: number, wallet: string, message: string): Promise<boolean> {
+  const res = await fetch(`${API_URL}/api/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ matchApiId, wallet, message }),
+  });
+  return res.ok;
+}
+
 // ─── User Search ──────────────────────────────────────────────────────────────
 
 export interface SearchUser {
