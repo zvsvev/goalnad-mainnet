@@ -318,6 +318,15 @@ function ShareCard({ profile }: { profile: ApiUserProfile }) {
     ? `${origin}/u/@${username}`
     : `${origin}/u/${wallet}`;
 
+  const ogImageUrl = `${origin}/api/og?` + new URLSearchParams({
+    wallet,
+    username: username || "",
+    wins: String(stats.wins),
+    losses: String(stats.losses),
+    pnl: ((stats.total_claimed - stats.total_wagered) / 1e9).toFixed(2),
+    totalBets: String(stats.total_bets),
+  }).toString();
+
   const tweetText = encodeURIComponent(
     `I'm ${stats.win_rate}% accurate on GoalScore.fun 🎯\n\n` +
     `${stats.wins}W – ${stats.losses}L · ${(stats.total_wagered / 1e9).toFixed(2)} SOL wagered\n\n` +
@@ -325,21 +334,34 @@ function ShareCard({ profile }: { profile: ApiUserProfile }) {
   );
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="font-mono text-xs rounded-none border-border"
-      asChild
-    >
-      <a
-        href={`https://twitter.com/intent/tweet?text=${tweetText}`}
-        target="_blank"
-        rel="noopener noreferrer"
+    <div className="flex gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        className="font-mono text-xs rounded-none border-border"
+        asChild
       >
-        <Share2 className="mr-1.5 h-3 w-3" />
-        Share on X
-      </a>
-    </Button>
+        <a
+          href={`https://twitter.com/intent/tweet?text=${tweetText}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Share2 className="mr-1.5 h-3 w-3" />
+          Share on X
+        </a>
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="font-mono text-xs rounded-none border-border"
+        asChild
+      >
+        <a href={ogImageUrl} target="_blank" rel="noopener noreferrer">
+          <ExternalLink className="mr-1.5 h-3 w-3" />
+          View Card
+        </a>
+      </Button>
+    </div>
   );
 }
 

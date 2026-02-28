@@ -34,6 +34,7 @@ import {
   fetchMatch,
   fetchMatchBets,
   fetchComments,
+  fetchH2HStats,
   postComment,
   outcomeName,
   outcomeColor,
@@ -41,6 +42,7 @@ import {
   type ApiMatch,
   type ApiBet,
   type MatchComment,
+  type H2HStats,
   OUTCOME_HOME,
   OUTCOME_DRAW,
   OUTCOME_AWAY,
@@ -468,6 +470,7 @@ export default function MatchPage() {
   const [match, setMatch] = useState<ApiMatch | null>(null);
   const [bets, setBets] = useState<ApiBet[]>([]);
   const [comments, setComments] = useState<MatchComment[]>([]);
+  const [h2h, setH2H] = useState<H2HStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -477,13 +480,14 @@ export default function MatchPage() {
   const loadData = useCallback(async () => {
     try {
       if (isNaN(numId)) { setError("Invalid match ID"); setLoading(false); return; }
-      const [matchData, betsData, commentsData] = await Promise.all([
+      const [matchData, betsData, commentsData, h2hData] = await Promise.all([
         fetchMatch(numId),
         fetchMatchBets(numId),
         fetchComments(numId),
+        fetchH2HStats(numId),
       ]);
       if (!matchData) { setError("Match not found"); }
-      else { setMatch(matchData); setBets(betsData); setComments(commentsData); }
+      else { setMatch(matchData); setBets(betsData); setComments(commentsData); setH2H(h2hData); }
     } catch (e) {
       console.error("Failed to load match:", e);
       setError("Failed to load match data");
@@ -711,6 +715,55 @@ export default function MatchPage() {
                     <p className="mt-3 text-xs font-mono text-primary text-center">
                       Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to read full Oracle analysis
                     </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Head-to-Head Stats */}
+          {h2h?.available && (
+            <Card className="border-border rounded-none shadow-none bg-background mb-8">
+              <CardContent className="pt-5 pb-5">
+                <h3 className="font-bold mb-4 flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-primary" />
+                  Head-to-Head ({h2h.numberOfMatches} matches)
+                </h3>
+
+                {/* H2H Record */}
+                <div className="grid grid-cols-3 gap-3 text-center mb-4">
+                  <div>
+                    <div className="font-mono text-lg font-bold text-blue-400">{h2h.homeTeam?.wins ?? 0}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">{match.home_team?.split(' ').pop()} Wins</div>
+                  </div>
+                  <div>
+                    <div className="font-mono text-lg font-bold text-yellow-400">{h2h.homeTeam?.draws ?? 0}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">Draws</div>
+                  </div>
+                  <div>
+                    <div className="font-mono text-lg font-bold text-red-400">{h2h.awayTeam?.wins ?? 0}</div>
+                    <div className="font-mono text-[10px] text-muted-foreground uppercase">{match.away_team?.split(' ').pop()} Wins</div>
+                  </div>
+                </div>
+
+                {/* Recent matches */}
+                {h2h.recentMatches && h2h.recentMatches.length > 0 && (
+                  <div>
+                    <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Recent Encounters</p>
+                    <div className="space-y-1">
+                      {h2h.recentMatches.map((m, i) => (
+                        <div key={i} className="flex items-center gap-2 font-mono text-xs border border-border/50 px-2 py-1">
+                          <span className="text-muted-foreground text-[10px] w-14 shrink-0">
+                            {new Date(m.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                          </span>
+                          <span className="truncate flex-1 text-right">{m.home}</span>
+                          <span className="font-bold text-foreground">
+                            {m.homeScore ?? "?"} - {m.awayScore ?? "?"}
+                          </span>
+                          <span className="truncate flex-1">{m.away}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </CardContent>

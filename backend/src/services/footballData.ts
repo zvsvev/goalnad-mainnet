@@ -78,3 +78,30 @@ export async function getStandings(competitionCode: string): Promise<FDStanding[
     const res = await client.get(`/competitions/${competitionCode}/standings`);
     return res.data.standings || [];
 }
+
+export interface FDH2H {
+    numberOfMatches: number;
+    totalGoals: number;
+    homeTeam: { id: number; wins: number; draws: number; losses: number };
+    awayTeam: { id: number; wins: number; draws: number; losses: number };
+    matches: FDMatch[];
+}
+
+export async function getHeadToHead(matchId: number, limit = 5): Promise<FDH2H | null> {
+    try {
+        const res = await client.get(`/matches/${matchId}/head2head`, {
+            params: { limit },
+        });
+        return {
+            numberOfMatches: res.data.aggregates?.numberOfMatches || 0,
+            totalGoals: res.data.aggregates?.totalGoals || 0,
+            homeTeam: res.data.aggregates?.homeTeam || { id: 0, wins: 0, draws: 0, losses: 0 },
+            awayTeam: res.data.aggregates?.awayTeam || { id: 0, wins: 0, draws: 0, losses: 0 },
+            matches: res.data.matches || [],
+        };
+    } catch (err: any) {
+        if (err.response?.status === 404 || err.response?.status === 400) return null;
+        console.error(`Error fetching H2H for match ${matchId}:`, err.message);
+        return null;
+    }
+}

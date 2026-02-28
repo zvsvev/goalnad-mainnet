@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { db } from "../db/connection.js";
-import { getMatch } from "../services/footballData.js";
+import { getMatch, getHeadToHead } from "../services/footballData.js";
 
 const router = Router();
 
@@ -150,6 +150,36 @@ router.get("/feed/recent", (req: Request, res: Response) => {
     } catch (err: any) {
         console.error("Error fetching feed:", err.message);
         res.status(500).json({ error: "Failed to fetch feed" });
+    }
+});
+
+// GET /api/matches/:id/h2h — head-to-head stats from football-data.org
+router.get("/:id/h2h", async (req: Request, res: Response) => {
+    try {
+        const matchId = parseInt(req.params.id, 10);
+        if (isNaN(matchId)) return res.status(400).json({ error: "Invalid match ID" });
+
+        const h2h = await getHeadToHead(matchId, 5);
+        if (!h2h) return res.json({ available: false });
+
+        res.json({
+            available: true,
+            numberOfMatches: h2h.numberOfMatches,
+            totalGoals: h2h.totalGoals,
+            homeTeam: h2h.homeTeam,
+            awayTeam: h2h.awayTeam,
+            recentMatches: h2h.matches.map((m) => ({
+                date: m.utcDate,
+                home: m.homeTeam.shortName || m.homeTeam.name,
+                away: m.awayTeam.shortName || m.awayTeam.name,
+                homeScore: m.score?.fullTime?.home,
+                awayScore: m.score?.fullTime?.away,
+                status: m.status,
+            })),
+        });
+    } catch (err: any) {
+        console.error("Error fetching H2H:", err.message);
+        res.json({ available: false });
     }
 });
 

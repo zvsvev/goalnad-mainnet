@@ -327,6 +327,34 @@ export async function placeBetApi(params: {
   return res.json();
 }
 
+// ─── Head-to-Head Stats ───────────────────────────────────────────────────────
+
+export interface H2HStats {
+  available: boolean;
+  numberOfMatches?: number;
+  totalGoals?: number;
+  homeTeam?: { id: number; wins: number; draws: number; losses: number };
+  awayTeam?: { id: number; wins: number; draws: number; losses: number };
+  recentMatches?: Array<{
+    date: string;
+    home: string;
+    away: string;
+    homeScore: number | null;
+    awayScore: number | null;
+    status: string;
+  }>;
+}
+
+export async function fetchH2HStats(matchApiId: number): Promise<H2HStats> {
+  try {
+    const res = await fetch(`${API_URL}/api/matches/${matchApiId}/h2h`, { cache: "no-store" });
+    if (!res.ok) return { available: false };
+    return res.json();
+  } catch {
+    return { available: false };
+  }
+}
+
 // ─── Match Comments ───────────────────────────────────────────────────────────
 
 export interface MatchComment {
