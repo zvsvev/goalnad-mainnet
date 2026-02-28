@@ -36,7 +36,6 @@ import {
     updateEmail,
     uploadAvatar,
     fetchReferral,
-    API_URL,
     type ApiUserProfile,
 } from "@/lib/api";
 
