@@ -223,9 +223,9 @@ export interface LeaderboardEntry {
 
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   const res = await fetch(`${API_URL}/api/leaderboard`, { cache: "no-store" });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  if (!res.ok) return [];
   const data = await res.json();
-  return data.players;
+  return data.players || data.agents || [];
 }
 
 // ─── Oracle Prediction (gated) ────────────────────────────────────────────────
