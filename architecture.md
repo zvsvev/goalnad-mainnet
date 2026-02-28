@@ -1,73 +1,117 @@
-# GoalNad Architecture
+# GoalScore Architecture
 
-GoalNad is an AI-vs-AI football prediction arena built on the Monad blockchain. It consists of four main components interacting to create an autonomous betting ecosystem.
+GoalScore.fun is a football prediction arena on **Solana** where users bet SOL against an AI Oracle's match predictions. 1% fee, no house edge, pure on-chain.
 
-## 1. System Overview
+## System Overview
 
 ```mermaid
 graph TD
-    User[End User] --> Frontend[Next.js Frontend]
-    Frontend --> BackendAPI[Node.js Backend API]
-    Frontend --> Blockchain[Monad Blockchain]
-    
-    subgraph "AI Agents (Autonomous)"
-        Oracle[Oracle Agent] -->|Publish Prediction & Settle| Blockchain
-        Agents[Agents] -->|Challenge/Support| Blockchain
+    User[End User / Browser] --> Frontend[Next.js Frontend — Vercel]
+    Frontend --> BackendAPI[Node.js Backend — Railway]
+    Frontend --> Solana[Solana Blockchain]
+
+    subgraph "AI Layer"
+        Oracle[Oracle Agent] -->|Publish Prediction & Resolve| Solana
     end
-    
-    subgraph "Blockchain Layer"
-        Arena[GoalNadArena.sol]
-        Token[GoalToken.sol ($GOAL)]
+
+    subgraph "Solana Programs (Anchor)"
+        Arena[goalscore-arena Program]
+        Token[$GOAL SPL Token]
     end
-    
-    subgraph "Backend Layer"
-        Indexer[Event Indexer] -->|Listen| Blockchain
-        Indexer -->|Write| DB[(SQLite Database)]
-        BackendAPI -->|Read| DB
+
+    subgraph "Backend (Railway)"
+        Sync[syncFixtures Job] -->|Fetch matches| FootballAPI[football-data.org]
+        Sync -->|Write| DB[(SQLite)]
+        Indexer[Event Indexer] -->|Listen| Solana
+        Indexer -->|Write| DB
+        BackendAPI -->|Read/Write| DB
+        WS[WebSocket Server] -->|Push updates| Frontend
     end
 ```
 
-## 2. Smart Contracts (Solidity)
+## Stack
 
-### GoalNadArena.sol
-The core logic contract handling the entire match lifecycle.
-- **`publishPrediction`**: Called by the Oracle to set Home/Away/Score predictions.
-- **`challenge/support`**: Users stake $GOAL tokens to bet for or against the Oracle.
-- **`resolveMatch`**: Called by the Resolver (Oracle role) to finalize outcomes based on real-world results.
-- **Resolution Logic**:
-    - **Oracle Correct:** Random supporter wins 99% of pot. 1% burned. (Treasury fallback if no supporters).
-    - **Oracle Wrong:** Highest challenger bidder wins 99% of pot. 1% burned.
-    - **Draw:** Full refund to challengers (if Oracle didn't predict draw).
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Next.js 16, React 19, shadcn/ui, Privy auth |
+| **Backend** | Node.js, Express, better-sqlite3, WebSocket |
+| **Blockchain** | Solana (devnet → mainnet), Anchor framework |
+| **Smart Contract** | `goalscore-arena` (Rust/Anchor) |
+| **Token** | $GOAL SPL token (pump.fun deployment) |
+| **Oracle** | Custom AI agent using football-data.org |
+| **Hosting** | Vercel (frontend), Railway (backend) |
+| **Auth** | Privy (wallet connect, social login) |
 
-### GoalToken.sol
-Standard ERC-20 token used for betting and rewards. Includes burn mechanics.
+## Directory Structure
 
-## 3. Backend (Node.js + SQLite)
+```
+solana-goal/
+├── frontend/              # Next.js app
+│   ├── src/app/           # Pages: home, match, settings, leaderboard, goal, profile
+│   ├── src/components/    # Navbar, Footer, UI components (shadcn)
+│   ├── src/hooks/         # useBetting, useGoalBalance, useWebSocket
+│   └── src/lib/           # api.ts (all API functions & types)
+├── backend/               # Express API server
+│   ├── src/routes/        # matches, users, leaderboard, agent, chain, oracle, admin
+│   ├── src/services/      # footballData, chain, indexer, websocket
+│   ├── src/jobs/          # syncFixtures, cleanupAccounts
+│   └── src/db/            # schema, connection (SQLite)
+├── goalscore-arena/       # Anchor program (Rust)
+│   └── programs/goalscore-arena/src/lib.rs
+├── agents/
+│   └── oracle-agent/      # Oracle prediction & resolution agent
+└── docs-web/              # Documentation site
+```
 
-A lightweight backend handles data indexing and serving for the frontend.
+## Smart Contract: goalscore-arena
 
-- **Indexer Service (`indexer.ts`)**: Listens to `PredictionPublished`, `BidPlaced`, `Supported`, and `MatchResolved` events on Monad. Syncs state to SQLite.
-- **API (`server.ts`)**: Provides endpoints for matches, user stats, leaderboards, and agent registration.
-- **Database**: `better-sqlite3` storage for fast reads.
+Anchor program handling the match lifecycle on Solana:
 
-## 4. AI Agents
+- **`publish_prediction`** — Oracle sets Home/Draw/Away prediction for a match
+- **`place_bet`** — Users bet SOL on Home (0), Draw (1), or Away (2)
+- **`resolve_match`** — Oracle resolves with final result; winners split pot proportionally
+- **`claim_winnings`** — Winners claim their share of the pot
+- **Fee**: 1% to treasury on resolution
+- **Draw handling**: Full refund to all bettors
 
-The arena is driven by autonomous agents.
+## Backend API
 
-### Oracle Agent
-- **Role**: The "House" predictor and resolver.
-- **Logic**: 
-    1. Analyzes match data (via football-data.org) to publish predictions.
-    2. Monitors finished matches and calls `resolveMatch` on-chain with the final score.
-- **Skills**: located in `agents/openclaw-skills/goalnad-oracle/`.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/matches` | GET | List matches with filters (league, status, etc.) |
+| `/api/matches/:id` | GET | Single match with arena data |
+| `/api/matches/:id/bids` | GET | Bet activity for a match |
+| `/api/users/:walletOrUsername` | GET | User profile with stats |
+| `/api/users/claim-username` | POST | One-time username claim |
+| `/api/users/upload-avatar` | POST | Upload avatar (base64, max 500KB) |
+| `/api/users/update-email` | POST | Set/clear custom email |
+| `/api/users/:wallet/pnl` | GET | P&L history |
+| `/api/users/:wallet/referral` | GET | Referral code & count |
+| `/api/leaderboard` | GET | Top players by stats |
+| `/api/chain/*` | Various | On-chain data proxies |
+| `/api/oracle/*` | POST | Oracle prediction submission |
+| `/api/agent/*` | Various | Agent registration & metadata |
 
-### Agents
-- **Role**: Independent participants providing liquidity and competition.
-- **Logic**: Autonomous agents that decide to challenge or support the Oracle based on their own strategies.
-- **Structure**: Users can run their own agents or use provided templates.
+## Data Flow
 
-## 5. Frontend (Next.js)
+1. **Match sync**: `syncFixtures` job fetches matches from football-data.org every 5 min → stores in SQLite with team names, logos (crests), kickoff times
+2. **Oracle prediction**: Oracle agent analyzes match data → calls `publish_prediction` on-chain → backend indexes the event
+3. **User bets**: Frontend builds Solana transaction → user signs with wallet → `place_bet` instruction → backend indexes bet event
+4. **Match resolution**: Oracle agent detects final score → calls `resolve_match` → pot distributed on-chain
+5. **Claim**: User clicks "Claim" → `claim_winnings` instruction → SOL transferred
 
-- **Tech**: Next.js 14, Tailwind CSS, Wagmi/Viem.
-- **Features**: Live match feed, agent dashboard, leaderboard, and betting interface.
-- **Integration**: Reads static data from Backend API, executes writes via Wallet connection to Monad.
+## Auth & Access Control
+
+- **Privy**: Handles wallet connection, social login (Twitter/Google), email linking
+- **$GOAL gating**: Oracle analysis/predictions require holding ≥1,000,000 $GOAL tokens
+- **API docs**: Gated to ≥2,000,000 $GOAL holders (planned)
+
+## Recent Changes (Feb 2026)
+
+- Migrated from Monad (EVM) to **Solana** with Anchor programs
+- Rebranded from GoalNad to **GoalScore**
+- Added **settings page** with avatar upload, username, email, social connections, referral
+- Added **leaderboard page** with player rankings
+- Fixed leaderboard API data mismatch (`agents` vs `players`)
+- Added protocol auto-detection for API URL configuration
+- Profile page with P&L chart, share cards, referral links
