@@ -58,6 +58,9 @@ export function Navbar() {
           <Link href="/leaderboard" className="hover:text-primary transition-colors">
             Leaderboard
           </Link>
+          <Link href="/oracle" className="hover:text-primary transition-colors">
+            Oracle
+          </Link>
           <Link href="/goal" className="hover:text-primary transition-colors text-primary/70">
             $GOAL
           </Link>

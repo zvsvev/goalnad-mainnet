@@ -237,6 +237,48 @@ export async function fetchLeaderboard(opts?: { period?: string; sort?: string }
   return data.players || data.agents || [];
 }
 
+// ─── Oracle Stats & Predictions (public) ──────────────────────────────────────
+
+export interface OracleStats {
+  totalPredictions: number;
+  totalResolved: number;
+  correct: number;
+  accuracy: string | null;
+}
+
+export async function fetchOracleStats(): Promise<OracleStats> {
+  const res = await fetch(`${API_URL}/api/matches/oracle/stats`, { cache: "no-store" });
+  if (!res.ok) return { totalPredictions: 0, totalResolved: 0, correct: 0, accuracy: null };
+  return res.json();
+}
+
+export interface OraclePredictionEntry {
+  api_match_id: number;
+  league_id: string;
+  league_name: string;
+  home_team: string;
+  away_team: string;
+  home_logo: string | null;
+  away_logo: string | null;
+  home_score: number | null;
+  away_score: number | null;
+  match_date: string;
+  oracle_prediction: number;
+  oracle_score: string | null;
+  oracle_analysis: string | null;
+  oracle_conviction: number | null;
+  resolved: number;
+  result: number | null;
+  status: string;
+}
+
+export async function fetchOraclePredictions(limit = 100): Promise<OraclePredictionEntry[]> {
+  const res = await fetch(`${API_URL}/api/matches/oracle/predictions?limit=${limit}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.predictions || [];
+}
+
 // ─── Oracle Prediction (gated) ────────────────────────────────────────────────
 
 export interface OraclePrediction {

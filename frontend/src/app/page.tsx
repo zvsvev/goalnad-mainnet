@@ -24,11 +24,13 @@ import { TypingEffect } from "@/components/ui/typing-effect";
 import {
   fetchMatches,
   fetchLeaderboard,
+  fetchOracleStats,
   outcomeName,
   outcomeColor,
   formatSol,
   type ApiMatch,
   type LeaderboardEntry,
+  type OracleStats,
 } from "@/lib/api";
 
 const HOW_IT_WORKS = [
@@ -211,19 +213,22 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [arenaVisibleCount, setArenaVisibleCount] = useState(6);
   const [resultsVisibleCount, setResultsVisibleCount] = useState(6);
+  const [oracleStats, setOracleStats] = useState<OracleStats | null>(null);
 
   const { login } = usePrivy();
 
   const loadData = useCallback(async (isInitial = false) => {
     try {
-      const [upRes, ftRes, lbRes] = await Promise.all([
+      const [upRes, ftRes, lbRes, osRes] = await Promise.all([
         fetchMatches({ status: "NS", limit: 50 }),
         fetchMatches({ status: "FT", predicted: "true", limit: 50 }),
         fetchLeaderboard().catch(() => [] as LeaderboardEntry[]),
+        fetchOracleStats().catch(() => null),
       ]);
       setUpcoming(upRes);
       setResults(ftRes.reverse().slice(0, 30));
       setLeaderboard(lbRes);
+      if (osRes) setOracleStats(osRes);
     } catch (e) {
       console.error("Failed to load matches:", e);
     } finally {
@@ -299,6 +304,7 @@ No house edge. 1% fee. Pure on-chain.`}
                 { label: "Chain", value: "Solana" },
                 { label: "Bet Currency", value: "SOL" },
                 { label: "Fee", value: "1%" },
+                { label: "Oracle Accuracy", value: oracleStats?.accuracy ? `${oracleStats.accuracy}%` : "—" },
                 { label: "Outcomes", value: "H / D / A" },
               ].map((s) => (
                 <div key={s.label} className="text-center">

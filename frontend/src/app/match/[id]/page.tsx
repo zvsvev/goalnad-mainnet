@@ -149,11 +149,26 @@ function BettingPanel({
   const { placeBet, loading } = usePlaceBet();
   const [selectedOutcome, setSelectedOutcome] = useState<number | null>(null);
   const [amount, setAmount] = useState("0.1");
+  const [confirming, setConfirming] = useState(false);
 
   const solAmount = parseFloat(amount) || 0;
   const fee = solAmount * 0.01;
   const net = solAmount - fee;
   const isValid = solAmount >= 0.01 && selectedOutcome !== null;
+
+  // Projected payout calculation
+  const pot = match.total_pot ?? 0;
+  const outcomePool = selectedOutcome === OUTCOME_HOME ? (match.total_home ?? 0)
+    : selectedOutcome === OUTCOME_DRAW ? (match.total_draw ?? 0)
+      : selectedOutcome === OUTCOME_AWAY ? (match.total_away ?? 0) : 0;
+
+  // After your bet: new total pot and new outcome pool
+  const newPot = pot + (solAmount * 1e9);
+  const newOutcomePool = outcomePool + (solAmount * 1e9);
+  const projectedPayout = newOutcomePool > 0
+    ? ((solAmount * 1e9) / newOutcomePool) * (newPot * 0.99)
+    : 0;
+  const multiplier = solAmount > 0 ? projectedPayout / (solAmount * 1e9) : 0;
 
   const handleBet = async () => {
     if (!isValid || selectedOutcome === null) return;
@@ -162,6 +177,7 @@ function BettingPanel({
       onBetPlaced();
       setSelectedOutcome(null);
       setAmount("0.1");
+      setConfirming(false);
     } catch {
       // Error already handled by toast
     }
@@ -183,6 +199,87 @@ function BettingPanel({
             <Wallet className="mr-2 h-4 w-4" />
             Connect Wallet
           </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Confirmation view
+  if (confirming && isValid) {
+    return (
+      <Card className="border-2 border-primary rounded-none shadow-none bg-background mb-8">
+        <CardContent className="pt-6 pb-6">
+          <h3 className="font-bold mb-4 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400" />
+            Confirm Your Bet
+          </h3>
+
+          <div className="space-y-3 mb-5">
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Outcome</span>
+              <span className={`font-mono text-sm font-bold ${outcomeColor(selectedOutcome)}`}>
+                {outcomeName(selectedOutcome)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Bet Amount</span>
+              <span className="font-mono text-sm font-bold">{solAmount} SOL</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Fee (1%)</span>
+              <span className="font-mono text-xs text-muted-foreground">{fee.toFixed(4)} SOL</span>
+            </div>
+
+            <Separator className="opacity-50" />
+
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Current Pool</span>
+              <span className="font-mono text-xs">{formatSol(pot)} total</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Projected Payout</span>
+              <span className="font-mono text-sm font-bold text-green-400">
+                ~{(projectedPayout / 1e9).toFixed(4)} SOL
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-muted-foreground">Est. Multiplier</span>
+              <span className="font-mono text-sm font-bold text-primary">
+                {multiplier.toFixed(2)}x
+              </span>
+            </div>
+
+            <p className="font-mono text-[10px] text-muted-foreground/60 text-center mt-2">
+              ⚠ Payout changes as more bets are placed. Final payout depends on total pool at match start.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirming(false)}
+              className="flex-1 font-mono rounded-none border-border"
+            >
+              ← Back
+            </Button>
+            <Button
+              onClick={handleBet}
+              disabled={loading}
+              className="flex-1 font-mono bg-primary text-background hover:bg-foreground hover:text-background rounded-none transition-colors border-none"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Confirming...
+                </>
+              ) : (
+                <>
+                  <Coins className="mr-2 h-4 w-4" />
+                  Confirm Bet
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -255,41 +352,32 @@ function BettingPanel({
           </div>
         </div>
 
-        {/* Fee breakdown */}
-        {solAmount > 0 && (
-          <div className="mb-4 rounded-none border border-border/50 bg-secondary/20 px-3 py-2">
+        {/* Inline projected payout preview */}
+        {isValid && (
+          <div className="mb-4 rounded-none border border-border/50 bg-secondary/20 px-3 py-2 space-y-1">
             <div className="flex justify-between font-mono text-xs text-muted-foreground">
               <span>Fee (1%)</span>
               <span>{fee.toFixed(4)} SOL</span>
             </div>
-            <div className="flex justify-between font-mono text-xs text-foreground font-bold mt-0.5">
-              <span>Net bet</span>
-              <span>{net.toFixed(4)} SOL</span>
+            <div className="flex justify-between font-mono text-xs text-foreground font-bold">
+              <span>Projected Payout</span>
+              <span className="text-green-400">~{(projectedPayout / 1e9).toFixed(4)} SOL ({multiplier.toFixed(2)}x)</span>
             </div>
           </div>
         )}
 
-        {/* Place bet button */}
+        {/* Place bet button — goes to confirmation */}
         <Button
-          onClick={handleBet}
-          disabled={!isValid || loading}
+          onClick={() => setConfirming(true)}
+          disabled={!isValid}
           className="w-full font-mono bg-primary text-background hover:bg-foreground hover:text-background rounded-none transition-colors border-none disabled:opacity-50"
         >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Confirming...
-            </>
-          ) : (
-            <>
-              <Coins className="mr-2 h-4 w-4" />
-              {isValid
-                ? `Bet ${solAmount} SOL on ${outcomeName(selectedOutcome)}`
-                : selectedOutcome === null
-                  ? "Select an outcome"
-                  : "Enter amount (min 0.01 SOL)"}
-            </>
-          )}
+          <Coins className="mr-2 h-4 w-4" />
+          {isValid
+            ? `Bet ${solAmount} SOL on ${outcomeName(selectedOutcome)}`
+            : selectedOutcome === null
+              ? "Select an outcome"
+              : "Enter amount (min 0.01 SOL)"}
         </Button>
       </CardContent>
     </Card>

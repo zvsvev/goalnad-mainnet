@@ -55,6 +55,81 @@ router.get("/", (req: Request, res: Response) => {
 });
 
 
+// GET /api/matches/oracle/stats — public Oracle accuracy stats
+router.get("/oracle/stats", (_req: Request, res: Response) => {
+    try {
+        const totalPredictions = db.prepare(
+            "SELECT COUNT(*) as count FROM matches WHERE oracle_prediction IS NOT NULL"
+        ).get() as any;
+
+        const correctPredictions = db.prepare(`
+            SELECT COUNT(*) as count FROM matches
+            WHERE oracle_prediction IS NOT NULL
+              AND resolved = 1
+              AND result = oracle_prediction
+        `).get() as any;
+
+        const totalResolved = db.prepare(`
+            SELECT COUNT(*) as count FROM matches
+            WHERE oracle_prediction IS NOT NULL AND resolved = 1
+        `).get() as any;
+
+        const accuracy = totalResolved.count > 0
+            ? ((correctPredictions.count / totalResolved.count) * 100).toFixed(1)
+            : null;
+
+        res.json({
+            totalPredictions: totalPredictions.count,
+            totalResolved: totalResolved.count,
+            correct: correctPredictions.count,
+            accuracy,
+        });
+    } catch (err: any) {
+        console.error("Error fetching oracle stats:", err.message);
+        res.status(500).json({ error: "Failed to fetch oracle stats" });
+    }
+});
+
+// GET /api/matches/oracle/predictions — all Oracle predictions with results
+router.get("/oracle/predictions", (req: Request, res: Response) => {
+    try {
+        const limit = parseInt(req.query.limit as string, 10) || 100;
+
+        const predictions = db.prepare(`
+            SELECT
+                api_match_id,
+                league_id,
+                league_name,
+                home_team,
+                away_team,
+                home_logo,
+                away_logo,
+                home_score,
+                away_score,
+                match_date,
+                oracle_prediction,
+                oracle_score,
+                oracle_analysis,
+                oracle_conviction,
+                resolved,
+                result,
+                status
+            FROM matches
+            WHERE oracle_prediction IS NOT NULL
+            ORDER BY match_date DESC
+            LIMIT ?
+        `).all(limit);
+
+        res.json({
+            count: predictions.length,
+            predictions,
+        });
+    } catch (err: any) {
+        console.error("Error fetching oracle predictions:", err.message);
+        res.status(500).json({ error: "Failed to fetch oracle predictions" });
+    }
+});
+
 // GET /api/matches/feed/recent — latest 8 agent actions across all matches
 router.get("/feed/recent", (req: Request, res: Response) => {
     try {
