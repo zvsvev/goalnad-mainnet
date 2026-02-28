@@ -1,5 +1,4 @@
-const _raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-const API_URL = (_raw.startsWith("http") ? _raw : "https://" + _raw).replace(/\/api\/?$/, "");
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001").replace(/\/api\/?$/, "");
 export { API_URL };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
