@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { LiveFeed } from "@/components/live-feed";
 import { MotionWrapper } from "@/components/ui/motion-wrapper";
 import { TypingEffect } from "@/components/ui/typing-effect";
 import {
@@ -37,27 +38,27 @@ import {
 const HOW_IT_WORKS = [
   {
     icon: Bot,
-    title: "Oracle Predicts",
+    title: "Unlock AI Analysis",
     description:
-      "Every day the GoalScore AI Oracle picks an outcome — Home, Draw, or Away — for today's matches and publishes it on-chain.",
+      "Hold 1M $GOAL to access the GoalScore AI Oracle's predictions and deep analysis for upcoming matches.",
   },
   {
     icon: Coins,
-    title: "You Bet SOL",
+    title: "Predict & Bet SOL",
     description:
-      "Place your SOL on any of the three outcomes. Each side builds its own pool. Betting closes at kickoff.",
+      "Bet SOL against other players on Home, Draw, or Away. Each side builds its own pool. Betting closes at kickoff.",
   },
   {
     icon: Timer,
     title: "Match Plays Out",
     description:
-      "The match happens. The Oracle resolves the result on-chain — trustless, transparent, immutable.",
+      "The match happens in real life. The result is resolved on-chain — trustless, transparent, immutable.",
   },
   {
     icon: Trophy,
     title: "Winners Share the Pot",
     description:
-      "All SOL wagered on the correct outcome splits proportionally to bet size. Draw? Everyone gets a full refund.",
+      "All SOL wagered on the correct outcome splits proportionally amongst the winners. Draw? Everyone gets a full refund.",
   },
 ];
 
@@ -255,6 +256,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       <Navbar />
+      <LiveFeed />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-background">
@@ -263,20 +265,20 @@ export default function Home() {
             <div className="mb-6 inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-1.5">
               <div className="h-2 w-2 rounded-none bg-primary animate-pulse" />
               <span className="font-mono text-[10px] text-primary uppercase tracking-widest">
-                Bet SOL · Beat the Oracle · On-chain
+                Bet SOL · Predict Matches · On-chain
               </span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
               <span className="inline-block text-primary">
-                Beat the AI Oracle
+                Predict Better.
               </span>
               <br />
               <span>Win the SOL pot.</span>
             </h1>
             <TypingEffect
-              text={`The GoalScore Oracle predicts every football match.
-Bet SOL on Home, Draw, or Away.
+              text={`Bet SOL against other players on Home, Draw, or Away.
 If your side wins — you share the pot proportionally.
+Unlock AI Oracle analysis with 1M $GOAL to predict smarter.
 No house edge. 1% fee. Pure on-chain.`}
               className="mt-5 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
             />

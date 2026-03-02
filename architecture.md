@@ -1,6 +1,6 @@
 # GoalScore Architecture
 
-GoalScore.fun is a football prediction arena on **Solana** where users bet SOL against an AI Oracle's match predictions. 1% fee, no house edge, pure on-chain.
+GoalScore.fun is a football prediction arena on **Solana** where users bet SOL against other human players. The platform features an AI Oracle that provides match analysis and predictions, which users can unlock by holding $GOAL tokens to make more informed betting decisions. 1% fee, no house edge, pure on-chain.
 
 ## System Overview
 
@@ -68,8 +68,8 @@ solana-goal/
 Anchor program handling the match lifecycle on Solana:
 
 - **`publish_prediction`** — Oracle sets Home/Draw/Away prediction for a match
-- **`place_bet`** — Users bet SOL on Home (0), Draw (1), or Away (2)
-- **`resolve_match`** — Oracle resolves with final result; winners split pot proportionally
+- **`place_bet`** — Users bet SOL on Home (0), Draw (1), or Away (2) against other users.
+- **`resolve_match`** — Oracle resolves with final result; winning players split the pot proportionally
 - **`claim_winnings`** — Winners claim their share of the pot
 - **Fee**: 1% to treasury on resolution
 - **Draw handling**: Full refund to all bettors
@@ -95,9 +95,9 @@ Anchor program handling the match lifecycle on Solana:
 ## Data Flow
 
 1. **Match sync**: `syncFixtures` job fetches matches from football-data.org every 5 min → stores in SQLite with team names, logos (crests), kickoff times
-2. **Oracle prediction**: Oracle agent analyzes match data → calls `publish_prediction` on-chain → backend indexes the event
-3. **User bets**: Frontend builds Solana transaction → user signs with wallet → `place_bet` instruction → backend indexes bet event
-4. **Match resolution**: Oracle agent detects final score → calls `resolve_match` → pot distributed on-chain
+2. **Oracle prediction**: Oracle agent analyzes match data → calls `publish_prediction` on-chain → backend indexes the event (unlockable by $GOAL holders)
+3. **User bets**: Frontend builds Solana transaction → user signs with wallet → `place_bet` instruction against other human players → backend indexes bet event
+4. **Match resolution**: Oracle agent detects final score → calls `resolve_match` → pot distributed on-chain to the winning side
 5. **Claim**: User clicks "Claim" → `claim_winnings` instruction → SOL transferred
 
 ## Auth & Access Control
@@ -106,15 +106,17 @@ Anchor program handling the match lifecycle on Solana:
 - **$GOAL gating**: Oracle analysis/predictions require holding ≥1,000,000 $GOAL tokens
 - **API docs**: Gated to ≥2,000,000 $GOAL holders (planned)
 
-## Recent Changes (Feb 2026)
+## Recent Changes (Feb/March 2026)
 
 - Migrated from Monad (EVM) to **Solana** with Anchor programs
 - Rebranded from GoalNad to **GoalScore**
+- Pivoted architecture from AI vs AI / Human vs Oracle to **Human vs Human** (with Oracle providing locked predictive analysis to token holders)
 - Added **settings page** with avatar upload, username, email, social connections, referral
-- Added **leaderboard page** with player rankings
-- Fixed leaderboard API data mismatch (`agents` vs `players`)
+- Added **leaderboard page** with player rankings dynamically calculated from direct match/bid history
+- Fixed leaderboard API data mismatch and completely removed legacy internal AI agent tables 
 - Added protocol auto-detection for API URL configuration
 - Profile page with P&L chart, share cards, referral links
+- Added global **Live Feed** ticker tracking open platform wagers
 - Added **Sentry** (error monitoring), **PostHog** (analytics), and **Resend** (email notifications) integrations
 
 ## Environment Variables & External Services
