@@ -10,7 +10,16 @@
  */
 
 import { db } from "../db/connection.js";
-import { getMarketOnChain, isChainEnabled } from "../services/chain.js";
+import { getMarketPDA, connection, isChainEnabled } from "../services/chain.js";
+
+// Helper to chunk arrays
+function chunkArray<T>(array: T[], size: number): T[][] {
+    const chunked: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+        chunked.push(array.slice(i, i + size));
+    }
+    return chunked;
+}
 
 export async function recoverOnChainMarkets(): Promise<void> {
     if (!isChainEnabled()) {
@@ -34,36 +43,47 @@ export async function recoverOnChainMarkets(): Promise<void> {
         return;
     }
 
-    console.log(`[Recovery] Checking ${matches.length} matches for on-chain markets...`);
+    console.log(`[Recovery] Checking ${matches.length} matches for on-chain markets in batches...`);
 
     let recovered = 0;
     let errors = 0;
 
-    for (const match of matches) {
-        try {
-            const onchainMarket = await getMarketOnChain(match.api_match_id);
-            if (onchainMarket) {
-                // Market exists on-chain — restore the link in SQLite
-                db.prepare(`
-                    UPDATE matches
-                    SET onchain_match_id = ?,
-                        updated_at = CURRENT_TIMESTAMP
-                    WHERE api_match_id = ?
-                `).run(match.api_match_id, match.api_match_id);
+    // Process in batches of 100 to avoid RPC rate limits and payload size limits
+    const BATCH_SIZE = 100;
+    const matchChunks = chunkArray(matches, BATCH_SIZE);
 
-                recovered++;
-                console.log(`[Recovery] ✅ Recovered on-chain market: ${match.home_team} vs ${match.away_team} (ID: ${match.api_match_id})`);
+    for (let i = 0; i < matchChunks.length; i++) {
+        const chunk = matchChunks[i];
+        try {
+            // Get PDAs for this chunk
+            const pdas = chunk.map((m) => getMarketPDA(m.api_match_id)[0]);
+
+            // Bulk fetch account info
+            const accounts = await connection.getMultipleAccountsInfo(pdas);
+
+            // Process results
+            for (let j = 0; j < accounts.length; j++) {
+                if (accounts[j] !== null) {
+                    // Account exists! Recover it.
+                    const match = chunk[j];
+                    db.prepare(`
+                        UPDATE matches
+                        SET onchain_match_id = ?,
+                            updated_at = CURRENT_TIMESTAMP
+                        WHERE api_match_id = ?
+                    `).run(match.api_match_id, match.api_match_id);
+
+                    recovered++;
+                    console.log(`[Recovery] ✅ Recovered on-chain market: ${match.home_team} vs ${match.away_team} (ID: ${match.api_match_id})`);
+                }
             }
         } catch (err: any) {
-            errors++;
-            // Don't log "Account does not exist" — that's expected for matches without markets
-            if (!err.message?.includes("Account does not exist")) {
-                console.error(`[Recovery] ❌ Error checking match ${match.api_match_id}:`, err.message);
-            }
+            errors += chunk.length;
+            console.error(`[Recovery] ❌ Error checking batch ${i + 1}:`, err.message);
         }
 
-        // Small delay to avoid RPC rate limiting
-        await new Promise((r) => setTimeout(r, 100));
+        // Small delay between batches
+        await new Promise((r) => setTimeout(r, 500));
     }
 
     console.log(`[Recovery] 🏁 Done. Recovered: ${recovered}, Errors: ${errors}, Checked: ${matches.length}`);
