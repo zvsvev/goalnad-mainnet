@@ -129,6 +129,7 @@ export function initSchema(): void {
     "ALTER TABLE matches ADD COLUMN onchain_closed INTEGER",
     "ALTER TABLE users ADD COLUMN email TEXT",
     "ALTER TABLE users ADD COLUMN avatar_url TEXT",
+    "ALTER TABLE bids ADD COLUMN outcome INTEGER",
   ];
 
   for (const sql of migrations) {

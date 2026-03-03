@@ -193,9 +193,13 @@ export async function uploadAvatar(wallet: string, avatarData: string): Promise<
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ wallet, avatarData }),
   });
-  const data = await res.json();
-  if (!res.ok) return { success: false, error: data.error };
-  return { success: true };
+  try {
+    const data = await res.json();
+    if (!res.ok) return { success: false, error: data.error || `Server error (${res.status})` };
+    return { success: true };
+  } catch {
+    return { success: false, error: `Server error (${res.status})` };
+  }
 }
 
 export async function fetchPnl(wallet: string): Promise<PnlEntry[]> {
