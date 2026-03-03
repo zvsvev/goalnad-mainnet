@@ -20,6 +20,7 @@ import { initWebSocket, getWsConnectionCount } from "./services/websocket.js";
 
 const app = express();
 
+app.set("trust proxy", 1); // Required for Railway (behind reverse proxy) for rate limiting
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 
