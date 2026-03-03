@@ -279,7 +279,7 @@ export default function Home() {
               text={`Bet SOL against other players on Home, Draw, or Away.
 If your side wins — you share the pot proportionally.
 Unlock AI Analysis bot analysis with 1M $GOAL to predict smarter.
-No house edge. 1% fee. Pure on-chain.`}
+No house edge. Pure on-chain.`}
               className="mt-5 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
             />
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -306,7 +306,7 @@ No house edge. 1% fee. Pure on-chain.`}
               {[
                 { label: "Chain", value: "Solana" },
                 { label: "Bet Currency", value: "SOL" },
-                { label: "Fee", value: "1%" },
+
                 { label: "AI Accuracy", value: oracleStats?.accuracy ? `${oracleStats.accuracy}%` : "—" },
                 { label: "Outcomes", value: "H / D / A" },
               ].map((s) => (

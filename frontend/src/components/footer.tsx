@@ -30,12 +30,12 @@ export function Footer() {
             <span>Built on Solana</span>
             <span className="text-border">·</span>
             <a
-              href="https://solscan.io/account/EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL"
+              href="https://docs.goalscore.fun"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors"
             >
-              Contract
+              Docs
             </a>
             <span className="text-border">·</span>
             <Link href="/goal" className="hover:text-primary transition-colors">
