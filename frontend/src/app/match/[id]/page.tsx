@@ -617,19 +617,28 @@ export default function MatchPage() {
             {/* Oracle prediction badge */}
             {hasPrediction && (
               <div className="flex items-center justify-center gap-3 flex-wrap">
-                <div className="inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
-                  <Bot className="h-4 w-4 text-primary" />
-                  <span className="font-mono text-sm">
-                    Oracle picks{" "}
-                    <span className={`font-bold ${outcomeColor(match.oracle_prediction)}`}>
-                      {outcomeName(match.oracle_prediction)}
+                {isHolder ? (
+                  <div className="inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    <span className="font-mono text-sm">
+                      Oracle picks{" "}
+                      <span className={`font-bold ${outcomeColor(match.oracle_prediction)}`}>
+                        {outcomeName(match.oracle_prediction)}
+                      </span>
+                      {match.oracle_score && ` · ${match.oracle_score}`}
+                      {match.oracle_conviction !== null && (
+                        <span className="text-muted-foreground"> ({match.oracle_conviction}% conviction)</span>
+                      )}
                     </span>
-                    {match.oracle_score && ` · ${match.oracle_score}`}
-                    {match.oracle_conviction !== null && (
-                      <span className="text-muted-foreground"> ({match.oracle_conviction}% conviction)</span>
-                    )}
-                  </span>
-                </div>
+                  </div>
+                ) : (
+                  <div className="inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-mono text-sm text-muted-foreground">
+                      Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to see Oracle prediction
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>

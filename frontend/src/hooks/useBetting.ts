@@ -21,9 +21,18 @@ const MIN_BET_SOL = 0.01;
 
 // ─── PDA Helpers ──────────────────────────────────────────────────────────────
 
+// Browser-safe BigInt to little-endian bytes (Buffer polyfill lacks writeBigUInt64LE)
+function toBigUInt64LE(value: bigint): Buffer {
+    const buf = Buffer.alloc(8);
+    for (let i = 0; i < 8; i++) {
+        buf[i] = Number(value & 0xffn);
+        value >>= 8n;
+    }
+    return buf;
+}
+
 function getMarketPDA(matchId: number): [PublicKey, number] {
-    const matchIdBuf = Buffer.alloc(8);
-    matchIdBuf.writeBigUInt64LE(BigInt(matchId));
+    const matchIdBuf = toBigUInt64LE(BigInt(matchId));
     return PublicKey.findProgramAddressSync(
         [Buffer.from("market"), matchIdBuf],
         PROGRAM_ID
@@ -31,8 +40,7 @@ function getMarketPDA(matchId: number): [PublicKey, number] {
 }
 
 function getBetPDA(matchId: number, user: PublicKey): [PublicKey, number] {
-    const matchIdBuf = Buffer.alloc(8);
-    matchIdBuf.writeBigUInt64LE(BigInt(matchId));
+    const matchIdBuf = toBigUInt64LE(BigInt(matchId));
     return PublicKey.findProgramAddressSync(
         [Buffer.from("bet"), matchIdBuf, user.toBuffer()],
         PROGRAM_ID
@@ -58,9 +66,9 @@ function buildPlaceBetIx(
 
     const data = Buffer.alloc(8 + 8 + 1 + 8);
     PLACE_BET_DISC.copy(data, 0);
-    data.writeBigUInt64LE(BigInt(matchId), 8);
+    toBigUInt64LE(BigInt(matchId)).copy(data, 8);
     data.writeUInt8(outcome, 16);
-    data.writeBigUInt64LE(amountLamports, 17);
+    toBigUInt64LE(amountLamports).copy(data, 17);
 
     return new TransactionInstruction({
         programId: PROGRAM_ID,
@@ -81,7 +89,7 @@ function buildClaimIx(matchId: number, user: PublicKey): TransactionInstruction 
 
     const data = Buffer.alloc(8 + 8);
     CLAIM_DISC.copy(data, 0);
-    data.writeBigUInt64LE(BigInt(matchId), 8);
+    toBigUInt64LE(BigInt(matchId)).copy(data, 8);
 
     return new TransactionInstruction({
         programId: PROGRAM_ID,
@@ -102,7 +110,7 @@ function buildRefundIx(matchId: number, user: PublicKey): TransactionInstruction
 
     const data = Buffer.alloc(8 + 8);
     REFUND_DISC.copy(data, 0);
-    data.writeBigUInt64LE(BigInt(matchId), 8);
+    toBigUInt64LE(BigInt(matchId)).copy(data, 8);
 
     return new TransactionInstruction({
         programId: PROGRAM_ID,
