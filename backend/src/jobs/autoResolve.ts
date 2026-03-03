@@ -6,7 +6,6 @@
  *
  * Also handles:
  *   - Auto-cancel: matches with status PST/CANC → cancel on-chain
- *   - Post-match result summary: posts to Moltbook after resolution
  *
  * Flow:
  *   1. Query DB for matches WHERE status='FT' AND resolved=0
@@ -14,7 +13,6 @@
  *   2. Determine result from scores: 0 = Home, 1 = Draw, 2 = Away
  *   3. Call resolveMatchOnChain(matchId, result)
  *   4. Update DB: resolved=1, result
- *   5. Post result to Moltbook
  */
 
 import { db } from "../db/connection.js";

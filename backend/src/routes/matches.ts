@@ -136,10 +136,10 @@ router.get("/feed/recent", (req: Request, res: Response) => {
         const feed = db
             .prepare(
                 `SELECT b.amount, b.type, b.comment, b.created_at, b.agent_wallet, b.tx_hash,
-                        a.agent_name, a.persona_type,
+                        u.username, u.avatar_seed, u.avatar_url,
                         m.api_match_id, m.home_team, m.away_team, m.league_id
                  FROM bids b
-                 LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet
+                 LEFT JOIN users u ON b.agent_wallet = u.wallet
                  JOIN matches m ON b.match_id = m.id
                  ORDER BY b.created_at DESC
                  LIMIT 8`
@@ -156,7 +156,7 @@ router.get("/feed/recent", (req: Request, res: Response) => {
 // GET /api/matches/:id/h2h — head-to-head stats from football-data.org
 router.get("/:id/h2h", async (req: Request, res: Response) => {
     try {
-        const matchId = parseInt(req.params.id, 10);
+        const matchId = parseInt(req.params.id as string, 10);
         if (isNaN(matchId)) return res.status(400).json({ error: "Invalid match ID" });
 
         const h2h = await getHeadToHead(matchId, 5);
@@ -190,57 +190,31 @@ router.get("/:id", async (req: Request, res: Response) => {
         const match = db.prepare("SELECT * FROM matches WHERE api_match_id = ?").get(id) as any;
 
         if (match) {
-            // Enrich with arena data
-            const supportersCount = db
-                .prepare("SELECT COUNT(*) as count FROM bids WHERE match_id = ? AND type = 'support'")
-                .get(match.id) as any;
-            const challengersCount = db
-                .prepare("SELECT COUNT(*) as count FROM bids WHERE match_id = ? AND type = 'challenge'")
-                .get(match.id) as any;
+            // Get bet counts by outcome
+            const betCounts = db
+                .prepare("SELECT outcome, COUNT(*) as count FROM bids WHERE match_id = ? GROUP BY outcome")
+                .all(match.id) as any[];
+            const totalBets = betCounts.reduce((s: number, b: any) => s + b.count, 0);
 
-            // For resolved matches, add winner info
-            let winnerInfo = null;
+            // For resolved matches, add result info
+            let resultInfo = null;
             if (match.resolved && match.result !== null) {
-                const oraclePrediction = match.oracle_prediction;
-                const actualResult = match.result;
-                const oracleCorrect = oraclePrediction === actualResult;
+                const oracleCorrect = match.oracle_prediction === match.result;
+                const resultLabel = match.result === 0 ? "Home Win"
+                    : match.result === 1 ? "Draw"
+                        : "Away Win";
 
-                if (oracleCorrect) {
-                    // Lucky supporter won
-                    winnerInfo = {
-                        oracleCorrect: true,
-                        outcome: "ORACLE_RIGHT",
-                        message: "GoalNad was RIGHT — a lucky supporter wins!",
-                    };
-                } else if (actualResult === 3) {
-                    // Draw — refunds
-                    winnerInfo = {
-                        oracleCorrect: false,
-                        outcome: "DRAW",
-                        message: "Match ended in a DRAW — all bids refunded.",
-                    };
-                } else {
-                    // Oracle wrong — highest bidder won
-                    const winner = match.highest_bidder
-                        ? (db.prepare("SELECT agent_name FROM agents_metadata WHERE agent_wallet = ?").get(match.highest_bidder) as any)
-                        : null;
-                    winnerInfo = {
-                        oracleCorrect: false,
-                        outcome: "ORACLE_WRONG",
-                        message: "GoalNad was WRONG — highest bidder takes the pot!",
-                        winnerWallet: match.highest_bidder,
-                        winnerName: winner?.agent_name || null,
-                        prize: Math.floor((match.total_pot || 0) * 0.99),
-                    };
-                }
+                resultInfo = {
+                    oracleCorrect,
+                    resultLabel,
+                    message: `Result: ${resultLabel}${oracleCorrect ? " — Oracle was right" : ""}`,
+                };
             }
 
             return res.json({
                 ...match,
-                supportersCount: supportersCount?.count || 0,
-                challengersCount: challengersCount?.count || 0,
-                currentHighestBid: match.highest_bid || 0,
-                winnerInfo,
+                totalBets,
+                resultInfo,
             });
         }
 
@@ -293,10 +267,10 @@ router.get("/:id/bids", (req: Request, res: Response) => {
         const bids = db
             .prepare(
                 `SELECT b.agent_wallet, b.amount, b.type, b.comment, b.created_at, b.tx_hash,
-                        a.agent_name, a.persona_type, a.wins, a.losses,
+                        u.username, u.avatar_seed, u.avatar_url,
                         'bid' as activity_type
                  FROM bids b
-                 LEFT JOIN agents_metadata a ON b.agent_wallet = a.agent_wallet
+                 LEFT JOIN users u ON b.agent_wallet = u.wallet
                  WHERE b.match_id = ?`
             )
             .all(match.id);
@@ -305,10 +279,10 @@ router.get("/:id/bids", (req: Request, res: Response) => {
         const claims = db
             .prepare(
                 `SELECT c.agent_wallet, c.amount, c.created_at, c.tx_hash,
-                        a.agent_name, a.persona_type, a.wins, a.losses,
+                        u.username, u.avatar_seed, u.avatar_url,
                         'claim' as activity_type
                  FROM claims c
-                 LEFT JOIN agents_metadata a ON c.agent_wallet = a.agent_wallet
+                 LEFT JOIN users u ON c.agent_wallet = u.wallet
                  WHERE c.match_id = ?`
             )
             .all(match.id);
@@ -320,9 +294,8 @@ router.get("/:id/bids", (req: Request, res: Response) => {
 
         res.json({
             count: activity.length,
-            bids: activity,  // Keep 'bids' key for backward compatibility
+            bids: activity,
             resolve_tx_hash: match.resolve_tx_hash,
-            lucky_supporter: match.lucky_supporter
         });
     } catch (err: any) {
         console.error("Error fetching match bids:", err.message);

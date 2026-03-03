@@ -38,3 +38,6 @@ backend/data/
 *-keypair.json
 
 
+
+# Treasury keypair (devnet)
+treasury-keypair.json

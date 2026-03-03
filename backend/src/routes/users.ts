@@ -129,15 +129,15 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
     // Fetch user profile data
     const user = db.prepare("SELECT * FROM users WHERE wallet = ?").get(wallet) as any;
 
-    // Fetch bet stats
+    // Fetch bet stats — outcome-based win/loss
+    // Win = bet outcome matches match result. Draw is a valid winning outcome.
     const stats = db.prepare(`
         SELECT
             COUNT(*) as total_bets,
-            SUM(CASE WHEN m.resolved = 1 AND b.outcome = m.result AND m.result != 1 THEN 1 ELSE 0 END) as wins,
-            SUM(CASE WHEN m.resolved = 1 AND b.outcome != m.result AND m.result != 1 THEN 1 ELSE 0 END) as losses,
+            SUM(CASE WHEN m.resolved = 1 AND b.outcome = m.result THEN 1 ELSE 0 END) as wins,
+            SUM(CASE WHEN m.resolved = 1 AND b.outcome != m.result THEN 1 ELSE 0 END) as losses,
             SUM(CASE WHEN m.resolved = 1 AND m.result = 1 THEN 1 ELSE 0 END) as draws,
-            COALESCE(SUM(b.amount), 0) as total_wagered,
-            COALESCE(SUM(CASE WHEN b.claimed = 1 THEN b.claim_amount ELSE 0 END), 0) as total_claimed
+            COALESCE(SUM(b.amount), 0) as total_wagered
         FROM bids b
         JOIN matches m ON b.match_id = m.id
         WHERE b.agent_wallet = ?
@@ -156,8 +156,6 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
             m.league_id,
             b.outcome,
             b.amount,
-            b.claimed,
-            b.refunded,
             m.result,
             m.resolved
         FROM bids b
@@ -183,7 +181,6 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
             draws: stats.draws || 0,
             win_rate: winRate,
             total_wagered: stats.total_wagered || 0,
-            total_claimed: stats.total_claimed || 0,
         },
         recent_bets: recentBets.map((b: any) => ({
             api_match_id: b.api_match_id,
@@ -193,8 +190,6 @@ router.get("/:walletOrUsername", (req: Request, res: Response) => {
             league_id: b.league_id,
             outcome: b.outcome,
             amount: b.amount,
-            claimed: !!b.claimed,
-            refunded: !!b.refunded,
             result: b.result,
             resolved: b.resolved,
         })),
@@ -318,32 +313,33 @@ router.get("/:wallet/pnl", (req: Request, res: Response) => {
     const wallet = req.params.wallet as string;
 
     // Get all resolved bets with results for this wallet
+    // PnL for challengers: win if oracle was wrong, lose if oracle was right
     const bets = db.prepare(`
         SELECT
             m.match_date,
             b.amount,
-            b.outcome,
+            b.type,
             m.result,
-            m.resolved,
-            b.claimed,
-            b.claim_amount
+            m.oracle_prediction,
+            m.total_pot
         FROM bids b
         JOIN matches m ON b.match_id = m.id
         WHERE b.agent_wallet = ? AND m.resolved = 1
         ORDER BY m.match_date ASC
     `).all(wallet) as any[];
 
+    // PnL: win if bet outcome matches result, lose if not
+
     let cumulative = 0;
     const pnl = bets.map((b: any) => {
-        const isDraw = b.result === 1;
-        const isWin = b.outcome === b.result && !isDraw;
+        const isWin = b.outcome === b.result;
 
-        if (isDraw) {
-            // No change on draw (refunded)
-        } else if (isWin && b.claimed) {
-            cumulative += (b.claim_amount || 0) - b.amount; // profit
-        } else if (!isWin) {
-            cumulative -= b.amount; // loss
+        if (isWin) {
+            // Winner — approximate proportional payout
+            cumulative += b.amount;
+        } else {
+            // Loser
+            cumulative -= b.amount;
         }
 
         return {

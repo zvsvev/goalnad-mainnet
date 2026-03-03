@@ -1,5 +1,5 @@
 /**
- * Admin routes for GoalNad backend.
+ * Admin routes for GoalScore backend.
  * Protected by X-Admin-Key header (must match ADMIN_API_KEY env var).
  *
  * Endpoints:
@@ -23,7 +23,7 @@ const router = Router();
 
 // ─── Auth Middleware ──────────────────────────────────────────────────
 
-const ADMIN_KEY = process.env.ADMIN_API_KEY || "goalnad-admin-secret";
+const ADMIN_KEY = process.env.ADMIN_API_KEY || "goalscore-secret";
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
     const key = req.headers["x-admin-key"];
@@ -40,7 +40,7 @@ router.use(requireAdmin);
 // Creates a compressed-timeline test match:
 //   - kickoffMinutes (default 60): when the "match" kicks off
 //   - lockdownMinutes (default 30): when bidding closes
-//   - publishOnChain (default true): also publish on GoalNadArena contract
+//   - publishOnChain (default true): also publish on GoalScoreArena contract
 //
 // This creates a full 1-hour test cycle:
 //   T+0:  Match created + Oracle prediction published
@@ -64,9 +64,9 @@ router.post("/test-match", async (req: Request, res: Response) => {
             publishOnChain = true,
         } = req.body;
 
-        // Validate oracle prediction (1=Home, 2=Away, 3=Draw)
-        if (![1, 2, 3].includes(oraclePrediction)) {
-            return res.status(400).json({ error: "oraclePrediction must be 1 (Home), 2 (Away), or 3 (Draw)" });
+        // Validate oracle prediction (0=Home, 1=Draw, 2=Away — matches on-chain contract)
+        if (![0, 1, 2].includes(oraclePrediction)) {
+            return res.status(400).json({ error: "oraclePrediction must be 0 (Home), 1 (Draw), or 2 (Away)" });
         }
 
         const now = new Date();
@@ -78,7 +78,7 @@ router.post("/test-match", async (req: Request, res: Response) => {
 
         // Generate analysis if not provided
         const analysis = oracleAnalysis ||
-            `Test prediction: Oracle calls ${oraclePrediction === 1 ? "Home Win" : oraclePrediction === 2 ? "Away Win" : "Draw"} ` +
+            `Test prediction: Oracle calls ${oraclePrediction === 0 ? "Home Win" : oraclePrediction === 2 ? "Away Win" : "Draw"} ` +
             `${oracleScore} for ${homeTeam} vs ${awayTeam}. Conviction: ${oracleConviction}/100.`;
 
         const result = db.prepare(`
@@ -179,8 +179,8 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
         if (!matchId) {
             return res.status(400).json({ error: "matchId is required" });
         }
-        if (![1, 2, 3].includes(matchResult)) {
-            return res.status(400).json({ error: "result must be 1 (Home), 2 (Away), or 3 (Draw)" });
+        if (![0, 1, 2].includes(matchResult)) {
+            return res.status(400).json({ error: "result must be 0 (Home), 1 (Draw), or 2 (Away)" });
         }
 
         // Get the match
@@ -195,8 +195,8 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
         const oracleCorrect = matchResult === match.oracle_prediction;
 
         // Determine scores if not provided
-        const finalHomeScore = homeScore ?? (matchResult === 1 ? 2 : matchResult === 2 ? 0 : 1);
-        const finalAwayScore = awayScore ?? (matchResult === 1 ? 0 : matchResult === 2 ? 2 : 1);
+        const finalHomeScore = homeScore ?? (matchResult === 0 ? 2 : matchResult === 2 ? 0 : 1);
+        const finalAwayScore = awayScore ?? (matchResult === 0 ? 0 : matchResult === 2 ? 2 : 1);
 
         // Resolve the match in DB (stats/leaderboard only — on-chain handles real payouts)
         const resolveTransaction = db.transaction(() => {
@@ -209,70 +209,31 @@ router.post("/resolve-test", async (req: Request, res: Response) => {
         WHERE id = ?
       `).run(matchResult, finalHomeScore, finalAwayScore, match.id);
 
-            // Get all bids for this match
+            // Get all bets for this match
             const bids = db.prepare("SELECT * FROM bids WHERE match_id = ?").all(match.id) as any[];
-            const challengers = bids.filter((b: any) => b.type === "challenge");
-            const supporters = bids.filter((b: any) => b.type === "support");
 
-            if (challengers.length === 0) {
-                console.log("[Admin] No challengers — nothing to distribute");
-                return { winners: [], distribution: "none", challengers: 0, supporters: supporters.length };
+            if (bids.length === 0) {
+                console.log("[Admin] No bets — nothing to distribute");
+                return { totalBets: 0, distribution: "none" };
             }
 
-            if (matchResult === 3 && match.oracle_prediction !== 3) {
-                // Draw: on-chain handles full refund to all challengers (no fee)
-                return { winners: [], distribution: "draw_refund", challengers: challengers.length, supporters: supporters.length };
-            }
+            // In GoalScore, winners are determined by the on-chain contract:
+            // whoever bet on the correct outcome claims proportionally from the total pot.
+            // The backend just records the result — payouts happen on-chain via claim().
+            const winningBets = bids.filter((b: any) => b.outcome === matchResult);
+            const resultLabel = matchResult === 0 ? "Home" : matchResult === 1 ? "Draw" : "Away";
 
-            if (oracleCorrect) {
-                // Oracle correct: on-chain distributes 99% to lucky supporter, 1% burned
-                if (supporters.length > 0) {
-                    const luckyIdx = Math.floor(Math.random() * supporters.length);
-                    const luckySupporter = supporters[luckyIdx];
-
-                    // Track stats only — no balance changes
-                    for (const bid of challengers) {
-                        db.prepare("UPDATE agents_metadata SET losses = losses + 1 WHERE agent_wallet = ?")
-                            .run(bid.agent_wallet);
-                    }
-                    db.prepare("UPDATE agents_metadata SET wins = wins + 1 WHERE agent_wallet = ?")
-                        .run(luckySupporter.agent_wallet);
-
-                    return {
-                        winners: [{ wallet: luckySupporter.agent_wallet, type: "luckySupporter" }],
-                        distribution: "oracle_win",
-                        challengers: challengers.length,
-                        supporters: supporters.length,
-                    };
-                }
-                return { winners: [], distribution: "oracle_win_no_supporters", challengers: challengers.length, supporters: 0 };
-            } else {
-                // Oracle wrong: on-chain distributes 99% to highest bidder, 1% burned
-                const highestBidder = challengers.reduce((a: any, b: any) => a.amount > b.amount ? a : b);
-
-                // Track stats only — no balance changes
-                db.prepare("UPDATE agents_metadata SET wins = wins + 1 WHERE agent_wallet = ?")
-                    .run(highestBidder.agent_wallet);
-
-                for (const bid of challengers) {
-                    if (bid.agent_wallet !== highestBidder.agent_wallet) {
-                        db.prepare("UPDATE agents_metadata SET losses = losses + 1 WHERE agent_wallet = ?")
-                            .run(bid.agent_wallet);
-                    }
-                }
-
-                return {
-                    winners: [{ wallet: highestBidder.agent_wallet, type: "highestBidder" }],
-                    distribution: "challenger_win",
-                    challengers: challengers.length,
-                    supporters: supporters.length,
-                };
-            }
+            return {
+                totalBets: bids.length,
+                winningBets: winningBets.length,
+                distribution: `${resultLabel}_win`,
+                oracleCorrect,
+            };
         });
 
         const resolution = resolveTransaction();
 
-        // Resolve on-chain too (lucky supporter is selected on-chain via block.prevrandao)
+        // Resolve on-chain
         let onChainTxHash: string | null = null;
         if (resolveOnChain && isChainEnabled() && match.onchain_match_id != null) {
             try {
@@ -318,8 +279,8 @@ router.post("/oracle-predict", (req: Request, res: Response) => {
         if (!matchId || !prediction) {
             return res.status(400).json({ error: "matchId and prediction are required" });
         }
-        if (![1, 2, 3].includes(prediction)) {
-            return res.status(400).json({ error: "prediction must be 1 (Home), 2 (Away), or 3 (Draw)" });
+        if (![0, 1, 2].includes(prediction)) {
+            return res.status(400).json({ error: "prediction must be 0 (Home), 1 (Draw), or 2 (Away)" });
         }
 
         const match = db.prepare("SELECT * FROM matches WHERE api_match_id = ?").get(matchId) as any;

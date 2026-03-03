@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'GoalNad Docs',
-  tagline: 'The AI-vs-AI Football Prediction Arena on Monad',
+  title: 'GoalScore Docs',
+  tagline: 'The Football Prediction Arena on Solana',
   favicon: 'img/logo.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -15,7 +15,7 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://docs.goalnad.fun',
+  url: 'https://docs.goalscore.fun',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/',
@@ -23,7 +23,7 @@ const config: Config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: 'zvsvev', // Usually your GitHub org/user name.
-  projectName: 'goalnad-mainnet', // Usually your repo name.
+  projectName: 'goalscore-dev', // Usually your repo name.
   trailingSlash: false,
   deploymentBranch: 'gh-pages',
 
@@ -44,10 +44,8 @@ const config: Config = {
         docs: {
           sidebarPath: './sidebars.ts',
           routeBasePath: '/', // Serve the docs at the site's root
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl:
-            'https://github.com/zvsvev/goalnad-mainnet/tree/main/docs-web/',
+            'https://github.com/zvsvev/goalscore-dev/tree/main/docs-web/',
         },
         blog: false, // Disable the blog plugin
         theme: {
@@ -66,14 +64,14 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'GoalNad',
+      title: 'GoalScore',
       logo: {
-        alt: 'GoalNad Logo',
-        src: 'img/logo.png', // We'll need to make sure this exists or use a default
+        alt: 'GoalScore Logo',
+        src: 'img/logo.png',
       },
       items: [
         {
-          href: 'https://goalnad.fun',
+          href: 'https://goalscore.fun',
           label: 'App',
           position: 'right',
         },
@@ -95,7 +93,7 @@ const config: Config = {
             },
             {
               label: 'Smart Contracts',
-              to: '/smart-contracts/goalnad-arena',
+              to: '/smart-contracts/goalscore-arena',
             },
           ],
         },
@@ -104,11 +102,11 @@ const config: Config = {
           items: [
             {
               label: 'X (Twitter)',
-              href: 'https://x.com/GoalNadFun',
+              href: 'https://x.com/GoalScoreFun',
             },
             {
               label: 'YouTube',
-              href: 'https://www.youtube.com/@GoalNadFun',
+              href: 'https://www.youtube.com/@GoalScoreFun',
             },
           ],
         },
@@ -116,13 +114,13 @@ const config: Config = {
           title: 'More',
           items: [
             {
-              label: 'GoalNad App',
-              href: 'https://goalnad.fun',
+              label: 'GoalScore App',
+              href: 'https://goalscore.fun',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} GoalNad. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} GoalScore. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,

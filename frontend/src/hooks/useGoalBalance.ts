@@ -53,7 +53,7 @@ export function useGoalBalance() {
                 );
 
                 const accountInfo = await connection.getAccountInfo(ata);
-                if (!accountInfo || !cancelled === false) {
+                if (!accountInfo) {
                     // No token account = 0 balance
                     if (!cancelled) setBalance(0);
                     return;

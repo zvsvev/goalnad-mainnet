@@ -11,6 +11,9 @@ const BPS_DENOM: u64 = 10_000;
 /// Minimum bet: 0.01 SOL = 10,000,000 lamports
 const MIN_BET: u64 = 10_000_000;
 
+/// Minimum betting window: 1 hour before kickoff required at market creation
+const MIN_BETTING_WINDOW: i64 = 3600;
+
 /// Outcomes
 const OUTCOME_HOME: u8 = 0;
 const OUTCOME_DRAW: u8 = 1;
@@ -22,16 +25,54 @@ const OUTCOME_CANCELLED: u8 = 254;
 pub mod goalscore_arena {
     use super::*;
 
+    /// Admin initializes the global config (called once after deploy).
+    pub fn initialize_config(
+        ctx: Context<InitializeConfig>,
+        treasury: Pubkey,
+    ) -> Result<()> {
+        require!(treasury != Pubkey::default(), GoalScoreError::InvalidTreasury);
+
+        let config = &mut ctx.accounts.config;
+        config.admin = ctx.accounts.admin.key();
+        config.treasury = treasury;
+        config.bump = ctx.bumps.config;
+
+        msg!("Config initialized: admin={}, treasury={}", config.admin, config.treasury);
+        Ok(())
+    }
+
+    /// Admin updates the treasury address.
+    pub fn set_treasury(
+        ctx: Context<SetTreasury>,
+        new_treasury: Pubkey,
+    ) -> Result<()> {
+        require!(new_treasury != Pubkey::default(), GoalScoreError::InvalidTreasury);
+
+        let old_treasury = ctx.accounts.config.treasury;
+        ctx.accounts.config.treasury = new_treasury;
+
+        msg!("Treasury updated: {} -> {}", old_treasury, new_treasury);
+        Ok(())
+    }
+
     /// Oracle creates a match market on-chain.
+    /// Treasury is read from the global config PDA — not passed by caller.
     pub fn create_match(
         ctx: Context<CreateMatch>,
         match_id: u64,
         kickoff_time: i64,
     ) -> Result<()> {
+        // [M2] Validate kickoff is far enough in the future
+        let clock = Clock::get()?;
+        require!(
+            kickoff_time > clock.unix_timestamp + MIN_BETTING_WINDOW,
+            GoalScoreError::KickoffTooSoon
+        );
+
         let market = &mut ctx.accounts.market;
         market.match_id = match_id;
         market.oracle = ctx.accounts.oracle.key();
-        market.treasury = ctx.accounts.treasury.key();
+        market.treasury = ctx.accounts.config.treasury; // from global config
         market.kickoff_time = kickoff_time;
         market.result = OUTCOME_NONE;
         market.resolved = false;
@@ -40,6 +81,7 @@ pub mod goalscore_arena {
         market.total_home = 0;
         market.total_draw = 0;
         market.total_away = 0;
+        market.claimed_pot = 0;
         market.bump = ctx.bumps.market;
 
         emit!(MatchCreated {
@@ -143,6 +185,7 @@ pub mod goalscore_arena {
     }
 
     /// Oracle resolves a match. Only oracle authority can call this.
+    /// [M4] Cannot resolve before kickoff to prevent oracle front-running.
     pub fn resolve_match(
         ctx: Context<ResolveMatch>,
         match_id: u64,
@@ -156,7 +199,14 @@ pub mod goalscore_arena {
         let market = &mut ctx.accounts.market;
         require!(!market.resolved, GoalScoreError::MarketResolved);
         require!(!market.cancelled, GoalScoreError::MarketCancelled);
-        require!(market.oracle == ctx.accounts.oracle.key(), GoalScoreError::Unauthorized);
+        // oracle constraint is already enforced in the Accounts struct
+
+        // [M4] Cannot resolve before the match has started
+        let clock = Clock::get()?;
+        require!(
+            clock.unix_timestamp >= market.kickoff_time,
+            GoalScoreError::MatchNotStarted
+        );
 
         market.result = result;
         market.resolved = true;
@@ -214,10 +264,11 @@ pub mod goalscore_arena {
     }
 
     /// Winner claims proportional payout. 1% fee taken at claim time.
+    /// All three outcomes (Home/Draw/Away) are valid winning outcomes.
+    /// [C2] Uses direct lamport manipulation to avoid rent-exempt minimum issues.
     pub fn claim(ctx: Context<Claim>, match_id: u64) -> Result<()> {
         let market = &ctx.accounts.market;
         require!(market.resolved, GoalScoreError::MarketNotResolved);
-        require!(market.result != OUTCOME_DRAW, GoalScoreError::DrawUseRefund);
 
         let bet = &ctx.accounts.bet;
         require!(!bet.claimed, GoalScoreError::AlreadyClaimed);
@@ -226,8 +277,9 @@ pub mod goalscore_arena {
 
         let winning_total = match market.result {
             OUTCOME_HOME => market.total_home,
+            OUTCOME_DRAW => market.total_draw,
             OUTCOME_AWAY => market.total_away,
-            _ => return err!(GoalScoreError::DrawUseRefund),
+            _ => return err!(GoalScoreError::InvalidOutcome),
         };
         require!(winning_total > 0, GoalScoreError::ZeroAmount);
 
@@ -244,35 +296,18 @@ pub mod goalscore_arena {
         // Mark claimed before transfers (reentrancy guard)
         ctx.accounts.bet.claimed = true;
 
-        let match_id_bytes = match_id.to_le_bytes();
-        let seeds = &[b"market".as_ref(), match_id_bytes.as_ref(), &[market.bump]];
-        let signer = &[&seeds[..]];
+        // [C1] Track claimed amount so close_market can verify all funds are settled
+        ctx.accounts.market.claimed_pot = ctx.accounts.market.claimed_pot
+            .checked_add(gross_payout).unwrap();
 
+        // [C2] Direct lamport manipulation — avoids rent-exempt minimum failures
         // Fee → treasury
-        system_program::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: ctx.accounts.market.to_account_info(),
-                    to: ctx.accounts.treasury.to_account_info(),
-                },
-                signer,
-            ),
-            fee,
-        )?;
+        **ctx.accounts.market.to_account_info().try_borrow_mut_lamports()? -= fee;
+        **ctx.accounts.treasury.to_account_info().try_borrow_mut_lamports()? += fee;
 
         // Net payout → user
-        system_program::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: ctx.accounts.market.to_account_info(),
-                    to: ctx.accounts.user.to_account_info(),
-                },
-                signer,
-            ),
-            net_payout,
-        )?;
+        **ctx.accounts.market.to_account_info().try_borrow_mut_lamports()? -= net_payout;
+        **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += net_payout;
 
         emit!(Claimed {
             match_id,
@@ -285,14 +320,13 @@ pub mod goalscore_arena {
         Ok(())
     }
 
-    /// Refund — available on draw OR cancelled matches. Full net bet returned, no fee.
+    /// Refund — available only on cancelled/postponed matches. Full net bet returned, no fee.
+    /// [C2] Uses direct lamport manipulation to avoid rent-exempt minimum issues.
     pub fn refund(ctx: Context<Refund>, match_id: u64) -> Result<()> {
         let market = &ctx.accounts.market;
 
-        // Allow refund if: (1) resolved as draw, OR (2) cancelled
-        let is_draw = market.resolved && market.result == OUTCOME_DRAW;
-        let is_cancelled = market.cancelled;
-        require!(is_draw || is_cancelled, GoalScoreError::RefundNotAllowed);
+        // Refund only allowed for cancelled matches
+        require!(market.cancelled, GoalScoreError::RefundNotAllowed);
 
         let bet = &ctx.accounts.bet;
         require!(!bet.claimed, GoalScoreError::AlreadyClaimed);
@@ -302,21 +336,13 @@ pub mod goalscore_arena {
         let refund_amount = bet.amount;
         ctx.accounts.bet.refunded = true;
 
-        let match_id_bytes = match_id.to_le_bytes();
-        let seeds = &[b"market".as_ref(), match_id_bytes.as_ref(), &[market.bump]];
-        let signer = &[&seeds[..]];
+        // [C1] Track refunded amount
+        ctx.accounts.market.claimed_pot = ctx.accounts.market.claimed_pot
+            .checked_add(refund_amount).unwrap();
 
-        system_program::transfer(
-            CpiContext::new_with_signer(
-                ctx.accounts.system_program.to_account_info(),
-                system_program::Transfer {
-                    from: ctx.accounts.market.to_account_info(),
-                    to: ctx.accounts.user.to_account_info(),
-                },
-                signer,
-            ),
-            refund_amount,
-        )?;
+        // [C2] Direct lamport manipulation — avoids rent-exempt minimum failures
+        **ctx.accounts.market.to_account_info().try_borrow_mut_lamports()? -= refund_amount;
+        **ctx.accounts.user.to_account_info().try_borrow_mut_lamports()? += refund_amount;
 
         emit!(Refunded {
             match_id,
@@ -344,6 +370,37 @@ pub mod goalscore_arena {
 // ─── Account Structs ──────────────────────────────────────────────────────────
 
 #[derive(Accounts)]
+pub struct InitializeConfig<'info> {
+    #[account(
+        init,
+        payer = admin,
+        space = 8 + Config::INIT_SPACE,
+        seeds = [b"config"],
+        bump
+    )]
+    pub config: Account<'info, Config>,
+
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct SetTreasury<'info> {
+    #[account(
+        mut,
+        seeds = [b"config"],
+        bump = config.bump,
+        constraint = config.admin == admin.key() @ GoalScoreError::Unauthorized,
+    )]
+    pub config: Account<'info, Config>,
+
+    #[account(mut)]
+    pub admin: Signer<'info>,
+}
+
+#[derive(Accounts)]
 #[instruction(match_id: u64)]
 pub struct CreateMatch<'info> {
     #[account(
@@ -355,12 +412,15 @@ pub struct CreateMatch<'info> {
     )]
     pub market: Account<'info, Market>,
 
+    /// Global config PDA — treasury is read from here
+    #[account(
+        seeds = [b"config"],
+        bump = config.bump,
+    )]
+    pub config: Account<'info, Config>,
+
     #[account(mut)]
     pub oracle: Signer<'info>,
-
-    /// CHECK: wallet address only, no data read
-    #[account(mut)]
-    pub treasury: UncheckedAccount<'info>,
 
     pub system_program: Program<'info, System>,
 }
@@ -503,7 +563,8 @@ pub struct CloseBet<'info> {
     pub user: Signer<'info>,
 }
 
-/// Close a market account. Only oracle can close. Market must be resolved/cancelled.
+/// Close a market account. Only oracle can close.
+/// [C1] Market must be resolved/cancelled AND all funds must be settled.
 #[derive(Accounts)]
 #[instruction(match_id: u64)]
 pub struct CloseMarket<'info> {
@@ -513,6 +574,8 @@ pub struct CloseMarket<'info> {
         bump = market.bump,
         constraint = market.resolved || market.cancelled @ GoalScoreError::MarketNotResolved,
         constraint = market.oracle == oracle.key() @ GoalScoreError::Unauthorized,
+        // [C1] Cannot close until all funds are claimed/refunded
+        constraint = market.claimed_pot >= market.total_pot @ GoalScoreError::UnsettledBets,
         close = oracle,
     )]
     pub market: Account<'info, Market>,
@@ -525,6 +588,14 @@ pub struct CloseMarket<'info> {
 
 #[account]
 #[derive(InitSpace)]
+pub struct Config {
+    pub admin: Pubkey,
+    pub treasury: Pubkey,
+    pub bump: u8,
+}
+
+#[account]
+#[derive(InitSpace)]
 pub struct Market {
     pub match_id: u64,
     pub oracle: Pubkey,
@@ -532,11 +603,12 @@ pub struct Market {
     pub kickoff_time: i64,
     pub result: u8,
     pub resolved: bool,
-    pub cancelled: bool,          // NEW: supports cancel/void
+    pub cancelled: bool,
     pub total_pot: u64,
     pub total_home: u64,
     pub total_draw: u64,
     pub total_away: u64,
+    pub claimed_pot: u64,
     pub bump: u8,
 }
 
@@ -630,9 +702,7 @@ pub enum GoalScoreError {
     AlreadyRefunded,
     #[msg("You did not pick the winning outcome.")]
     WrongOutcome,
-    #[msg("Match ended in a draw — use refund instead of claim.")]
-    DrawUseRefund,
-    #[msg("Refund not allowed — market is not a draw and not cancelled.")]
+    #[msg("Refund not allowed — market is not cancelled.")]
     RefundNotAllowed,
     #[msg("Unauthorized.")]
     Unauthorized,
@@ -642,4 +712,12 @@ pub enum GoalScoreError {
     BetNotSettled,
     #[msg("Invalid oracle address.")]
     InvalidOracle,
+    #[msg("Match has not started yet — cannot resolve.")]
+    MatchNotStarted,
+    #[msg("Kickoff must be at least 1 hour in the future.")]
+    KickoffTooSoon,
+    #[msg("Cannot close market — not all bets have been settled.")]
+    UnsettledBets,
+    #[msg("Invalid treasury address.")]
+    InvalidTreasury,
 }

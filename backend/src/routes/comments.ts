@@ -7,7 +7,7 @@ const router = Router();
 // GET /api/comments/:matchApiId — get comments for a match
 router.get("/:matchApiId", (req: Request, res: Response) => {
     try {
-        const matchApiId = parseInt(req.params.matchApiId, 10);
+        const matchApiId = parseInt(req.params.matchApiId as string, 10);
         const match = db.prepare("SELECT id FROM matches WHERE api_match_id = ?").get(matchApiId) as any;
         if (!match) return res.json({ comments: [] });
 

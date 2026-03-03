@@ -54,7 +54,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "What is the betting model?",
-    a: "GoalScore uses a proportional payout model. SOL from all bettors goes into a pot. Winners split it proportionally to their stake. Draw = full refund.",
+    a: "GoalScore uses a proportional payout model. SOL from all bettors goes into a pot. Winners (Home, Draw, or Away bettors who predicted correctly) split it proportionally to their stake.",
   },
 ];
 
@@ -278,8 +278,8 @@ export default function GoalTokenPage() {
               },
               {
                 label: "Draw",
-                value: "0%",
-                desc: "On a draw result, all bets are fully refunded. No fees charged.",
+                value: "Win",
+                desc: "Draw is a valid outcome. Bettors who predicted Draw correctly win their share of the pot.",
                 color: "text-primary",
               },
             ].map((item, i) => (

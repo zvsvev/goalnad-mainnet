@@ -306,26 +306,8 @@ export async function fetchOraclePrediction(
   return res.json();
 }
 
-// ─── Bet placement ────────────────────────────────────────────────────────────
-
-export async function placeBetApi(params: {
-  matchId: number;
-  outcome: Outcome;
-  amountLamports: number;
-  userWallet: string;
-  signedTx: string; // base64 serialized signed transaction
-}): Promise<{ txHash: string }> {
-  const res = await fetch(`${API_URL}/api/bets/place`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(params),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).error || `API error: ${res.status}`);
-  }
-  return res.json();
-}
+// Bets are placed directly on-chain via the useBetting hook.
+// See frontend/src/hooks/useBetting.ts for Solana program interaction.
 
 // ─── Head-to-Head Stats ───────────────────────────────────────────────────────
 

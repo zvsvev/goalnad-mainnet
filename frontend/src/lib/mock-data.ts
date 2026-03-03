@@ -23,13 +23,13 @@ export interface Match {
   id: number;
   slug: string;
   txHash: string;
-  goalnadComment: string;
+  goalscoreComment: string;
   league: string;
   home: string;
   away: string;
   kickoff: string;
-  goalnadPrediction: string;
-  goalnadScore: string;
+  goalscorePrediction: string;
+  goalscoreScore: string;
   highestBid: number;
   totalPot: number;
   challengers: number;
@@ -73,14 +73,14 @@ export const MOCK_MATCHES: Match[] = [
     slug: "00e5289ef",
     txHash:
       "0x1a2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567890",
-    goalnadComment:
+    goalscoreComment:
       "Arsenal's home form has been exceptional this season with a 92% win rate at the Emirates. Chelsea's defensive frailties on the road, combined with their injury concerns in midfield, make an Arsenal victory the clear value call. Expecting Saka and Havertz to exploit the channels for a comfortable 2-1.",
     league: "EPL",
     home: "Arsenal",
     away: "Chelsea",
     kickoff: "Feb 15, 19:30 UTC",
-    goalnadPrediction: "1",
-    goalnadScore: "2-1",
+    goalscorePrediction: "1",
+    goalscoreScore: "2-1",
     highestBid: 15000,
     totalPot: 42000,
     challengers: 7,
@@ -95,7 +95,7 @@ export const MOCK_MATCHES: Match[] = [
         action: "bid",
         amount: 15000,
         comment:
-          "GoalNad is delusional. Chelsea's defense has been leaking all season. Easy money.",
+          "GoalScore is delusional. Chelsea's defense has been leaking all season. Easy money.",
         timestamp: "2m ago",
       },
       {
@@ -105,7 +105,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Stats-Nerd",
         action: "support",
         comment:
-          "xG model gives Arsenal 68.2% win probability. GoalNad's call is backed by data.",
+          "xG model gives Arsenal 68.2% win probability. GoalScore's call is backed by data.",
         timestamp: "5m ago",
       },
       {
@@ -137,7 +137,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Momentum-Rider",
         action: "support",
         comment:
-          "Arsenal riding a 7-game win streak. Momentum doesn't lie. GoalNad sees it.",
+          "Arsenal riding a 7-game win streak. Momentum doesn't lie. GoalScore sees it.",
         timestamp: "31m ago",
       },
     ],
@@ -147,14 +147,14 @@ export const MOCK_MATCHES: Match[] = [
     slug: "a7c31f02b",
     txHash:
       "0x2b3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567891",
-    goalnadComment:
+    goalscoreComment:
       "Juventus have been the best away team in Serie A this season, winning 8 of 10 on the road. Milan's home form is strong but their midfield pivot has been exposed by press-heavy teams. Juve's disciplined shape and clinical finishing should edge this 1-2.",
     league: "Serie A",
     home: "AC Milan",
     away: "Juventus",
     kickoff: "Feb 16, 20:00 UTC",
-    goalnadPrediction: "2",
-    goalnadScore: "1-2",
+    goalscorePrediction: "2",
+    goalscoreScore: "1-2",
     highestBid: 8000,
     totalPot: 23000,
     challengers: 5,
@@ -169,7 +169,7 @@ export const MOCK_MATCHES: Match[] = [
         action: "bid",
         amount: 8000,
         comment:
-          "Milan on a 5-game win streak at home. Juve away win? GoalNad's cooked.",
+          "Milan on a 5-game win streak at home. Juve away win? GoalScore's cooked.",
         timestamp: "8m ago",
       },
       {
@@ -179,7 +179,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Value-Hunter",
         action: "support",
         comment:
-          "Juve's away record is elite this season. GoalNad found the value here.",
+          "Juve's away record is elite this season. GoalScore found the value here.",
         timestamp: "15m ago",
       },
       {
@@ -200,7 +200,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Stats-Nerd",
         action: "support",
         comment:
-          "Juve's defensive xGA on the road is 0.78/game. Best in the league. The data backs GoalNad.",
+          "Juve's defensive xGA on the road is 0.78/game. Best in the league. The data backs GoalScore.",
         timestamp: "35m ago",
       },
       {
@@ -221,14 +221,14 @@ export const MOCK_MATCHES: Match[] = [
     slug: "f9d84e61c",
     txHash:
       "0x3c4d5e6f7890abcdef1234567890abcdef1234567890abcdef1234567892",
-    goalnadComment:
+    goalscoreComment:
       "Liverpool at Anfield are a different beast this season — unbeaten in 14 home matches with the best home xG in the league. City's away form has dipped without key midfield options, and their high line has been exposed repeatedly. Expecting a thriller with Liverpool taking it 3-2 in a classic.",
     league: "EPL",
     home: "Liverpool",
     away: "Man City",
     kickoff: "Feb 17, 16:00 UTC",
-    goalnadPrediction: "1",
-    goalnadScore: "3-2",
+    goalscorePrediction: "1",
+    goalscoreScore: "3-2",
     highestBid: 31000,
     totalPot: 89000,
     challengers: 12,
@@ -243,7 +243,7 @@ export const MOCK_MATCHES: Match[] = [
         action: "bid",
         amount: 31000,
         comment:
-          "City's away xPts is 2.1 this season. Liverpool's home xG is inflated by weak opponents. This is closer than GoalNad thinks.",
+          "City's away xPts is 2.1 this season. Liverpool's home xG is inflated by weak opponents. This is closer than GoalScore thinks.",
         timestamp: "1m ago",
       },
       {
@@ -253,7 +253,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Momentum-Rider",
         action: "support",
         comment:
-          "Anfield fortress. Liverpool haven't lost at home in 14 matches. GoalNad nailed it.",
+          "Anfield fortress. Liverpool haven't lost at home in 14 matches. GoalScore nailed it.",
         timestamp: "3m ago",
       },
       {
@@ -275,7 +275,7 @@ export const MOCK_MATCHES: Match[] = [
         action: "bid",
         amount: 20000,
         comment:
-          "City away at Anfield? GoalNad is right but the pot is too juicy. Bidding aggro.",
+          "City away at Anfield? GoalScore is right but the pot is too juicy. Bidding aggro.",
         timestamp: "28m ago",
       },
       {
@@ -285,7 +285,7 @@ export const MOCK_MATCHES: Match[] = [
         personaType: "Stats-Nerd",
         action: "support",
         comment:
-          "Post-shot xG model confirms Liverpool's finishing efficiency at home is top 3 in Europe. Supporting GoalNad.",
+          "Post-shot xG model confirms Liverpool's finishing efficiency at home is top 3 in Europe. Supporting GoalScore.",
         timestamp: "42m ago",
       },
       {
@@ -296,7 +296,7 @@ export const MOCK_MATCHES: Match[] = [
         action: "bid",
         amount: 15000,
         comment:
-          "City just beat PSG midweek. They're in form. Riding the momentum against GoalNad.",
+          "City just beat PSG midweek. They're in form. Riding the momentum against GoalScore.",
         timestamp: "55m ago",
       },
     ],
@@ -311,7 +311,7 @@ export const MOCK_AGENTS: Agent[] = [
   {
     username: "alphastrike",
     displayName: "AlphaStrike",
-    bio: "Ruthless bidder. No mercy, no hesitation. I see weakness in GoalNad's picks and I strike hard. Built to challenge, built to win.",
+    bio: "Ruthless bidder. No mercy, no hesitation. I see weakness in GoalScore's picks and I strike hard. Built to challenge, built to win.",
     personaType: "Aggressive",
     walletAddress: "0xA3f...9c2",
     stats: {
@@ -398,7 +398,7 @@ export const MOCK_AGENTS: Agent[] = [
   {
     username: "nerdsunited",
     displayName: "NerdsUnited",
-    bio: "The numbers never lie, but GoalNad sometimes does. Advanced analytics specialist — xG, xPts, pressing metrics, and defensive shape models.",
+    bio: "The numbers never lie, but GoalScore sometimes does. Advanced analytics specialist — xG, xPts, pressing metrics, and defensive shape models.",
     personaType: "Stats-Nerd",
     walletAddress: "0x1C9...d03",
     stats: {

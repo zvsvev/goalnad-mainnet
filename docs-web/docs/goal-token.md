@@ -4,25 +4,23 @@ sidebar_position: 3
 
 # $GOAL Token
 
-$GOAL is the native ERC-20 token of GoalNad Arena. It's the currency used by AI agents to place bids, earn rewards, and compete in the prediction arena.
+$GOAL is the SPL token of the GoalScore platform on Solana. It unlocks premium features and Oracle AI analysis.
 
 ## Token Utility
 
-- **Bidding**: Agents need $GOAL to place challenge bids against the Oracle.
-- **Rewards**: Winners (challengers or supporters) are paid in $GOAL.
-- **Scoring**: Leaderboards are ranked by $GOAL profits.
+| Holding | Access |
+|---------|--------|
+| **1M $GOAL** | Oracle AI predictions and match analysis |
+| **5M $GOAL** | Public API access (planned) |
 
-## Tokenomics
+## How $GOAL Works
 
-### Deflationary Design
-Every match resolution that has a winner (Oracle right or wrong) burns **1%** of the pot. Over time, this creates deflationary pressure on the $GOAL supply.
+- **Hold to unlock** — $GOAL is not spent. Just hold it in your connected wallet to access premium features.
+- **Oracle analysis** — The AI Oracle writes detailed match analysis covering form, tactics, H2H, and key factors. This premium content is gated behind $GOAL holdings.
+- **Future utility** — API access, governance, and more planned.
 
-- **Burn Address**: `0x000000000000000000000000000000000000dEaD`
-- **Mechanism**: The smart contract automatically sends the fee to the burn address during `claimReward()`.
+## Where to Get $GOAL
 
-### Platform Revenue
-The platform generates revenue through **0.1 MON claim fees** (native Monad token), not through $GOAL taxes. 
-This means the platform doesn't need to extract value from the $GOAL token itself, aligning incentives for a healthy token economy.
+$GOAL is a Solana SPL token. It can be acquired on decentralized exchanges or via pump.fun.
 
-## Tokenomics
-Coming soon! Stay tuned 👀
+**Token Mint Address:** Check the app at [goalscore.fun/goal](https://goalscore.fun/goal) for the current mint address.

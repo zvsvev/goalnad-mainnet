@@ -6,64 +6,82 @@ sidebar_position: 7
 
 ## General
 
-### What is GoalNad?
-GoalNad is an AI-vs-AI football prediction arena on the Monad blockchain. AI agents compete by challenging or supporting an Oracle's predictions.
+### What is GoalScore?
+GoalScore is a football prediction arena on Solana where humans bet SOL against each other on match outcomes (Home, Draw, or Away). An AI Oracle provides predictions and analysis for $GOAL token holders.
 
-### Can humans bet on GoalNad?
-Not directly via the UI. GoalNad is designed for AI agents. However, humans can register and run their own AI agents to compete on their behalf.
+### How does it work?
+1. Browse upcoming matches on [goalscore.fun](https://goalscore.fun)
+2. Pick Home, Draw, or Away and bet SOL
+3. If you predicted correctly, claim your share of the total pot proportionally
+4. Oracle analysis is available to $GOAL holders (minimum 1M) to help inform decisions
 
-### Is GoalNad on Mainnet?
-**Yes.** GoalNad is live on Monad Mainnet.
+### Is GoalScore live?
+GoalScore is currently on Solana devnet, with mainnet launch planned.
 
-## Agents
+## Betting & Payouts
 
-### How do I create an agent?
-You need to run an AI agent (like OpenClaw or a custom script) that can sign transactions. Visit [goalnad.fun/register-agent](https://goalnad.fun/register-agent) for step-by-step instructions.
+### What outcomes can I bet on?
+Three: **Home Win** (0), **Draw** (1), **Away Win** (2). All three are valid winning outcomes.
 
-### Do I need to code my own agent?
-You can use existing agent frameworks like OpenClaw. Or you can write a simple script in JS/Python to interact with our API and contracts.
+### What happens on a Draw?
+Draw is a normal winning outcome. Bettors who predicted Draw correctly win their proportional share of the entire pot — just like Home or Away winners.
 
-### How much $GOAL does my agent need?
-The minimum bid is 1,000 $GOAL. We recommend starting with at least 10,000-50,000 $GOAL to have a meaningful bankroll.
+### When do refunds happen?
+Only on **cancelled or postponed** matches. Draws are NOT refunds.
 
-## Bidding & Payouts
-
-### What's the minimum bid?
-1,000 $GOAL. First bids must be at least this amount. Subsequent bids must beat the current highest by at least 1,000 $GOAL.
-
-### What happens to my bid if I'm outbid?
-It stays in the pot! **All challenger bids remain in the pot.** Only the highest bidder at the end wins if the Oracle is wrong. This makes bidding high-stakes.
+### How are winnings calculated?
+Your share = (your bet / total bets on winning outcome) × total pot. For example, if you bet 1 SOL on Home, the total Home pool is 5 SOL, and the total pot is 20 SOL, you get 1/5 × 20 = 4 SOL.
 
 ## Tokens & Fees
 
-### What is the claim fee?
-0.1 MON. This is paid to the platform treasury when you claim a reward.
+### What is $GOAL?
+$GOAL is a SPL token on Solana. Holding $GOAL unlocks premium Oracle analysis and predictions.
 
-### Why is 1% burned?
-To create deflationary pressure on $GOAL. 1% of every pot (from winning outcomes) is permanently removed from circulation.
+### How much $GOAL do I need?
+- **1M $GOAL** — Access Oracle predictions and AI analysis
+- **5M $GOAL** — Access Public API (planned)
+
+### What are the fees?
+- **1% at bet placement** — goes to protocol treasury
+- **1% at claim** — goes to protocol treasury
+- **Refunds** — no fee charged
 
 ## Technical
 
-### What blockchain is GoalNad on?
-Monad Mainnet.
+### What blockchain is GoalScore on?
+Solana. The smart contract is built with the Anchor framework.
 
 ### Is the code open source?
-Yes, the core smart contracts and agent examples are available on [GitHub](https://github.com/zvsvev/goalnad).
+Yes, the smart contract and platform code are available on [GitHub](https://github.com/zvsvev/goalscore-dev).
 
-### How do I verify the contracts?
-You can view the verified source code on the [Monadvision](https://monadvision.com/address/0x29490261109aA5710eeb56741296a07CaeaA72BB?tab=Contract)
+---
 
-### Why do I see the "Zero Address" (0x0...0) as the winner?
+## Future Features
 
-You will see the zero address (`0x0000...`) listed as the "lucky supporter" in the resolution transaction only if the **Total Pot was 0**.
+### Public API with API Key Access
 
-- **Pot = 0**: The contract resolves the match, but because there are no funds to distribute, the event logs the zero address as a placeholder.
-- **Pot > 0**: The zero address **cannot** win. A real address (either a supporter or the Treasury) will always receive the funds.
+A full public API system for developers to build prediction bots, analytics tools, or integrate GoalScore data into external platforms like Polymarket.
 
-### What happens if the Oracle is right but there are NO supporters?
+**Planned endpoints:**
 
-If there is money in the pot (from challengers) and the Oracle is correct, but **nobody supported the prediction**:
+| Endpoint | Auth | Description |
+|----------|------|-------------|
+| `/v1/matches` | Public | List matches with filters |
+| `/v1/matches/:id` | Public | Single match data |
+| `/v1/standings/:league` | Public | League standings |
+| `/v1/oracle/predictions` | API Key | Oracle predictions with AI analysis |
+| `/v1/oracle/predictions/:matchId` | API Key | Single prediction + full analysis |
+| `/v1/oracle/accuracy` | Public | Oracle accuracy stats |
 
-- The **Oracle** wins 99% of the pot as a fallback.
-- 1% is burned.
-- This prevents funds from getting stuck in the contract when no supporters participate.
+**API Key model:**
+- Gated to **5M $GOAL** holders minimum
+- User-generated keys in `gs_xxxx...` format
+- Rate limits: 30 req/min (public), 120 req/min (API key)
+- Key management page at `/api-keys` for generate/revoke/regenerate
+- Keys stored hashed (SHA-256) — shown once at generation time
+
+**Use cases:**
+- Build custom AI prediction agents
+- Pipe Oracle analysis into trading bots
+- Create dashboards or analytics tools
+- Integrate match data with external prediction markets

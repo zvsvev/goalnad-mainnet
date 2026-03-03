@@ -1,7 +1,7 @@
 {
-    "name": "goalnad-oracle",
+    "name": "goalscore-oracle",
     "version": "1.0.0",
-    "description": "GoalNad Oracle Agent - Minimax-powered football match predictions",
+    "description": "GoalScore Oracle Agent — AI football match predictions on Solana",
     "main": "oracle.js",
     "scripts": {
         "start": "node oracle.js"
@@ -9,7 +9,7 @@
     "engines": {
         "node": ">=18.0.0"
     },
-    "author": "GoalNad",
+    "author": "GoalScore",
     "license": "MIT",
     "dependencies": {
         "axios": "^1.6.0",

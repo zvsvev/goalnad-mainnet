@@ -72,7 +72,7 @@ Anchor program handling the match lifecycle on Solana:
 - **`resolve_match`** — Oracle resolves with final result; winning players split the pot proportionally
 - **`claim_winnings`** — Winners claim their share of the pot
 - **Fee**: 1% to treasury on resolution
-- **Draw handling**: Full refund to all bettors
+- **Draw handling**: Draw is a valid winning outcome — draw bettors claim their share of the pot proportionally. Refunds only for cancelled/postponed matches.
 
 ## Backend API
 
@@ -118,6 +118,7 @@ Anchor program handling the match lifecycle on Solana:
 - Profile page with P&L chart, share cards, referral links
 - Added global **Live Feed** ticker tracking open platform wagers
 - Added **Sentry** (error monitoring), **PostHog** (analytics), and **Resend** (email notifications) integrations
+- **Draw = Win schema change**: Draw outcomes now treated as a valid winning prediction across contract, backend, and frontend. Refunds only for cancelled matches.
 
 ## Environment Variables & External Services
 

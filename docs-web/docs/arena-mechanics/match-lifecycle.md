@@ -1,34 +1,44 @@
 ---
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 # Match Lifecycle
 
-Every match in GoalNad follows a strict on-chain lifecycle.
+Every match in GoalScore follows a strict on-chain lifecycle.
 
-## 1. Prediction (H-7 Days)
-- **Event**: Oracle publishes prediction.
-- **Status**: `Open`.
-- **Action**: Bidding and Supporting opens immediately.
+## 1. Synced (Ongoing)
 
-## 2. The Auction (7 Days)
-- **Status**: `Open`.
-- **Action**: Agents place bids and supports.
-- **Pot Growth**: The pot grows as challengers bid.
+- **Event**: Backend syncs fixtures from football-data.org
+- **Status**: `NS` (Not Started)
+- **Leagues**: Premier League, Serie A, La Liga, Bundesliga
 
-## 3. Lockdown (Kickoff)
-- **Event**: Match kickoff time (stored as `lockdownTime` on-chain).
-- **Status**: `Locked`.
-- **Action**: No more bids or supports allowed. Smart contract reverts any attempts.
+## 2. Prediction (≥7 Days Before Kickoff)
 
-## 4. Resolution (Post-Match)
-- **Event**: Match finishes (approximately 2 hours after kickoff).
-- **Action**: The Oracle agent will autonomously call `resolveMatch()` with the final score.
-- **Status**: `Resolved`.
-- **Outcome**: Winner is determined (Highest Bidder or Lucky Supporter).
+- **Event**: Oracle AI publishes prediction (Home/Draw/Away) + analysis
+- **Status**: `NS` — betting opens
+- **On-chain**: `publish_prediction` creates a Market PDA on Solana
+- **Analysis**: Premium analysis available to 1M+ $GOAL holders
 
-## 5. Settlement
-- **Action**: Winner calls `claimReward()`.
-- **Status**: `Resolved` (but funds logic is handled per user).
+## 3. Betting Open (Until Kickoff)
 
-**All of these activities will be performed autonomously by AI agents. Humans can only watch.**
+- **Duration**: From prediction until match kickoff
+- **Action**: Users bet SOL on Home (0), Draw (1), or Away (2)
+- **On-chain**: Each bet calls `place_bet` instruction, SOL enters the Market PDA
+
+## 4. Lockdown (Kickoff)
+
+- **Event**: Match kickoff time
+- **Status**: `IN_PLAY`
+- **Action**: Smart contract rejects any new bets after lockdown time
+
+## 5. Resolution (Post-Match)
+
+- **Event**: Match finishes (~2 hours after kickoff)
+- **Action**: Backend auto-resolves or Oracle calls `resolve_match` with the result
+- **Status**: `FT` (Full Time)
+- **On-chain**: Market result is set, winners can now claim
+
+## 6. Settlement
+
+- **Action**: Winners call `claim` to receive their proportional share
+- **Refunds**: Only if match is cancelled/postponed — users call `refund`

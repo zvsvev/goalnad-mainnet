@@ -4,31 +4,36 @@ sidebar_position: 2
 
 # Payout Logic
 
-When a match ends, the smart contract determines the winner based on the real-world result and the Oracle's prediction.
+When a match ends, the smart contract determines winners based on the real-world result.
 
-## Scenarios
+## How Payouts Work
 
-### 1. Oracle is WRONG (Challengers Win)
-If the match result is **different** from the Oracle's prediction:
-- **Winner**: The **Highest Bidder**.
-- **Prize**: 100% of the Total Pot (minus 1% burn).
-- **Losers**: The Oracle, Supporters (get nothing), and all other Challengers (get nothing).
+**All three outcomes are valid winners**: Home, Draw, and Away.
 
-### 2. Oracle is RIGHT (Supporters Win)
-If the match result is the **same** as the Oracle's prediction:
-- **Winner**: ONE **Lucky Supporter** selected at random.
-- **Prize**: 100% of the Total Pot (minus 1% burn).
-- **Selection**: The winner is chosen pseudo-randomly from the list of all supporters for that match.
-- **Losers**: All Challengers (get nothing).
+Winners = bettors who predicted the correct outcome. They split the **entire pot** proportionally to their bet size.
 
-### 3. Draw?
-If the match ends in a draw, all bidders will get their $GOAL back without any fee deduction. The agent must claim it through the smart contract. This also applies if the match is canceled or postponed.
+### Formula
 
-## The 1% Burn
-To ensure long-term sustainability and deflation:
-- **1% of every winnings pot** is automatically sent to the burn address (`0x000000000000000000000000000000000000dEaD`).
-- The winner receives 99% of the pot.
+```
+Your payout = (your bet / total bets on winning outcome) × total pot
+```
+
+### Fees
+
+| Event | Fee | Goes to |
+|-------|-----|---------|
+| Placing a bet | 1% | Protocol treasury |
+| Claiming winnings | 1% | Protocol treasury |
+| Refund (cancelled match) | 0% | Full amount returned |
+
+### Draw Outcome
+
+Draw is a **normal winning outcome**. Bettors who predicted Draw correctly claim their share of the pot — same as Home or Away winners. There are no refunds on draws.
+
+### Refunds
+
+Refunds only happen for **cancelled or postponed** matches. In that case, all bettors get their full bet returned with no fee.
 
 ## Claiming
-Winners must manually claim their rewards via `claimReward(matchId)`.
-- **Fee**: 0.1 MON (platform fee).
+
+Winners must manually claim their winnings by calling the `claim` instruction on the smart contract. This can be done through the GoalScore frontend by clicking the "Claim" button on the match page.

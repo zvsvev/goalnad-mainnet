@@ -30,20 +30,15 @@ export async function cleanupAccounts(): Promise<void> {
         return;
     }
 
-    // Find resolved/cancelled markets with on-chain IDs that haven't been closed yet
-    // Only close if there are no unsettled bets for this match
+    // Find resolved/cancelled markets with on-chain IDs that haven't been closed yet.
+    // On-chain bets are settled by users directly on Solana (claim/refund),
+    // so we just wait a day after resolution before closing the market account.
     const closeableMarkets = db.prepare(`
         SELECT m.id, m.api_match_id, m.onchain_match_id, m.home_team, m.away_team
         FROM matches m
         WHERE m.resolved = 1
           AND m.onchain_match_id IS NOT NULL
           AND m.onchain_closed IS NULL
-          AND NOT EXISTS (
-              SELECT 1 FROM bids b
-              WHERE b.match_id = m.id
-                AND b.claimed = 0
-                AND b.refunded = 0
-          )
           AND m.updated_at < datetime('now', '-1 day')
     `).all() as CloseableMarket[];
 

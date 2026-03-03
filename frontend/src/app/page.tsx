@@ -58,7 +58,7 @@ const HOW_IT_WORKS = [
     icon: Trophy,
     title: "Winners Share the Pot",
     description:
-      "All SOL wagered on the correct outcome splits proportionally amongst the winners. Draw? Everyone gets a full refund.",
+      "Correct predictions split the total pot proportionally. Home, Draw, or Away — predict right and win SOL.",
   },
 ];
 

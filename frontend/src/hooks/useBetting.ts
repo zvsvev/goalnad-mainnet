@@ -130,9 +130,6 @@ async function signAndSend(
     tx.recentBlockhash = blockhash;
     tx.feePayer = userPk;
 
-    // Serialize the transaction for Privy wallet standard signing
-    const serialized = tx.serialize({ requireAllSignatures: false });
-
     // Use wallet standard signAndSendTransaction
     const result = await wallet.sendTransaction(tx, connection);
 

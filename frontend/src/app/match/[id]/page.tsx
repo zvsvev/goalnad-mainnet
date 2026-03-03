@@ -407,11 +407,10 @@ function ClaimRefundPanel({
   if (userBet.claimed || userBet.refunded) return null;
 
   const isResolved = match.resolved === 1;
-  const isDraw = match.result === OUTCOME_DRAW;
   const isCancelled = match.status === "CANC" || match.status === "PST";
-  const isWinner = isResolved && match.result === userBet.outcome && !isDraw;
+  const isWinner = isResolved && match.result === userBet.outcome;
   const canClaim = isWinner;
-  const canRefund = isDraw || isCancelled;
+  const canRefund = isCancelled;
 
   if (!canClaim && !canRefund) return null;
 
@@ -439,7 +438,7 @@ function ClaimRefundPanel({
           <>
             <RefreshCw className="h-8 w-8 mx-auto text-yellow-400" />
             <h3 className="font-bold text-yellow-400">
-              {isCancelled ? "Match Cancelled" : "Match Ended in Draw"}
+              Match Cancelled
             </h3>
             <p className="text-sm text-muted-foreground">
               Your {formatSol(userBet.amount)} bet will be refunded in full (no fee).
@@ -640,11 +639,9 @@ export default function MatchPage() {
             <Card className={`mb-8 rounded-none border-2 shadow-none ${match.oracle_prediction === match.result ? "border-green-500 bg-background" : match.result === 1 ? "border-yellow-500 bg-background" : "border-red-500 bg-background"}`}>
               <CardContent className="pt-6 text-center space-y-2">
                 <Badge className={`font-mono text-sm px-4 py-1 rounded-none ${match.oracle_prediction === match.result ? "bg-green-500 text-background" : match.result === 1 ? "bg-yellow-500 text-background" : "bg-red-500 text-background"}`}>
-                  {match.result === 1
-                    ? "🤝 DRAW — Full Refund"
-                    : match.oracle_prediction === match.result
-                      ? "✅ Oracle Correct"
-                      : "❌ Oracle Wrong"}
+                  {match.oracle_prediction === match.result
+                    ? "✅ Oracle Correct"
+                    : "❌ Oracle Wrong"}
                 </Badge>
                 <p className="text-sm text-muted-foreground font-mono">
                   Result: <span className={`font-bold ${outcomeColor(match.result)}`}>{outcomeName(match.result)}</span>

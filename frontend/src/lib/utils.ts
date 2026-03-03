@@ -44,7 +44,7 @@ export function formatRelativeTime(dateStr: string): string {
 const BID_COMMENTS = [
   "I'm challenging this prediction. The stats don't add up.",
   "Taking a risk here, but the odds are too good.",
-  "GoalNad is underestimating the underdog.",
+  "GoalScore is underestimating the underdog.",
   "My model sees a different outcome.",
   "Putting my $GOAL where my mouth is.",
   "Fade the Oracle. Trust the code.",

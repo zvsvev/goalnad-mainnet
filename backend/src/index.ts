@@ -6,7 +6,6 @@ import { config } from "./config.js";
 import { initSchema } from "./db/schema.js";
 import matchesRouter from "./routes/matches.js";
 import standingsRouter from "./routes/standings.js";
-import agentRouter from "./routes/agent.js";
 import chainRouter from "./routes/chain.js";
 import adminRouter from "./routes/admin.js";
 import oracleRouter from "./routes/oracle.js";
@@ -52,15 +51,14 @@ app.get("/api/health", (_req, res) => {
         indexer: indexerStatus.running ? "running" : "stopped",
         websocket: { connections: getWsConnectionCount() },
         contracts: {
-            goalToken: config.goalTokenAddress || null,
-            arena: config.arenaAddress || null,
+            goalToken: config.goalTokenMint || null,
+            arena: config.arenaProgramId || null,
         },
     });
 });
 
 app.use("/api/matches", matchesRouter);
 app.use("/api/standings", standingsRouter);
-app.use("/api/agent", agentRouter);
 app.use("/api/chain", chainRouter);
 app.use("/api/admin", sensitiveLimiter, adminRouter);
 app.use("/api/oracle", sensitiveLimiter, oracleRouter);
@@ -99,8 +97,8 @@ async function start() {
         console.log(`\n🚀 GoalScore Backend running on http://localhost:${config.port}`);
         console.log(`   Chain: ${isChainEnabled() ? "Solana (CONNECTED)" : "OFFLINE (no keys configured)"}`);
         if (isChainEnabled()) {
-            console.log(`   $GOAL Token: ${config.goalTokenAddress}`);
-            console.log(`   Arena:       ${config.arenaAddress}`);
+            console.log(`   $GOAL Token: ${config.goalTokenMint}`);
+            console.log(`   Arena:       ${config.arenaProgramId}`);
         }
         console.log(`   API Provider: football-data.org (free tier)`);
         console.log(`   WebSocket: ws://localhost:${config.port}/ws`);

@@ -4,21 +4,22 @@ sidebar_position: 2
 
 # Arena Mechanics
 
-The GoalNad Arena is the core engine where AI agents compete. This section explains the bidding system, payout logic, support quota rules, and match lifecycle.
+The GoalScore Arena is the core engine where users bet SOL on football match outcomes. This section explains the betting model, payout logic, and match lifecycle.
 
 ## Key Concepts
 
-- **[Auction System](auction-system.md)** — How the progressive bidding works
-- **[Payout Logic](payout-logic.md)** — Who wins, how much, and when
-- **[Support Quota](support-quota.md)** — The anti-parasite system
+- **[Betting Model](betting-model.md)** — How 3-way betting works
+- **[Payout Logic](payout-logic.md)** — How winnings are calculated and distributed
 - **[Match Lifecycle](match-lifecycle.md)** — From prediction to settlement
+- **[FAQ](faq.md)** — Common questions
 
 ## Quick Reference
 
 | Concept | Description |
 |---------|-------------|
-| **Oracle** | The AI that sets the "house line" (prediction) |
-| **Challenge** | Bidding $GOAL tokens *against* the Oracle's prediction |
-| **Support** | Backing the Oracle's prediction (Free, uses Quota) |
-| **Lockdown** | The moment the match starts; no more bids allowed |
-| **Resolution** | Determining the winner after the match ends |
+| **Oracle** | AI that publishes match predictions and analysis |
+| **Outcome** | Home Win (0), Draw (1), or Away Win (2) |
+| **Bet** | Wager SOL on one of the three outcomes |
+| **Lockdown** | Match kickoff time — no more bets allowed |
+| **Resolution** | Final result is set on-chain after the match ends |
+| **Claim** | Winners collect their share of the pot |

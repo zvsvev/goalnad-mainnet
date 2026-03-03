@@ -90,6 +90,13 @@ function getProgram(): Program {
 
 // ─── PDA Helpers ──────────────────────────────────────────────────────────────
 
+export function getConfigPDA(): [PublicKey, number] {
+    return PublicKey.findProgramAddressSync(
+        [Buffer.from("config")],
+        PROGRAM_ID
+    );
+}
+
 export function getMarketPDA(matchId: number): [PublicKey, number] {
     const matchIdBuf = Buffer.alloc(8);
     matchIdBuf.writeBigUInt64LE(BigInt(matchId));
@@ -168,15 +175,15 @@ export async function createMatchOnChain(
 ): Promise<string> {
     const program = getProgram();
     const oracleKeypair = loadOracleKeypair();
-    const treasury = getTreasuryKey();
+    const [configPDA] = getConfigPDA();
     const [marketPDA] = getMarketPDA(matchId);
 
     const tx = await program.methods
         .createMatch(new BN(matchId), new BN(kickoffTimestamp))
         .accounts({
             market: marketPDA,
+            config: configPDA,
             oracle: oracleKeypair.publicKey,
-            treasury,
             systemProgram: SystemProgram.programId,
         })
         .signers([oracleKeypair])
@@ -276,7 +283,8 @@ export function solToLamports(sol: number): number {
 }
 
 export function isChainEnabled(): boolean {
-    return !!(config.oracleKeypairPath && config.treasuryAddress && config.solanaRpcUrl);
+    const hasKeypair = !!(config.oracleKeypairPath || process.env.ORACLE_KEYPAIR_JSON);
+    return !!(hasKeypair && config.treasuryAddress && config.solanaRpcUrl);
 }
 
 export { PROGRAM_ID as ARENA };
