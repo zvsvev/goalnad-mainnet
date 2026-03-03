@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,7 +23,6 @@ import {
   Link2,
   Users,
   Pencil,
-  Shuffle,
   Twitter,
   Mail,
 } from "lucide-react";
@@ -37,7 +36,7 @@ import { showToast } from "@/components/ui/toast";
 import {
   fetchUserProfile,
   claimUsername,
-  updateAvatar,
+  uploadAvatar,
   fetchPnl,
   fetchReferral,
   outcomeName,
@@ -164,88 +163,69 @@ function PnlChart({ pnl }: { pnl: PnlEntry[] }) {
   );
 }
 
-// ─── Avatar Picker ──────────────────────────────────────────────────
+// ─── Avatar Upload Button ────────────────────────────────────────────
 
-function AvatarPicker({
-  currentSeed,
+function AvatarUploadButton({
   wallet,
   onUpdate,
 }: {
-  currentSeed: string;
   wallet: string;
-  onUpdate: (seed: string) => void;
+  onUpdate: (avatarUrl: string) => void;
 }) {
-  const [picking, setPicking] = useState(false);
-  const [seeds, setSeeds] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const generateSeeds = () => {
-    const newSeeds = Array.from({ length: 8 }, () =>
-      Math.random().toString(36).slice(2, 10)
-    );
-    setSeeds(newSeeds);
-  };
-
-  const handlePick = async (seed: string) => {
-    const result = await updateAvatar(wallet, seed);
-    if (result.success) {
-      onUpdate(seed);
-      setPicking(false);
-      showToast({ type: "success", message: "Avatar updated!" });
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      showToast({ type: "error", message: "Please upload an image file" });
+      return;
+    }
+    if (file.size > 500_000) {
+      showToast({ type: "error", message: "Image too large (max 500KB)" });
+      return;
+    }
+    setUploading(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const result = await uploadAvatar(wallet, base64);
+      if (result.success) {
+        onUpdate(base64);
+        showToast({ type: "success", message: "Avatar uploaded!" });
+      } else {
+        showToast({ type: "error", message: result.error || "Failed to upload" });
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      showToast({ type: "error", message: "Network error — check your connection" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  if (!picking) {
-    return (
-      <button
-        onClick={() => {
-          generateSeeds();
-          setPicking(true);
-        }}
-        className="text-[10px] font-mono text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
-      >
-        <Pencil className="h-2.5 w-2.5" />
-        Change avatar
-      </button>
-    );
-  }
-
   return (
-    <div className="mt-3 p-3 border border-border rounded-none bg-background">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-          Pick an avatar
-        </span>
-        <button
-          onClick={generateSeeds}
-          className="text-[10px] font-mono text-primary hover:underline flex items-center gap-1"
-        >
-          <Shuffle className="h-2.5 w-2.5" />
-          Randomize
-        </button>
-      </div>
-      <div className="grid grid-cols-4 gap-2">
-        {seeds.map((seed) => (
-          <button
-            key={seed}
-            onClick={() => handlePick(seed)}
-            className={`border-2 p-1 transition-colors rounded-none hover:border-primary ${currentSeed === seed ? "border-primary" : "border-border"
-              }`}
-          >
-            <Image
-              src={diceBearUrl(seed)}
-              width={96}
-              height={96}
-              alt="avatar option"
-              className="w-full aspect-square"
-            />
-          </button>
-        ))}
-      </div>
+    <div className="mt-1">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        onChange={handleFileUpload}
+        className="hidden"
+      />
       <button
-        onClick={() => setPicking(false)}
-        className="mt-2 text-[10px] font-mono text-muted-foreground hover:text-foreground"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        className="text-[10px] font-mono text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 disabled:opacity-50"
       >
-        Cancel
+        {uploading ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <Pencil className="h-2.5 w-2.5" />}
+        {uploading ? "Uploading..." : "Change avatar"}
       </button>
     </div>
   );
@@ -527,11 +507,10 @@ export default function UserProfilePage() {
                 />
               </div>
               {isOwner && (
-                <AvatarPicker
-                  currentSeed={avatarSeed}
+                <AvatarUploadButton
                   wallet={wallet}
-                  onUpdate={(seed) => {
-                    if (profile) setProfile({ ...profile, avatar_seed: seed });
+                  onUpdate={(avatarUrl) => {
+                    if (profile) setProfile({ ...profile, avatar_url: avatarUrl });
                   }}
                 />
               )}
