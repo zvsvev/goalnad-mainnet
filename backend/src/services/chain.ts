@@ -77,10 +77,10 @@ function getProgram(): Program {
     });
     setProvider(provider);
 
-    // Load IDL from build artifacts
+    // Load IDL from backend's own idl directory (copied from goalscore-arena build)
     const idlPath = path.resolve(
         __dirname,
-        "../../../goalscore-arena/target/idl/goalscore_arena.json"
+        "../idl/goalscore_arena.json"
     );
     const idl = JSON.parse(fs.readFileSync(idlPath, "utf-8"));
 
