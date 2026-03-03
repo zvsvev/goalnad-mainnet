@@ -13,6 +13,7 @@ import leaderboardRouter from "./routes/leaderboard.js";
 import usersRouter from "./routes/users.js";
 import commentsRouter from "./routes/comments.js";
 import { initialSync, scheduleSyncJobs } from "./jobs/syncFixtures.js";
+import { recoverOnChainMarkets } from "./jobs/recoverOnChain.js";
 import { isChainEnabled } from "./services/chain.js";
 import { startIndexer, getIndexerStatus } from "./services/indexer.js";
 import { initWebSocket, getWsConnectionCount } from "./services/websocket.js";
@@ -75,10 +76,16 @@ async function start() {
     // Initial data load
     await initialSync();
 
+    // Recover on-chain market state (in case SQLite was wiped by redeploy)
+    if (isChainEnabled()) {
+        console.log("\n🔗 Recovering on-chain market state...");
+        await recoverOnChainMarkets().catch((err) =>
+            console.error("[Recovery] ❌ Recovery failed:", err.message)
+        );
+    }
+
     // Schedule recurring jobs
     scheduleSyncJobs();
-
-    // Start event indexer if enabled
     const enableIndexer = process.env.ENABLE_INDEXER !== "false";
     if (enableIndexer && isChainEnabled()) {
         console.log("\n🔍 Starting event indexer...");

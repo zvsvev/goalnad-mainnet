@@ -9,7 +9,7 @@
 
 import { Router, Request, Response, NextFunction } from "express";
 import { db } from "../db/connection.js";
-import { createMatchOnChain, isChainEnabled } from "../services/chain.js";
+import { createMatchOnChain, getMarketOnChain, isChainEnabled } from "../services/chain.js";
 
 const router = Router();
 
@@ -75,24 +75,36 @@ router.post("/predict", async (req: Request, res: Response) => {
         const lockdownTimestamp = Math.floor(kickoff / 1000);
 
         // ── Step 1: Publish on-chain ──
-        // Skip if match already has an on-chain prediction (re-prediction scenario)
-        // or if explicitly requested via skipOnChain param
-        const alreadyOnChain = match.onchain_match_id !== null && match.onchain_match_id !== undefined;
+        // First check if the market PDA already exists on-chain (e.g. after SQLite wipe)
         let txHash: string | null = match.oracle_tx_hash || null;
         let onchainMatchId: number | null = match.onchain_match_id || null;
-        if (isChainEnabled() && !alreadyOnChain && !skipOnChain) {
+
+        if (isChainEnabled() && !skipOnChain) {
             try {
-                txHash = await createMatchOnChain(
-                    matchId,
-                    lockdownTimestamp
-                );
-                onchainMatchId = matchId;
-                console.log(`[Oracle] ✅ Successfully published on-chain: ${txHash}, onchainMatchId: ${onchainMatchId}`);
+                // Check on-chain state first — market may exist even if SQLite was wiped
+                const existingMarket = await getMarketOnChain(matchId);
+                if (existingMarket) {
+                    console.log(`[Oracle] ℹ️  Market ${matchId} already exists on-chain, skipping creation`);
+                    onchainMatchId = matchId;
+                    // txHash stays as-is (we don't know the original tx hash)
+                } else {
+                    txHash = await createMatchOnChain(
+                        matchId,
+                        lockdownTimestamp
+                    );
+                    onchainMatchId = matchId;
+                    console.log(`[Oracle] ✅ Successfully published on-chain: ${txHash}, onchainMatchId: ${onchainMatchId}`);
+                }
             } catch (chainErr: any) {
                 console.error(`[Oracle] ❌ On-chain publish FAILED: ${chainErr.message}`);
-                // Ensure these stay null so DB doesn't get ghost ID
-                txHash = null;
-                onchainMatchId = null;
+                // If it failed because PDA already exists, still mark it
+                if (chainErr.message?.includes("already in use")) {
+                    console.log(`[Oracle] ℹ️  Market ${matchId} PDA already in use — marking as on-chain`);
+                    onchainMatchId = matchId;
+                } else {
+                    txHash = null;
+                    onchainMatchId = null;
+                }
             }
         }
 
