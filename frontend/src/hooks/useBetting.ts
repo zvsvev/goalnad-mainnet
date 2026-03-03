@@ -25,8 +25,8 @@ const MIN_BET_SOL = 0.01;
 function toBigUInt64LE(value: bigint): Buffer {
     const buf = Buffer.alloc(8);
     for (let i = 0; i < 8; i++) {
-        buf[i] = Number(value & 0xffn);
-        value >>= 8n;
+        buf[i] = Number(value & BigInt(0xff));
+        value = value >> BigInt(8);
     }
     return buf;
 }
