@@ -111,7 +111,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                 <div className="flex items-center gap-1.5">
                   <Bot className="h-3.5 w-3.5 text-primary" />
                   <span className="text-[10px] font-mono text-primary font-semibold uppercase tracking-wider">
-                    Oracle says
+                    AI says
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
               <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
                 isDraw ? "text-yellow-400" : oracleCorrect ? "text-emerald-400" : "text-red-400"
               }`}>
-                {isDraw ? "🤝 Draw" : oracleCorrect ? "✅ Oracle Right" : "❌ Oracle Wrong"}
+                {isDraw ? "🤝 Draw" : oracleCorrect ? "✅ AI Right" : "❌ AI Wrong"}
                 {" · "}
                 <span className={outcomeColor(match.result)}>{outcomeName(match.result)}</span>
               </span>

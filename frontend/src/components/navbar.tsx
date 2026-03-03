@@ -61,7 +61,7 @@ export function Navbar() {
             Leaderboard
           </Link>
           <Link href="/oracle" className="hover:text-primary transition-colors">
-            Oracle
+            AI Analysis
           </Link>
           <Link href="/referrals" className="hover:text-primary transition-colors">
             Referrals

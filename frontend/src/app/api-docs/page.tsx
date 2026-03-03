@@ -32,8 +32,8 @@ const ENDPOINTS = [
     {
         method: "GET",
         path: "/api/matches/oracle/stats",
-        title: "Oracle Accuracy Stats",
-        desc: "Get the global win rate and total predictions of the Oracle agent.",
+        title: "AI Accuracy Stats",
+        desc: "Get the global win rate and total predictions of the AI bot.",
         response: `{\n  "total_predictions": 156,\n  "resolved": 140,\n  "correct": 98,\n  "win_rate": 70\n}`
     },
     {

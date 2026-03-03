@@ -5,7 +5,7 @@ slug: /
 
 # What is GoalScore?
 
-GoalScore is a **football prediction arena on Solana** where humans bet SOL against each other on match outcomes. An AI Oracle provides predictions and analysis — gated to $GOAL token holders.
+GoalScore is a **football prediction arena on Solana** where humans bet SOL against each other on match outcomes. An AI Analysis bot provides predictions and analysis — gated to $GOAL token holders.
 
 ## The Core Idea
 
@@ -21,8 +21,8 @@ Bet on **Home Win**, **Draw**, or **Away Win** for every match. All three are va
 ### On-Chain Transparency
 All bets, resolutions, and payouts are recorded on Solana. Every transaction is verifiable on the blockchain.
 
-### AI Oracle
-An autonomous AI Oracle analyzes every match using standings, form, and historical data. Its premium analysis is available to $GOAL token holders (minimum 1M $GOAL).
+### AI Analysis
+An autonomous AI bot analyzes every match using standings, form, and historical data. Its premium analysis is available to $GOAL token holders (minimum 1M $GOAL).
 
 ### Proportional Payouts
 Winners share the entire pot proportionally to their bet size. No house edge — just a 1% platform fee.

@@ -7,13 +7,13 @@ sidebar_position: 7
 ## General
 
 ### What is GoalScore?
-GoalScore is a football prediction arena on Solana where humans bet SOL against each other on match outcomes (Home, Draw, or Away). An AI Oracle provides predictions and analysis for $GOAL token holders.
+GoalScore is a football prediction arena on Solana where humans bet SOL against each other on match outcomes (Home, Draw, or Away). An AI Analysis bot provides predictions and analysis for $GOAL token holders.
 
 ### How does it work?
 1. Browse upcoming matches on [goalscore.fun](https://goalscore.fun)
 2. Pick Home, Draw, or Away and bet SOL
 3. If you predicted correctly, claim your share of the total pot proportionally
-4. Oracle analysis is available to $GOAL holders (minimum 1M) to help inform decisions
+4. AI analysis is available to $GOAL holders (minimum 1M) to help inform decisions
 
 ### Is GoalScore live?
 GoalScore is currently on Solana devnet, with mainnet launch planned.
@@ -35,10 +35,10 @@ Your share = (your bet / total bets on winning outcome) × total pot. For exampl
 ## Tokens & Fees
 
 ### What is $GOAL?
-$GOAL is a SPL token on Solana. Holding $GOAL unlocks premium Oracle analysis and predictions.
+$GOAL is a SPL token on Solana. Holding $GOAL unlocks premium AI analysis and predictions.
 
 ### How much $GOAL do I need?
-- **1M $GOAL** — Access Oracle predictions and AI analysis
+- **1M $GOAL** — Access AI predictions and AI analysis
 - **5M $GOAL** — Access Public API (planned)
 
 ### What are the fees?
@@ -69,9 +69,9 @@ A full public API system for developers to build prediction bots, analytics tool
 | `/v1/matches` | Public | List matches with filters |
 | `/v1/matches/:id` | Public | Single match data |
 | `/v1/standings/:league` | Public | League standings |
-| `/v1/oracle/predictions` | API Key | Oracle predictions with AI analysis |
+| `/v1/oracle/predictions` | API Key | AI predictions with AI analysis |
 | `/v1/oracle/predictions/:matchId` | API Key | Single prediction + full analysis |
-| `/v1/oracle/accuracy` | Public | Oracle accuracy stats |
+| `/v1/oracle/accuracy` | Public | AI accuracy stats |
 
 **API Key model:**
 - Gated to **5M $GOAL** holders minimum
@@ -82,6 +82,6 @@ A full public API system for developers to build prediction bots, analytics tool
 
 **Use cases:**
 - Build custom AI prediction agents
-- Pipe Oracle analysis into trading bots
+- Pipe AI analysis into trading bots
 - Create dashboards or analytics tools
 - Integrate match data with external prediction markets

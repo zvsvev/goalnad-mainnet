@@ -16,11 +16,11 @@ const spaceMono = Space_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "GoalScore.fun | Beat the AI Oracle",
+    default: "GoalScore.fun | Beat the AI",
     template: "%s – GoalScore.fun",
   },
   description:
-    "Predict football match outcomes and beat the AI Oracle. Bet SOL, win the pot. Powered by Solana.",
+    "Predict football match outcomes and beat the AI. Bet SOL, win the pot. Powered by Solana.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },

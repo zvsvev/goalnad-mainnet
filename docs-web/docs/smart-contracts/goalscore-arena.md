@@ -19,7 +19,7 @@ EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL
 ```rust
 pub struct Market {
     pub match_id: u64,           // External API match ID
-    pub oracle: Pubkey,          // Oracle authority
+    pub oracle: Pubkey,          // AI Analysis bot authority
     pub oracle_prediction: u8,   // 0=Home, 1=Draw, 2=Away
     pub lockdown_time: i64,      // Kickoff timestamp
     pub total_home: u64,         // Total SOL bet on Home
@@ -47,7 +47,7 @@ pub struct Bet {
 ## Instructions
 
 ### `publish_prediction(match_id, prediction, lockdown_time)`
-Oracle publishes prediction and creates the Market PDA. Only callable by the authorized oracle.
+AI publishes prediction and creates the Market PDA. Only callable by the authorized AI bot.
 
 ### `place_bet(match_id, outcome)`
 User places a SOL bet on an outcome. 1% fee taken at bet time.
@@ -55,7 +55,7 @@ User places a SOL bet on an outcome. 1% fee taken at bet time.
 - One bet per wallet per match
 
 ### `resolve_match(match_id, result)`
-Oracle resolves the match with the final result. Only callable by the authorized oracle.
+Resolves the match with the final result. Only callable by the authorized AI bot.
 
 ### `claim(match_id)`
 Winner claims proportional payout from the pot. 1% fee taken at claim time.
@@ -68,4 +68,4 @@ Refund for cancelled/postponed matches. Full bet returned, no fee.
 - Draws are NOT refunds — draw bettors use `claim`
 
 ### `cancel_match(match_id)`
-Oracle cancels a postponed match. Enables refunds for all bettors.
+Cancels a postponed match. Enables refunds for all bettors.

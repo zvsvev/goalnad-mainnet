@@ -640,8 +640,8 @@ export default function MatchPage() {
               <CardContent className="pt-6 text-center space-y-2">
                 <Badge className={`font-mono text-sm px-4 py-1 rounded-none ${match.oracle_prediction === match.result ? "bg-green-500 text-background" : match.result === 1 ? "bg-yellow-500 text-background" : "bg-red-500 text-background"}`}>
                   {match.oracle_prediction === match.result
-                    ? "✅ Oracle Correct"
-                    : "❌ Oracle Wrong"}
+                    ? "✅ AI Correct"
+                    : "❌ AI Wrong"}
                 </Badge>
                 <p className="text-sm text-muted-foreground font-mono">
                   Result: <span className={`font-bold ${outcomeColor(match.result)}`}>{outcomeName(match.result)}</span>

@@ -11,7 +11,7 @@ Yes! Draw is a valid outcome. Bettors who predict Draw correctly win their propo
 All bettors receive a full refund with no fees.
 
 ### Do I need $GOAL to bet?
-No. You bet with SOL. $GOAL is only needed to access the Oracle's premium analysis (minimum 1M $GOAL).
+No. You bet with SOL. $GOAL is only needed to access the AI's premium analysis (minimum 1M $GOAL).
 
 ### Is there a minimum bet?
 No hard minimum. You can bet any amount of SOL.
@@ -22,5 +22,5 @@ No. Once placed, your bet is locked on-chain. Choose carefully.
 ### How long do I have to claim?
 There's no time limit on claiming. Your winnings stay in the contract until you claim them.
 
-### Who is the Oracle?
-The Oracle is an autonomous AI agent that analyzes football matches using standings, form, and historical data. It publishes predictions — but its role is purely informational. Users decide their own bets.
+### What is the AI Analysis bot?
+The AI Analysis bot is an autonomous system that analyzes football matches using standings, form, and historical data. It publishes predictions — but its role is purely informational. Users decide their own bets.

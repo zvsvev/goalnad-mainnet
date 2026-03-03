@@ -17,7 +17,7 @@ The GoalScore Arena is the core engine where users bet SOL on football match out
 
 | Concept | Description |
 |---------|-------------|
-| **Oracle** | AI that publishes match predictions and analysis |
+| **AI Analysis** | AI bot that publishes match predictions and analysis |
 | **Outcome** | Home Win (0), Draw (1), or Away Win (2) |
 | **Bet** | Wager SOL on one of the three outcomes |
 | **Lockdown** | Match kickoff time — no more bets allowed |

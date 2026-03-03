@@ -34,7 +34,7 @@ const PROGRAM_ID = "EPpsfGUp4Na92W6cYFz88X3AuxqsC8q6rveHn29iETrL";
 const FAQ_ITEMS = [
   {
     q: "What is $GOAL?",
-    a: "$GOAL is the native token of GoalScore.fun on Solana. Holding 1,000,000+ $GOAL unlocks the AI Oracle's full match analysis and predictions.",
+    a: "$GOAL is the native token of GoalScore.fun on Solana. Holding 1,000,000+ $GOAL unlocks the AI Analysis bot's full match analysis and predictions.",
   },
   {
     q: "How do I get $GOAL?",
@@ -42,11 +42,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "What does holding $GOAL unlock?",
-    a: "Holding 1,000,000+ $GOAL unlocks the Oracle's full prediction analysis, score forecasts, conviction scores, and on-chain reasoning for every match.",
+    a: "Holding 1,000,000+ $GOAL unlocks the AI's full prediction analysis, score forecasts, conviction scores, and on-chain reasoning for every match.",
   },
   {
     q: "Do I need $GOAL to bet?",
-    a: "No — anyone can bet SOL on match outcomes. $GOAL is only required to access the Oracle's analysis (the AI predictions remain gated behind a token threshold).",
+    a: "No — anyone can bet SOL on match outcomes. $GOAL is only required to access the AI's analysis (the AI predictions remain gated behind a token threshold).",
   },
   {
     q: "What happens to fees?",
@@ -143,8 +143,8 @@ export default function GoalTokenPage() {
                 on Solana
               </p>
               <p className="mt-2 text-sm text-muted-foreground max-w-md mx-auto">
-                Hold $GOAL to unlock the AI Oracle's full predictions. Bet SOL,
-                beat the Oracle, win the pot.
+                Hold $GOAL to unlock the AI Analysis bot's full predictions. Bet SOL,
+                beat the AI, win the pot.
               </p>
 
               <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -160,17 +160,17 @@ export default function GoalTokenPage() {
         </div>
       </section>
 
-      {/* Oracle Gate — Holder Benefits */}
+      {/* AI Analysis Gate — Holder Benefits */}
       <section className="border-t border-border bg-background">
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <MotionWrapper delay={0.05}>
             <div className="text-center mb-8">
               <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center justify-center gap-2">
                 <Lock className="h-5 w-5 text-primary" />
-                Oracle Access — Holder Benefits
+                AI Analysis Access — Holder Benefits
               </h2>
               <p className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
-                Hold 1,000,000+ $GOAL to unlock the full AI Oracle analysis for
+                Hold 1,000,000+ $GOAL to unlock the full AI AI Analysis analysis for
                 every match.
               </p>
             </div>
@@ -181,19 +181,19 @@ export default function GoalTokenPage() {
               {
                 icon: Trophy,
                 title: "AI Prediction",
-                desc: "Home / Draw / Away outcome predicted by the Oracle AI before every kickoff.",
+                desc: "Home / Draw / Away outcome predicted by the AI Analysis bot before every kickoff.",
                 locked: false,
               },
               {
                 icon: Zap,
                 title: "Score Forecast",
-                desc: "Exact predicted scoreline — e.g. Arsenal 2–1 Chelsea — from the Oracle.",
+                desc: "Exact predicted scoreline — e.g. Arsenal 2–1 Chelsea — from the AI.",
                 locked: true,
               },
               {
                 icon: PieChart,
                 title: "Conviction Score",
-                desc: "How confident is the Oracle? 0–100 conviction rating per match.",
+                desc: "How confident is the AI Analysis? 0–100 conviction rating per match.",
                 locked: true,
               },
               {
@@ -205,7 +205,7 @@ export default function GoalTokenPage() {
               {
                 icon: Flame,
                 title: "On-chain TX",
-                desc: "Direct link to the Oracle's prediction transaction on Solscan.",
+                desc: "Direct link to the AI's prediction transaction on Solscan.",
                 locked: true,
               },
               {
@@ -489,7 +489,7 @@ export default function GoalTokenPage() {
         <div className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
           <div className="text-center">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl mb-3">
-              Ready to Beat the Oracle?
+              Ready to Beat the AI?
             </h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               You don't need $GOAL to start betting — connect your Solana wallet

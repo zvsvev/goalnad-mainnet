@@ -8,10 +8,10 @@ GoalScore uses a **3-way parimutuel betting model**. All bets go into a shared p
 
 ## How it Works
 
-1. **Oracle Prediction**: The AI Oracle publishes a prediction (Home, Draw, or Away) with analysis.
+1. **AI Prediction**: The AI Analysis bot publishes a prediction (Home, Draw, or Away) with analysis.
 2. **Users Bet**: Anyone can bet SOL on any of the three outcomes — Home (0), Draw (1), or Away (2).
 3. **Lockdown**: Betting closes at match kickoff.
-4. **Resolution**: After the match, the Oracle resolves with the final result.
+4. **Resolution**: After the match, the result is resolved on-chain.
 5. **Winners Claim**: Everyone who bet on the correct outcome claims their proportional share.
 
 ## Example

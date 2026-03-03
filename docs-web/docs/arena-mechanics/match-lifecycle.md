@@ -14,7 +14,7 @@ Every match in GoalScore follows a strict on-chain lifecycle.
 
 ## 2. Prediction (≥7 Days Before Kickoff)
 
-- **Event**: Oracle AI publishes prediction (Home/Draw/Away) + analysis
+- **Event**: AI Analysis bot publishes prediction (Home/Draw/Away) + analysis
 - **Status**: `NS` — betting opens
 - **On-chain**: `publish_prediction` creates a Market PDA on Solana
 - **Analysis**: Premium analysis available to 1M+ $GOAL holders
@@ -34,7 +34,7 @@ Every match in GoalScore follows a strict on-chain lifecycle.
 ## 5. Resolution (Post-Match)
 
 - **Event**: Match finishes (~2 hours after kickoff)
-- **Action**: Backend auto-resolves or Oracle calls `resolve_match` with the result
+- **Action**: Backend auto-resolves with the final result
 - **Status**: `FT` (Full Time)
 - **On-chain**: Market result is set, winners can now claim
 

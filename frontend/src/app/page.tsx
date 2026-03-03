@@ -40,7 +40,7 @@ const HOW_IT_WORKS = [
     icon: Bot,
     title: "Unlock AI Analysis",
     description:
-      "Hold 1M $GOAL to access the GoalScore AI Oracle's predictions and deep analysis for upcoming matches.",
+      "Hold 1M $GOAL to access the GoalScore AI Analysis bot's predictions and deep analysis for upcoming matches.",
   },
   {
     icon: Coins,
@@ -137,7 +137,7 @@ function MatchCard({ match }: { match: ApiMatch }) {
         {hasOracle && (
           <div className="flex items-center gap-1.5 mb-3">
             <Bot className="h-3 w-3 text-primary shrink-0" />
-            <span className="font-mono text-[10px] text-muted-foreground">Oracle:</span>
+            <span className="font-mono text-[10px] text-muted-foreground">AI:</span>
             <span className={`font-mono text-[10px] font-bold ${oraclePredColor}`}>
               {oraclePredName}
             </span>
@@ -173,9 +173,9 @@ function MatchCard({ match }: { match: ApiMatch }) {
               Result: {outcomeName(match.result)}
             </span>
             {match.oracle_prediction === match.result ? (
-              <span className="font-mono text-[9px] text-green-400">✓ Oracle correct</span>
+              <span className="font-mono text-[9px] text-green-400">✓ AI correct</span>
             ) : (
-              <span className="font-mono text-[9px] text-red-400">✗ Oracle wrong</span>
+              <span className="font-mono text-[9px] text-red-400">✗ AI wrong</span>
             )}
           </div>
         )}
@@ -195,10 +195,10 @@ function OracleGate({ children }: { children: React.ReactNode }) {
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background/95 border border-border rounded-none">
           <Lock className="h-8 w-8 text-primary" />
           <p className="font-mono text-sm text-center text-foreground">
-            Hold <span className="text-primary font-bold">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL</span> to see Oracle predictions
+            Hold <span className="text-primary font-bold">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL</span> to see AI predictions
           </p>
           <p className="font-mono text-[10px] text-muted-foreground text-center max-w-48">
-            Connect your wallet and hold $GOAL to unlock Oracle insights
+            Connect your wallet and hold $GOAL to unlock AI insights
           </p>
         </div>
       </div>
@@ -278,7 +278,7 @@ export default function Home() {
             <TypingEffect
               text={`Bet SOL against other players on Home, Draw, or Away.
 If your side wins — you share the pot proportionally.
-Unlock AI Oracle analysis with 1M $GOAL to predict smarter.
+Unlock AI Analysis bot analysis with 1M $GOAL to predict smarter.
 No house edge. 1% fee. Pure on-chain.`}
               className="mt-5 text-base text-muted-foreground sm:text-lg max-w-xl mx-auto whitespace-pre-line"
             />
@@ -307,7 +307,7 @@ No house edge. 1% fee. Pure on-chain.`}
                 { label: "Chain", value: "Solana" },
                 { label: "Bet Currency", value: "SOL" },
                 { label: "Fee", value: "1%" },
-                { label: "Oracle Accuracy", value: oracleStats?.accuracy ? `${oracleStats.accuracy}%` : "—" },
+                { label: "AI Accuracy", value: oracleStats?.accuracy ? `${oracleStats.accuracy}%` : "—" },
                 { label: "Outcomes", value: "H / D / A" },
               ].map((s) => (
                 <div key={s.label} className="text-center">
@@ -330,7 +330,7 @@ No house edge. 1% fee. Pure on-chain.`}
                 Live Betting Markets
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Oracle predictions are live — bet SOL before kickoff
+                AI predictions are live — bet SOL before kickoff
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -345,7 +345,7 @@ No house edge. 1% fee. Pure on-chain.`}
             </div>
           ) : predictedMatches.length === 0 ? (
             <p className="text-sm text-muted-foreground font-mono py-8 text-center">
-              No markets open yet — Oracle is scanning today&apos;s matches
+              No markets open yet — AI is scanning today&apos;s matches
             </p>
           ) : (
             <>
@@ -377,7 +377,7 @@ No house edge. 1% fee. Pure on-chain.`}
           <div className="mb-6">
             <h2 className="text-xl font-bold tracking-tight sm:text-2xl flex items-center gap-2">
               <Bot className="h-5 w-5 text-primary" />
-              Oracle Analysis
+              AI Analysis
               <Lock className="h-4 w-4 text-muted-foreground" />
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -497,7 +497,7 @@ No house edge. 1% fee. Pure on-chain.`}
           </div>
           {leaderboard.length === 0 ? (
             <p className="text-sm text-muted-foreground font-mono py-6 text-center">
-              No players ranked yet — be the first to beat the Oracle
+              No players ranked yet — be the first to beat the AI
             </p>
           ) : (
             <div className="rounded-none border border-border bg-background overflow-hidden">
@@ -551,7 +551,7 @@ No house edge. 1% fee. Pure on-chain.`}
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How It Works</h2>
             <p className="mt-2 text-sm text-muted-foreground max-w-2xl mx-auto">
-              No house always wins. No opaque bookmaker odds. Just you, the AI Oracle, and pure on-chain football betting on Solana.
+              No house always wins. No opaque bookmaker odds. Just you, the AI Analysis bot, and pure on-chain football betting on Solana.
             </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 max-w-4xl mx-auto">
@@ -590,12 +590,12 @@ No house edge. 1% fee. Pure on-chain.`}
             </div>
             <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">$GOAL Token</h2>
             <p className="mt-3 text-muted-foreground max-w-md mx-auto">
-              The utility token of GoalScore.fun. Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to unlock Oracle predictions and analysis.
+              The utility token of GoalScore.fun. Hold {GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL to unlock AI predictions and analysis.
               Deployed on Solana via pump.fun.
             </p>
             <div className="mt-6 inline-flex items-center gap-2 rounded-none border border-border bg-background px-4 py-2">
               <Lock className="h-3.5 w-3.5 text-primary" />
-              <span className="font-mono text-xs text-primary">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL = Oracle Access</span>
+              <span className="font-mono text-xs text-primary">{GOAL_HOLDER_THRESHOLD.toLocaleString()} $GOAL = AI Analysis Access</span>
             </div>
             <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button

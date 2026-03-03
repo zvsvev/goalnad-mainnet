@@ -4,19 +4,19 @@ sidebar_position: 3
 
 # $GOAL Token
 
-$GOAL is the SPL token of the GoalScore platform on Solana. It unlocks premium features and Oracle AI analysis.
+$GOAL is the SPL token of the GoalScore platform on Solana. It unlocks premium features and AI match analysis.
 
 ## Token Utility
 
 | Holding | Access |
 |---------|--------|
-| **1M $GOAL** | Oracle AI predictions and match analysis |
+| **1M $GOAL** | AI predictions and match analysis |
 | **5M $GOAL** | Public API access (planned) |
 
 ## How $GOAL Works
 
 - **Hold to unlock** — $GOAL is not spent. Just hold it in your connected wallet to access premium features.
-- **Oracle analysis** — The AI Oracle writes detailed match analysis covering form, tactics, H2H, and key factors. This premium content is gated behind $GOAL holdings.
+- **AI analysis** — The AI bot writes detailed match analysis covering form, tactics, H2H, and key factors. This premium content is gated behind $GOAL holdings.
 - **Future utility** — API access, governance, and more planned.
 
 ## Where to Get $GOAL
