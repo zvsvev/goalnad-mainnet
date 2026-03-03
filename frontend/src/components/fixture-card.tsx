@@ -32,7 +32,7 @@ function TeamCrest({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
-export function FixtureCard({ match }: { match: ApiMatch }) {
+export function FixtureCard({ match, userGoalBalance = 0 }: { match: ApiMatch, userGoalBalance?: number }) {
   const isFinished = match.status === "FT";
   const isLive = match.status === "LIVE";
   const isResolved = match.resolved === 1 && match.result !== null;
@@ -44,6 +44,9 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
   const oracleCorrect = isResolved && match.result !== null && match.result === match.oracle_prediction;
   // Is draw (outcome 1)
   const isDraw = isResolved && match.result === 1;
+
+  // Gating logic
+  const isEligible = userGoalBalance >= 1_000_000;
 
   return (
     <Link href={`/match/${match.api_match_id}`} className="block">
@@ -105,15 +108,16 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
           )}
 
           {/* Oracle Prediction */}
-          {hasPrediction && (
-            <div className="mt-3 rounded-lg bg-primary/5 border border-primary/20 p-2.5">
+          {hasPrediction && isEligible && (
+            <div className={`mt-3 rounded-lg border p-2.5 bg-primary/5 border-primary/20`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Bot className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-[10px] font-mono text-primary font-semibold uppercase tracking-wider">
+                  <span className={`text-[10px] font-mono font-semibold uppercase tracking-wider text-primary`}>
                     AI says
                   </span>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className={`border-primary/50 bg-primary/10 font-mono text-[10px] px-1.5 ${outcomeColor(match.oracle_prediction)}`}>
                     {outcomeName(match.oracle_prediction)}
@@ -125,6 +129,7 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
                   )}
                 </div>
               </div>
+
               {match.oracle_conviction !== null && (
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <div className="h-1.5 w-16 rounded-full bg-secondary overflow-hidden">
@@ -140,14 +145,12 @@ export function FixtureCard({ match }: { match: ApiMatch }) {
 
           {/* Resolved result banner */}
           {isResolved && match.result !== null && (
-            <div className={`mt-2 flex items-center justify-between rounded-lg p-2 ${
-              isDraw ? "bg-yellow-500/10 border border-yellow-500/20"
-                : oracleCorrect ? "bg-emerald-500/10 border border-emerald-500/20"
+            <div className={`mt-2 flex items-center justify-between rounded-lg p-2 ${isDraw ? "bg-yellow-500/10 border border-yellow-500/20"
+              : oracleCorrect ? "bg-emerald-500/10 border border-emerald-500/20"
                 : "bg-red-500/10 border border-red-500/20"
-            }`}>
-              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${
-                isDraw ? "text-yellow-400" : oracleCorrect ? "text-emerald-400" : "text-red-400"
               }`}>
+              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider ${isDraw ? "text-yellow-400" : oracleCorrect ? "text-emerald-400" : "text-red-400"
+                }`}>
                 {isDraw ? "🤝 Draw" : oracleCorrect ? "✅ AI Right" : "❌ AI Wrong"}
                 {" · "}
                 <span className={outcomeColor(match.result)}>{outcomeName(match.result)}</span>

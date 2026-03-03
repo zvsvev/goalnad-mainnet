@@ -62,7 +62,7 @@ const HOW_IT_WORKS = [
   },
 ];
 
-function MatchCard({ match }: { match: ApiMatch }) {
+function MatchCard({ match, userGoalBalance = 0 }: { match: ApiMatch, userGoalBalance?: number }) {
   const hasOracle = match.oracle_prediction !== null;
   const isResolved = match.resolved === 1;
   const pot = match.total_pot ?? 0;
@@ -77,6 +77,8 @@ function MatchCard({ match }: { match: ApiMatch }) {
 
   const oraclePredName = outcomeName(match.oracle_prediction);
   const oraclePredColor = outcomeColor(match.oracle_prediction);
+
+  const isEligible = userGoalBalance >= GOAL_HOLDER_THRESHOLD;
 
   return (
     <Link href={`/match/${match.api_match_id}`}>
@@ -134,16 +136,19 @@ function MatchCard({ match }: { match: ApiMatch }) {
         </div>
 
         {/* Oracle prediction */}
-        {hasOracle && (
+        {hasOracle && isEligible && (
           <div className="flex items-center gap-1.5 mb-3">
             <Bot className="h-3 w-3 text-primary shrink-0" />
-            <span className="font-mono text-[10px] text-muted-foreground">AI:</span>
+            <span className={`font-mono text-[10px] uppercase tracking-wider text-primary`}>
+              AI says
+            </span>
+
             <span className={`font-mono text-[10px] font-bold ${oraclePredColor}`}>
               {oraclePredName}
             </span>
             {match.oracle_score && (
               <span className="font-mono text-[10px] text-muted-foreground">
-                · {match.oracle_score}
+                ({match.oracle_score})
               </span>
             )}
           </div>
@@ -464,7 +469,7 @@ No house edge. Pure on-chain.`}
               <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
                 {displayedResults.slice(0, resultsVisibleCount).map((m, i) => (
                   <MotionWrapper key={m.api_match_id} delay={i * 0.05} viewportAmount={0.1}>
-                    <MatchCard match={m} />
+                    <MatchCard match={m} userGoalBalance={goalBalance} />
                   </MotionWrapper>
                 ))}
               </div>
